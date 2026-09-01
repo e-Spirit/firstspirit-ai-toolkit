@@ -1,0 +1,30 @@
+{
+  "name": "firstspirit-ai-toolkit",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Skills and tools for building and managing FirstSpirit CMS projects with AI",
+  "license": "MIT",
+  "author": {
+    "name": "Guy Brown",
+    "email": "guy.brown@rezolve.com"
+  },
+  "keywords": [
+    "firstspirit",
+    "cms",
+    "skills",
+    "agentic",
+    "ai-toolkit",
+    "claude",
+    "codex",
+    "gemini"
+  ],
+  "scripts": {
+    "bump": "./scripts/bump-version.sh",
+    "lint": "./scripts/lint-skills.sh",
+    "check-versions": "./scripts/bump-version.sh --check"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/guybrown/firstspirit-ai-toolkit"
+  }
+}

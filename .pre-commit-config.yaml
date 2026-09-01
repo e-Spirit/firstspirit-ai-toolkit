@@ -1,0 +1,9 @@
+repos:
+  - repo: local
+    hooks:
+      - id: lint-skills
+        name: Lint skills
+        entry: ./scripts/lint-skills.sh
+        language: script
+        pass_filenames: false
+        always_run: true
