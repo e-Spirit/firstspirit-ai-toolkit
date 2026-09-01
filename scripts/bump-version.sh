@@ -21,7 +21,7 @@ get_version() {
   local file="$1" field="$2"
   local jq_path
   jq_path="$(to_jq_path "$field")"
-  jq -r "$jq_path" "$REPO_ROOT/$file" 2>/dev/null || echo "NOT_FOUND"
+  jq -re "$jq_path" "$REPO_ROOT/$file" 2>/dev/null || echo "NOT_FOUND"
 }
 
 set_version() {
@@ -29,7 +29,7 @@ set_version() {
   local jq_path tmp
   jq_path="$(to_jq_path "$field")"
   tmp="$(mktemp)"
-  jq "$jq_path = \"$new_ver\"" "$REPO_ROOT/$file" > "$tmp"
+  jq --arg v "$new_ver" "$jq_path = \$v" "$REPO_ROOT/$file" > "$tmp"
   mv "$tmp" "$REPO_ROOT/$file"
 }
 
@@ -62,10 +62,16 @@ case "$CMD" in
   --audit)
     current_ver="$(jq -r '.version' "$REPO_ROOT/package.json")"
     echo "Auditing for undeclared occurrences of $current_ver..."
-    mapfile -t excludes < <(jq -r '.audit.exclude[]' "$CONFIG")
+    declared_paths=()
+    while IFS= read -r entry; do
+      declared_paths+=("$(echo "$entry" | jq -r '.path')")
+    done < <(jq -c '.files[]' "$CONFIG")
     exclude_args=()
-    for exc in "${excludes[@]}"; do
+    while IFS= read -r exc; do
       exclude_args+=(--exclude-dir="$exc" --exclude="$exc")
+    done < <(jq -r '.audit.exclude[]' "$CONFIG")
+    for p in "${declared_paths[@]}"; do
+      exclude_args+=(--exclude="$(basename "$p")")
     done
     grep -r "$current_ver" "$REPO_ROOT" \
       "${exclude_args[@]}" \
@@ -81,6 +87,10 @@ case "$CMD" in
 
   *)
     NEW_VER="$CMD"
+    if ! echo "$NEW_VER" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+'; then
+      echo "Error: '$NEW_VER' is not a valid semver (expected X.Y.Z)" >&2
+      exit 1
+    fi
     echo "Bumping all versions to $NEW_VER..."
     while IFS= read -r entry; do
       file="$(echo "$entry" | jq -r '.path')"

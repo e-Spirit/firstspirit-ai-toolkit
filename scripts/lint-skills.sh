@@ -16,14 +16,14 @@ while IFS= read -r skill_file; do
   frontmatter="$(awk '/^---/{p=!p; next} p{print}' "$skill_file" | head -20)"
 
   # Check name field
-  name="$(echo "$frontmatter" | grep '^name:' | sed 's/^name:[[:space:]]*//' | tr -d '"' | head -1)"
+  name="$(echo "$frontmatter" | grep '^name:' | sed 's/^name:[[:space:]]*//' | tr -d '"' | head -1 || true)"
   if [ -z "$name" ]; then
     echo "ERROR [$rel_path]: missing 'name' field in frontmatter"
     errors=$((errors + 1))
   fi
 
   # Check description field
-  description="$(echo "$frontmatter" | grep '^description:' | sed 's/^description:[[:space:]]*//' | tr -d '"' | head -1)"
+  description="$(echo "$frontmatter" | grep '^description:' | sed 's/^description:[[:space:]]*//' | tr -d '"' | head -1 || true)"
   if [ -z "$description" ]; then
     echo "ERROR [$rel_path]: missing 'description' field in frontmatter"
     errors=$((errors + 1))

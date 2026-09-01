@@ -69,8 +69,8 @@ See [CLAUDE.md](CLAUDE.md) for contributor guidelines.
 
 ## Requirements
 
-- `jq` for the version bump script (`brew install jq` / `apt install jq`)
-- Node.js 18+ for MCP servers
+- `jq` (required for session-start hook): `brew install jq` / `apt install jq`
+- `jq` and Node.js 18+ for contributors (version bump script, MCP servers)
 
 ## License
 
