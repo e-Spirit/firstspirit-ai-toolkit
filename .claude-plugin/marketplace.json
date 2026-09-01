@@ -1,0 +1,14 @@
+{
+  "name": "firstspirit-ai-toolkit",
+  "owner": {
+    "name": "Guy Brown",
+    "email": "guy.brown@rezolve.com"
+  },
+  "plugins": [
+    {
+      "name": "firstspirit-ai-toolkit",
+      "version": "0.1.0",
+      "source": "./"
+    }
+  ]
+}

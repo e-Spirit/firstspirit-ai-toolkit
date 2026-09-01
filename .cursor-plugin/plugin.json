@@ -1,0 +1,8 @@
+{
+  "name": "firstspirit-ai-toolkit",
+  "displayName": "FirstSpirit AI Toolkit",
+  "description": "Skills and tools for building and managing FirstSpirit CMS projects with AI",
+  "version": "0.1.0",
+  "skills": "./skills/",
+  "hooks": "./hooks/hooks-cursor.json"
+}

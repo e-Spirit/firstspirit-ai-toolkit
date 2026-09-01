@@ -1,0 +1,27 @@
+{
+  "name": "firstspirit-ai-toolkit",
+  "displayName": "FirstSpirit AI Toolkit",
+  "description": "Skills and tools for building and managing FirstSpirit CMS projects with AI",
+  "version": "0.1.0",
+  "author": {
+    "name": "Guy Brown",
+    "email": "guy.brown@rezolve.com"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/guybrown/firstspirit-ai-toolkit",
+  "skills": "./skills/",
+  "brandColor": "#0066CC",
+  "defaultPrompt": "You are working in a FirstSpirit CMS project. Use the firstspirit-ai-toolkit skills to assist with content management, templating, project setup, deployment, and diagnostics.",
+  "capabilities": [
+    "skills"
+  ],
+  "sessionStart": {
+    "skill": "using-firstspirit-toolkit"
+  },
+  "keywords": [
+    "firstspirit",
+    "cms",
+    "skills",
+    "agentic"
+  ]
+}
