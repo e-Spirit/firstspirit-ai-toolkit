@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PLUGIN_ROOT="$(dirname "$SCRIPT_DIR")"
+SKILL_FILE="$PLUGIN_ROOT/skills/using-firstspirit-toolkit/SKILL.md"
+
+if [ ! -f "$SKILL_FILE" ]; then
+  echo '{"additionalContext":"FirstSpirit AI Toolkit: bootstrap skill not found."}'
+  exit 0
+fi
+
+SKILL_CONTENT="$(cat "$SKILL_FILE")"
+
+if [ -n "${CLAUDE_PLUGIN_ROOT:-}" ]; then
+  # Claude Code expects this shape
+  jq -n --arg content "$SKILL_CONTENT" \
+    '{hookSpecificOutput: {hookEventName: "SessionStart", additionalContext: $content}}'
+elif [ -n "${CURSOR_PLUGIN_ROOT:-}" ]; then
+  # Cursor expects this shape
+  jq -n --arg content "$SKILL_CONTENT" \
+    '{additional_context: $content}'
+else
+  # Generic fallback for unknown harnesses
+  jq -n --arg content "$SKILL_CONTENT" \
+    '{additionalContext: $content}'
+fi
