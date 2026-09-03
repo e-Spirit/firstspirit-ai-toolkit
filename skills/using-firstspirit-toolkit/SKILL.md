@@ -5,13 +5,20 @@ description: "Use when starting any session that involves FirstSpirit CMS work �
 
 # FirstSpirit AI Toolkit
 
-You have the FirstSpirit AI Toolkit loaded. Before responding or taking action on any FirstSpirit task, check whether a more specific skill applies.
+## First: is this FirstSpirit work?
+
+This toolkit is loaded at session start. Depending on the assistant, it may load
+only inside a FirstSpirit project, or in **every** project — so before you use any
+of it, decide whether the current task actually involves FirstSpirit CMS.
+
+- **Not FirstSpirit work?** Ignore this file and the skills below entirely. Do not
+  mention them, and do not let them influence your answer — respond as if the
+  toolkit were not loaded.
+- **FirstSpirit work?** Apply the rule below before acting.
 
 ## Rule
 
-This applies to **FirstSpirit work only**. If the task is not about FirstSpirit, ignore these skills.
-
-When the task does involve FirstSpirit, check whether one of the skills below fits before you act, and invoke the most specific match rather than working from general knowledge — FirstSpirit's APIs and conventions are easy to get subtly wrong from memory. You do not need to invoke a skill before asking a clarifying question or reading the code to understand the task; do it before you write or change FirstSpirit code, templates, or configuration.
+When the task involves FirstSpirit, check whether one of the skills below fits before you act, and invoke the most specific match rather than working from general knowledge — FirstSpirit's APIs and conventions are easy to get subtly wrong from memory. You do not need to invoke a skill before asking a clarifying question or reading the code to understand the task; do it before you write or change FirstSpirit code, templates, or configuration.
 
 ## Available Skills
 
