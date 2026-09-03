@@ -47,6 +47,23 @@ Skills are organised into FirstSpirit domain categories:
 | `deployment/` | Publishing and generation runs |
 | `diagnostics/` | Troubleshooting and health checks |
 
+### When the toolkit loads
+
+On session start the toolkit loads its skill index only when the current project
+looks like FirstSpirit — so it stays invisible on unrelated projects. It is
+detected automatically from any of:
+
+- a `.firstspirit` marker file (empty file is enough), or `fs-project.yaml`;
+- an external-sync export tree (the `FS_References.txt` / `FS_Info.txt` sidecars);
+- a `module.xml` / `module-isolated.xml` or a build file (`pom.xml`, `build.gradle`)
+  that references FirstSpirit (`de.espirit…`, `fs-isolated-runtime`, `fs-access`).
+
+Drop an empty `.firstspirit` in a repo the detector doesn't recognise to force it
+on. Override either way with the `FIRSTSPIRIT_PROJECT` environment variable
+(`1` = always load, `0` = never). On projects with no signal, the toolkit prints a
+single line telling the assistant where to find the skill index if the work turns
+out to be FirstSpirit.
+
 ### MCP Servers
 
 | Server | Package | Purpose |

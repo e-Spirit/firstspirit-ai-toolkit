@@ -1,15 +1,115 @@
 #!/usr/bin/env bash
+#
+# SessionStart hook — load the FirstSpirit AI Toolkit bootstrap conditionally.
+#
+# The toolkit is useful only on FirstSpirit work. Injecting the full skill index
+# and its "check for a skill first" rule into every session — including
+# non-FirstSpirit projects — wastes context and biases the assistant toward
+# checking FirstSpirit skills for unrelated questions.
+#
+# This hook therefore detects whether the current project looks like a FirstSpirit
+# project and tiers the output:
+#   - FirstSpirit project  -> inject the full bootstrap skill (index + rule).
+#   - anything else        -> inject a single quiet line so the toolkit is still
+#                             discoverable if the task turns out to be FirstSpirit,
+#                             without the index or the imperative rule.
+#
+# Override the detection with the FIRSTSPIRIT_PROJECT env var:
+#   FIRSTSPIRIT_PROJECT=1  -> always load the full bootstrap
+#   FIRSTSPIRIT_PROJECT=0  -> never load it (quiet line only)
+#
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PLUGIN_ROOT="$(dirname "$SCRIPT_DIR")"
 SKILL_FILE="$PLUGIN_ROOT/skills/using-firstspirit-toolkit/SKILL.md"
 
-if [ ! -f "$SKILL_FILE" ]; then
-  SKILL_CONTENT="FirstSpirit AI Toolkit: bootstrap skill not found."
+QUIET_LINE="FirstSpirit AI Toolkit is available, but this does not look like a FirstSpirit project, so its skill index was not loaded. If the task turns out to involve FirstSpirit CMS, read skills/using-firstspirit-toolkit/SKILL.md for the list of skills. To always load it, set FIRSTSPIRIT_PROJECT=1; to force it off, set FIRSTSPIRIT_PROJECT=0."
+
+# --- Detection ---------------------------------------------------------------
+# Returns 0 if the working project looks like FirstSpirit, 1 otherwise. Bounded,
+# dependency-light (bash + find + grep), and fails quiet: any error means "not
+# detected", never a broken session.
+
+detect_fs_project() {
+  # 1) Explicit override wins in both directions.
+  case "${FIRSTSPIRIT_PROJECT:-}" in
+    1|true|TRUE|yes|YES) return 0 ;;
+    0|false|FALSE|no|NO) return 1 ;;
+  esac
+
+  # 2) Establish the search root: prefer the git top-level, else the project dir.
+  local start root top
+  start="${CLAUDE_PROJECT_DIR:-$PWD}"
+  top="$(cd "$start" 2>/dev/null && git rev-parse --show-toplevel 2>/dev/null || true)"
+  root="${top:-$start}"
+  [ -d "$root" ] || return 1
+
+  # 3) Explicit marker or the Cloud pipeline descriptor, walking up from start to
+  #    root (covers a module deep inside a monorepo).
+  local d="$start"
+  for _ in 1 2 3 4 5 6 7 8; do
+    if [ -e "$d/.firstspirit" ] || [ -e "$d/fs-project.yaml" ] || [ -e "$d/fsproject.yaml" ]; then
+      return 0
+    fi
+    if [ "$d" = "$root" ] || [ "$d" = "/" ]; then
+      break
+    fi
+    d="$(dirname "$d")"
+  done
+
+  # 4) Shallow scan under root for the same markers (covers markers in sibling
+  #    module dirs a level or two down).
+  if find "$root" -maxdepth 3 \
+        \( -name '.firstspirit' -o -name 'fs-project.yaml' -o -name 'fsproject.yaml' \) \
+        -print -quit 2>/dev/null | grep -q .; then
+    return 0
+  fi
+
+  # 5) External-sync export signature: the FS_*.txt sidecars fs-cli writes next to
+  #    every exported element. Unmistakably FirstSpirit.
+  if find "$root" -maxdepth 4 \
+        \( -name 'FS_References.txt' -o -name 'FS_Info.txt' \) \
+        -print -quit 2>/dev/null | grep -q .; then
+    return 0
+  fi
+
+  # 6) A module descriptor that actually names FirstSpirit (module.xml alone is
+  #    not FS-specific, so it must mention de.espirit / firstspirit).
+  local f
+  while IFS= read -r f; do
+    [ -n "$f" ] || continue
+    if grep -qiE 'de\.espirit|firstspirit' "$f" 2>/dev/null; then
+      return 0
+    fi
+  done < <(find "$root" -maxdepth 4 \
+             \( -name 'module.xml' -o -name 'module-isolated.xml' \) 2>/dev/null | head -20)
+
+  # 7) A build file that depends on the FirstSpirit Access API / isolated runtime.
+  while IFS= read -r f; do
+    [ -n "$f" ] || continue
+    if grep -qiE 'fs-isolated-runtime|fs-isolated-client|fs-access|de\.espirit\.firstspirit' "$f" 2>/dev/null; then
+      return 0
+    fi
+  done < <(find "$root" -maxdepth 3 \
+             \( -name 'pom.xml' -o -name 'build.gradle' -o -name 'build.gradle.kts' \) 2>/dev/null | head -20)
+
+  return 1
+}
+
+# --- Choose content ----------------------------------------------------------
+
+if detect_fs_project; then
+  if [ -f "$SKILL_FILE" ]; then
+    SKILL_CONTENT="$(cat "$SKILL_FILE")"
+  else
+    SKILL_CONTENT="FirstSpirit AI Toolkit: bootstrap skill not found."
+  fi
 else
-  SKILL_CONTENT="$(cat "$SKILL_FILE")"
+  SKILL_CONTENT="$QUIET_LINE"
 fi
+
+# --- Emit in the shape the host expects --------------------------------------
 
 if [ -n "${CLAUDE_PLUGIN_ROOT:-}" ]; then
   jq -n --arg content "$SKILL_CONTENT" \

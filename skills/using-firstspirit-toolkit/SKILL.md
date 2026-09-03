@@ -9,7 +9,9 @@ You have the FirstSpirit AI Toolkit loaded. Before responding or taking action o
 
 ## Rule
 
-If there is even a small chance a skill applies to your task, you MUST invoke it before acting. Check for skills before clarifying questions, before exploring the codebase, before writing code.
+This applies to **FirstSpirit work only**. If the task is not about FirstSpirit, ignore these skills.
+
+When the task does involve FirstSpirit, check whether one of the skills below fits before you act, and invoke the most specific match rather than working from general knowledge — FirstSpirit's APIs and conventions are easy to get subtly wrong from memory. You do not need to invoke a skill before asking a clarifying question or reading the code to understand the task; do it before you write or change FirstSpirit code, templates, or configuration.
 
 ## Available Skills
 
