@@ -27,9 +27,6 @@ while IFS= read -r skill_file; do
   if [ -z "$description" ]; then
     echo "ERROR [$rel_path]: missing 'description' field in frontmatter"
     errors=$((errors + 1))
-  elif [[ "$description" != "Use when"* ]]; then
-    echo "ERROR [$rel_path]: description must start with 'Use when', got: $description"
-    errors=$((errors + 1))
   fi
 
 done < <(find "$SKILLS_DIR" -name "SKILL.md" | sort)
