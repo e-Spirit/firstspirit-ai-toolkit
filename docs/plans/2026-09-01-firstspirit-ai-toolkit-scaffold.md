@@ -74,7 +74,7 @@ git init
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/guybrown/firstspirit-ai-toolkit"
+    "url": "https://github.com/e-Spirit/firstspirit-ai-toolkit"
   }
 }
 ```
@@ -229,8 +229,8 @@ mkdir -p .claude-plugin
     "name": "Guy Brown",
     "email": "guy.brown@rezolve.com"
   },
-  "homepage": "https://github.com/guybrown/firstspirit-ai-toolkit",
-  "repository": "https://github.com/guybrown/firstspirit-ai-toolkit",
+  "homepage": "https://github.com/e-Spirit/firstspirit-ai-toolkit",
+  "repository": "https://github.com/e-Spirit/firstspirit-ai-toolkit",
   "license": "MIT",
   "keywords": [
     "firstspirit",
@@ -278,7 +278,7 @@ mkdir -p .codex-plugin
     "email": "guy.brown@rezolve.com"
   },
   "license": "MIT",
-  "homepage": "https://github.com/guybrown/firstspirit-ai-toolkit",
+  "homepage": "https://github.com/e-Spirit/firstspirit-ai-toolkit",
   "skills": "./skills/",
   "brandColor": "#0066CC",
   "defaultPrompt": "You are working in a FirstSpirit CMS project. Use the firstspirit-ai-toolkit skills to assist with content management, templating, project setup, deployment, and diagnostics.",

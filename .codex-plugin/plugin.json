@@ -8,7 +8,7 @@
     "email": "guy.brown@rezolve.com"
   },
   "license": "MIT",
-  "homepage": "https://github.com/FirstSpirit-Solutions/firstspirit-ai-toolkit",
+  "homepage": "https://github.com/e-Spirit/firstspirit-ai-toolkit",
   "skills": "./skills/",
   "brandColor": "#0066CC",
   "defaultPrompt": "You are working in a FirstSpirit CMS project. Use the firstspirit-ai-toolkit skills to assist with content management, templating, project setup, deployment, and diagnostics.",

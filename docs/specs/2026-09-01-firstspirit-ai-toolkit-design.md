@@ -197,7 +197,7 @@ Configuration (base URL, API key) passed via environment variables documented in
   "description": "Skills and tools for building and managing FirstSpirit CMS projects with AI",
   "version": "0.1.0",
   "author": { "name": "Guy Brown", "email": "guy.brown@rezolve.com" },
-  "homepage": "https://github.com/guybrown/firstspirit-ai-toolkit",
+  "homepage": "https://github.com/e-Spirit/firstspirit-ai-toolkit",
   "license": "MIT",
   "keywords": ["firstspirit", "cms", "skills", "agentic"]
 }
