@@ -13,7 +13,7 @@ Skills, agents, and MCP servers for building and managing [FirstSpirit CMS](http
 Or via self-hosted marketplace:
 
 ```bash
-/plugin marketplace add FirstSpirit-Solutions/firstspirit-ai-toolkit-marketplace
+/plugin marketplace add e-Spirit/firstspirit-ai-toolkit-marketplace
 /plugin install firstspirit-ai-toolkit
 ```
 
