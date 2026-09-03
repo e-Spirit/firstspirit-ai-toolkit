@@ -13,11 +13,14 @@ FirstSpirit CMS projects with AI coding assistants.
 ```yaml
 ---
 name: your-skill-name
-description: "Use when [specific triggering conditions]."
+description: "What the skill covers and when it applies."
 ---
 ```
 
-4. The `description` field must start with `"Use when"` — this is validated by CI.
+4. The `description` field must be present and make clear when the skill applies.
+   Opening with `"Use when …"` is a good, greppable pattern but is **not** required
+   — a topic-first description (e.g. "Concrete lookup reference for …") is fine.
+   CI checks that a description exists, not its wording.
 5. Add your skill's instructions in the Markdown body.
 6. Update `skills/using-firstspirit-toolkit/SKILL.md` to mention your new skill in
    the relevant category section.
