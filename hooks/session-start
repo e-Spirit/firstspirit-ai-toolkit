@@ -111,7 +111,10 @@ fi
 
 # --- Emit in the shape the host expects --------------------------------------
 
-if [ -n "${CLAUDE_PLUGIN_ROOT:-}" ]; then
+if [ -n "${COPILOT_AGENT_SESSION_ID:-}" ]; then
+  jq -n --arg content "$SKILL_CONTENT" \
+    '{additionalContext: $content}'
+elif [ -n "${CLAUDE_PLUGIN_ROOT:-}" ]; then
   jq -n --arg content "$SKILL_CONTENT" \
     '{hookSpecificOutput: {hookEventName: "SessionStart", additionalContext: $content}}'
 elif [ -n "${CURSOR_PLUGIN_ROOT:-}" ]; then

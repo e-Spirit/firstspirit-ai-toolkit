@@ -36,7 +36,7 @@ Match the harness's own format. Current examples in this repo:
 |---|---|---|
 | Antigravity CLI | `.agents/plugins/marketplace.json` | native plugin — skills auto-discovered |
 | Claude Code | `.claude-plugin/plugin.json` (skills auto-discovered; no `skills` field) | hook — `hooks/hooks.json` |
-| GitHub Copilot | `.github/copilot-instructions.md` | context file — auto-injected, no install |
+| GitHub Copilot | `.github/hooks/firstspirit-ai-toolkit.json` + `.claude-plugin/plugin.json` | hook — `SessionStart` via `.github/hooks/`; conditional loading |
 | Codex | `.codex-plugin/plugin.json` (`skills`, `sessionStart.skill`, `defaultPrompt`) | manifest `sessionStart.skill` |
 | Cursor | `.cursor-plugin/plugin.json` (`skills`, `hooks` pointer) | hook — `hooks/hooks-cursor.json` |
 | Gemini CLI | root `gemini-extension.json` (`contextFileName`) | context file — `GEMINI.md` |
@@ -62,11 +62,14 @@ Add the manifest as an entry in the `files` array of `.version-bump.json`, so it
 
 Pick the mechanism the harness supports:
 
-- **Hook** (Claude Code, Cursor): register a `SessionStart` hook that runs
-  `hooks/run-hook.cmd session-start`. Claude uses `hooks/hooks.json`; Cursor uses
-  its own `hooks/hooks-cursor.json`. Then add a branch to `hooks/session-start`
-  that detects your harness's env var and emits its JSON shape — see the existing
-  branches: `CLAUDE_PLUGIN_ROOT` →
+- **Hook** (Claude Code, Cursor, GitHub Copilot): register a `SessionStart` hook
+  that runs `hooks/run-hook.cmd session-start`. Claude uses `hooks/hooks.json`;
+  Cursor uses `hooks/hooks-cursor.json`; Copilot uses
+  `.github/hooks/firstspirit-ai-toolkit.json` (its auto-discovery path). Then add
+  a branch to `hooks/session-start` that detects your harness's env var and emits
+  its JSON shape — see the existing branches: `COPILOT_AGENT_SESSION_ID` →
+  `{additionalContext}` (checked first, because Copilot also sets
+  `CLAUDE_PLUGIN_ROOT`), `CLAUDE_PLUGIN_ROOT` →
   `{hookSpecificOutput:{hookEventName,additionalContext}}`, `CURSOR_PLUGIN_ROOT` →
   `{additional_context}`, default → `{additionalContext}`. You do **not**
   reimplement detection: `session-start` already decides FirstSpirit-or-not and
@@ -79,11 +82,6 @@ Pick the mechanism the harness supports:
   file-references the bootstrap skill, e.g.
   `@./skills/using-firstspirit-toolkit/SKILL.md`. Also loads unconditionally;
   relies on self-gating.
-- **Context file** (GitHub Copilot): create `.github/copilot-instructions.md`.
-  Copilot injects this automatically on every request — no extension registration
-  or install step required. Keep it thin: a one-line pointer telling Copilot to
-  read `skills/using-firstspirit-toolkit/SKILL.md` if the project is FirstSpirit.
-  Loads unconditionally; relies on self-gating.
 - **Native plugin** (Antigravity CLI): declare a `.agents/plugins/marketplace.json`
   with `"source": { "source": "url", "url": "./" }`. Antigravity discovers the
   `skills/` directory through the plugin automatically. Loads unconditionally;
@@ -110,8 +108,8 @@ skill must activate before any code or instructions are generated.
 **Non-FirstSpirit project — the toolkit stays out of the way.** Run a fresh session
 in a plain directory and confirm:
 
-- hook-based harness: only the quiet discoverability line loads; no skill activates;
-- unconditional harness (Codex, Gemini): the skill loads but **self-gates** — ask an
+- hook-based harness (Claude Code, Cursor, GitHub Copilot): only the quiet discoverability line loads; no skill activates;
+- unconditional harness (Codex, Gemini, Antigravity): the skill loads but **self-gates** — ask an
   unrelated, non-FirstSpirit question and confirm the assistant neither invokes nor
   mentions the FirstSpirit skills.
 

@@ -19,7 +19,19 @@ Or via self-hosted marketplace:
 
 ### GitHub Copilot
 
-No install needed. Copilot reads `.github/copilot-instructions.md` automatically — just use Copilot in any repo that includes this toolkit.
+```bash
+copilot plugin install firstspirit-ai-toolkit@awesome-copilot
+```
+
+Or browse and install via VS Code: open Extensions, search `@agentPlugins`, find **FirstSpirit AI Toolkit**, and click Install.
+
+Once installed, the toolkit loads its skill index automatically at session start — only when the project looks like FirstSpirit (same detection as Claude Code). No per-project setup needed.
+
+**No plugin install?** Add the following to your project's `.github/copilot-instructions.md` instead (create the file if it doesn't exist):
+
+```
+If this project involves FirstSpirit CMS, read `skills/using-firstspirit-toolkit/SKILL.md` for the available skills and when to use them. If it does not, ignore that file entirely.
+```
 
 ### Codex App
 
@@ -29,14 +41,11 @@ plugin install firstspirit-ai-toolkit
 
 ### Antigravity CLI
 
-```bash
-agy plugin install firstspirit-ai-toolkit
-```
-
-Migrating from Gemini CLI? Import the existing extension automatically:
+Clone this repo (or add it as a submodule), then install from the local path:
 
 ```bash
-agy plugin import gemini
+git clone https://github.com/e-Spirit/firstspirit-ai-toolkit.git
+agy plugin install ./firstspirit-ai-toolkit
 ```
 
 ### Gemini CLI
