@@ -41,8 +41,10 @@ When the task involves FirstSpirit, check whether one of the skills below fits b
 
 If you are running on a harness listed below, read the corresponding reference for how abstract operations map to that harness's real tool names:
 
+- **Antigravity CLI:** read `skills/using-firstspirit-toolkit/references/antigravity-tools.md`
 - **Codex:** read `skills/using-firstspirit-toolkit/references/codex-tools.md`
 - **Cursor:** read `skills/using-firstspirit-toolkit/references/cursor-tools.md`
 - **Gemini CLI:** read `skills/using-firstspirit-toolkit/references/gemini-tools.md`
+- **GitHub Copilot:** read `skills/using-firstspirit-toolkit/references/copilot-tools.md`
 
 Claude Code users: native tool names match the skill descriptions directly.

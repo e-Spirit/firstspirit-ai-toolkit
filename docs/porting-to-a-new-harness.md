@@ -34,7 +34,9 @@ Match the harness's own format. Current examples in this repo:
 
 | Harness | Manifest | Bootstrap mechanism |
 |---|---|---|
+| Antigravity CLI | `.agents/plugins/marketplace.json` | native plugin — skills auto-discovered |
 | Claude Code | `.claude-plugin/plugin.json` (skills auto-discovered; no `skills` field) | hook — `hooks/hooks.json` |
+| GitHub Copilot | `.github/copilot-instructions.md` | context file — auto-injected, no install |
 | Codex | `.codex-plugin/plugin.json` (`skills`, `sessionStart.skill`, `defaultPrompt`) | manifest `sessionStart.skill` |
 | Cursor | `.cursor-plugin/plugin.json` (`skills`, `hooks` pointer) | hook — `hooks/hooks-cursor.json` |
 | Gemini CLI | root `gemini-extension.json` (`contextFileName`) | context file — `GEMINI.md` |
@@ -77,9 +79,19 @@ Pick the mechanism the harness supports:
   file-references the bootstrap skill, e.g.
   `@./skills/using-firstspirit-toolkit/SKILL.md`. Also loads unconditionally;
   relies on self-gating.
+- **Context file** (GitHub Copilot): create `.github/copilot-instructions.md`.
+  Copilot injects this automatically on every request — no extension registration
+  or install step required. Keep it thin: a one-line pointer telling Copilot to
+  read `skills/using-firstspirit-toolkit/SKILL.md` if the project is FirstSpirit.
+  Loads unconditionally; relies on self-gating.
+- **Native plugin** (Antigravity CLI): declare a `.agents/plugins/marketplace.json`
+  with `"source": { "source": "url", "url": "./" }`. Antigravity discovers the
+  `skills/` directory through the plugin automatically. Loads unconditionally;
+  relies on self-gating. Users migrating from Gemini CLI can also run
+  `agy plugin import gemini` to inherit context injection via `gemini-extension.json`.
 
 > `AGENTS.md` is the contributor guide, not a bootstrap file — do not wire the
-> bootstrap skill through it.
+> bootstrap skill through it. This applies to both Codex and Antigravity.
 
 ### 4. Add tool mappings
 

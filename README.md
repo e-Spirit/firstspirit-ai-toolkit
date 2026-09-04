@@ -17,10 +17,26 @@ Or via self-hosted marketplace:
 /plugin install firstspirit-ai-toolkit
 ```
 
+### GitHub Copilot
+
+No install needed. Copilot reads `.github/copilot-instructions.md` automatically — just use Copilot in any repo that includes this toolkit.
+
 ### Codex App
 
 ```
 plugin install firstspirit-ai-toolkit
+```
+
+### Antigravity CLI
+
+```bash
+agy plugin install firstspirit-ai-toolkit
+```
+
+Migrating from Gemini CLI? Import the existing extension automatically:
+
+```bash
+agy plugin import gemini
 ```
 
 ### Gemini CLI
