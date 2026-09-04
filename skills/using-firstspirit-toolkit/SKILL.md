@@ -13,20 +13,16 @@ If there is even a small chance a skill applies to your task, you MUST invoke it
 
 ## Available Skills
 
-### Content (`skills/content/`)
-- **manage-content** — Use when reading, writing, querying, or restructuring content in FirstSpirit content stores or datasets.
-
 ### Templating (`skills/templating/`)
-- **design-templates** — Use when creating or modifying FirstSpirit page templates, section templates, or link templates.
+- **firstspirit-templating-reference** — Use when you need exact FirstSpirit template syntax, the right GOM input component, what datatype a component produces, how to access it in an output channel, or whether something is deprecated.
 
 ### Project (`skills/project/`)
-- **setup-project** — Use when configuring a new FirstSpirit project, modifying project settings, or managing users and groups.
+- **firstspirit-api-reference** — Use when you need to know which interface a store element has, how the stores nest, which agent yields a store or service, how to load an element by UID, or how to write an `fs` query.
+- **firstspirit-rest-api** — Use when performing CMS operations via the FirstSpirit REST API — creating/editing templates, managing pages and sections, writing form field values, uploading media, or searching content.
+- **firstspirit-scripting** — Use when writing, reviewing, or debugging a FirstSpirit BeanShell script — covers script types and their `context` objects, BeanShell syntax, logging, and safe Access-API patterns.
 
 ### Deployment (`skills/deployment/`)
-- **publish-content** — Use when triggering generation runs, publishing content to delivery, or managing release workflows.
-
-### Diagnostics (`skills/diagnostics/`)
-- **diagnose-project** — Use when troubleshooting FirstSpirit project issues, checking project health, or analysing logs.
+- **firstspirit-external-sync-export** — Use when exporting or importing a FirstSpirit project via fs-cli (FSDevTools / external synchronisation) — covers installation, connection, authentication, export/import commands, and troubleshooting.
 
 ## Platform Tool Mappings
 
