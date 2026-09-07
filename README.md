@@ -1,29 +1,36 @@
 # FirstSpirit AI Toolkit
 
-Skills, agents, and MCP servers for building and managing [FirstSpirit CMS](https://www.crownpeak.com/products/crownpeak-dxp) projects with AI coding assistants.
+Skills for building and managing [FirstSpirit CMS](https://www.crownpeak.com/products/crownpeak-dxp) projects with AI coding assistants.
 
 ## Install
+
+Find your assistant below. Most installs are two commands: register this
+repository as a plugin marketplace, then install the toolkit from it. There is
+nothing to download or build first.
+
+Two names come up along the way. The marketplace is **`firstspirit`**; the plugin
+inside it is **`firstspirit-ai-toolkit`**. Where a command needs both, it joins
+them as `firstspirit-ai-toolkit@firstspirit`.
 
 ### Claude Code
 
 ```bash
+/plugin marketplace add e-Spirit/firstspirit-ai-toolkit
 /plugin install firstspirit-ai-toolkit
 ```
 
-Or via self-hosted marketplace:
-
-```bash
-/plugin marketplace add e-Spirit/firstspirit-ai-toolkit-marketplace
-/plugin install firstspirit-ai-toolkit
-```
+The first command registers this repository as a marketplace; the second installs
+the plugin from it.
 
 ### GitHub Copilot
 
 ```bash
-copilot plugin install firstspirit-ai-toolkit@awesome-copilot
+copilot plugin marketplace add e-Spirit/firstspirit-ai-toolkit
+copilot plugin install firstspirit-ai-toolkit@firstspirit
 ```
 
-Or browse and install via VS Code: open Extensions, search `@agentPlugins`, find **FirstSpirit AI Toolkit**, and click Install.
+Copilot CLI reads the marketplace manifest this repo already ships at
+`.claude-plugin/marketplace.json`.
 
 Once installed, the toolkit loads its skill index automatically at session start — only when the project looks like FirstSpirit (same detection as Claude Code). No per-project setup needed.
 
@@ -33,30 +40,72 @@ Once installed, the toolkit loads its skill index automatically at session start
 If this project involves FirstSpirit CMS, read `skills/using-firstspirit-toolkit/SKILL.md` for the available skills and when to use them. If it does not, ignore that file entirely.
 ```
 
-### Codex App
-
-```
-plugin install firstspirit-ai-toolkit
-```
-
-### Antigravity CLI
-
-Clone this repo (or add it as a submodule), then install from the local path:
+### Codex CLI
 
 ```bash
-git clone https://github.com/e-Spirit/firstspirit-ai-toolkit.git
-agy plugin install ./firstspirit-ai-toolkit
+codex plugin marketplace add https://github.com/e-Spirit/firstspirit-ai-toolkit
+codex plugin add firstspirit-ai-toolkit@firstspirit
 ```
+
+Note `plugin add`, not `plugin install`. Confirm with `codex plugin list`.
+
+### Codex App
+
+Codex marketplaces are imported per workspace by an admin, not added per user.
+
+1. Go to **Admin** → **Plugins** → **Add** → **Import marketplace**.
+2. Enter `https://github.com/e-Spirit/firstspirit-ai-toolkit` — the repository URL
+   only, with no branch or subdirectory path. Leave the subdirectory blank.
+3. Authorize GitHub access when prompted, using an account that can read the
+   repository.
+4. Review the import and set the plugin's installation policy.
+
+Developers then install it from the plugin browser:
+
+```bash
+codex /plugins
+```
+
+The first import can take up to an hour for a large marketplace; after that it
+syncs daily, and an admin can force one with **Sync now**.
 
 ### Gemini CLI
 
+Gemini has no plugin concept — the toolkit ships as a Gemini **extension**, which
+is why the manifest lives at the repository root as `gemini-extension.json`.
+Install it by repository URL:
+
 ```bash
-gemini extension add firstspirit-ai-toolkit
+gemini extensions install https://github.com/e-Spirit/firstspirit-ai-toolkit
 ```
+
+Note the plural `extensions`. The command needs `git` on your machine, cannot be
+run from inside Gemini's interactive mode, and takes effect on the next session.
+Gemini copies the extension rather than referencing it, so pull later changes
+with `gemini extensions update firstspirit-ai-toolkit`.
 
 ### Cursor
 
-Install via the Cursor plugin marketplace or manually reference `.cursor-plugin/`.
+Cursor has no install CLI — it is either a marketplace import or a local
+directory.
+
+**Team marketplace (recommended for a team):** in the Cursor dashboard go to
+**Plugins** → **Add Marketplace** under Team Marketplaces, choose **Import from
+Repo**, point it at `e-Spirit/firstspirit-ai-toolkit`, then **Add to
+Marketplace**. Members install it from **Customize** in the sidebar.
+
+**Local copy (for one machine, or to try it):** symlink this repository into
+Cursor's local plugin directory, then reload:
+
+```bash
+git clone https://github.com/e-Spirit/firstspirit-ai-toolkit.git
+mkdir -p ~/.cursor/plugins/local
+ln -s "$PWD/firstspirit-ai-toolkit" ~/.cursor/plugins/local/firstspirit-ai-toolkit
+```
+
+Restart Cursor (or run **Developer: Reload Window**) and confirm the plugin's
+components appear under **Customize**. A symlink rather than a copy means
+`git pull` is enough to update it.
 
 ## What's Included
 
@@ -74,36 +123,38 @@ Skills are organised into FirstSpirit domain categories:
 
 ### When the toolkit loads
 
-On session start the toolkit loads its skill index only when the current project
-looks like FirstSpirit — so it stays invisible on unrelated projects. It is
-detected automatically from any of:
+The toolkit is meant to stay out of the way on projects that have nothing to do
+with FirstSpirit. How it does that depends on what the harness supports.
+
+**Claude Code, GitHub Copilot and Cursor** run a session-start hook, so the skill
+index is only loaded when the project looks like FirstSpirit. On anything else the
+hook prints a single line telling the assistant where to find the index if the work
+turns out to be FirstSpirit after all — and nothing else is loaded.
+
+**Codex and Gemini CLI** have no session-start hook to run, so the index is always
+loaded. Gating there is done by the skill itself: its first section tells the
+assistant to ignore the toolkit entirely, and not mention it, unless the task
+actually involves FirstSpirit. The detection below and the `FIRSTSPIRIT_PROJECT`
+variable therefore have no effect on these two.
+
+#### How a FirstSpirit project is detected
+
+Used by the three hook-based harnesses above. A project counts as FirstSpirit if
+any of these is present:
 
 - a `.firstspirit` marker file (empty file is enough), or `fs-project.yaml`;
 - an external-sync export tree (the `FS_References.txt` / `FS_Info.txt` sidecars);
 - a `module.xml` / `module-isolated.xml` or a build file (`pom.xml`, `build.gradle`)
-  that references FirstSpirit (`de.espirit…`, `fs-isolated-runtime`, `fs-access`).
+  that references FirstSpirit (`de.espirit…`, `fs-isolated-runtime`, `fs-access`);
+- a server or CLI descriptor (`fs-server.conf`, `fs-cli.yaml`) or a built `.fsm`;
+- a decoupled frontend depending on FSXA (`fsxa-api`, `fsxa-pattern-library`).
+
+The scan skips `node_modules`, `.git`, `target`, `dist`, `build` and `.gradle`, so
+it stays fast on large repositories and a marker inside a dependency never counts.
 
 Drop an empty `.firstspirit` in a repo the detector doesn't recognise to force it
 on. Override either way with the `FIRSTSPIRIT_PROJECT` environment variable
-(`1` = always load, `0` = never). On projects with no signal, the toolkit prints a
-single line telling the assistant where to find the skill index if the work turns
-out to be FirstSpirit.
-
-### MCP Servers
-
-| Server | Package | Purpose |
-|--------|---------|---------|
-| `firstspirit-api` | `@firstspirit-ai-toolkit/mcp-firstspirit-api` | FirstSpirit REST API tools |
-
-Wire up the MCP server in your project:
-
-```bash
-claude mcp add firstspirit-api -- npx @firstspirit-ai-toolkit/mcp-firstspirit-api
-```
-
-Set environment variables:
-- `FS_URL` — FirstSpirit server URL (e.g. `https://your-server.example.com`)
-- `FS_API_KEY` — FirstSpirit API key
+(`1` = always load, `0` = never — `0` also suppresses the reminder line).
 
 ## Contributing
 
@@ -111,8 +162,11 @@ See [CLAUDE.md](CLAUDE.md) for contributor guidelines.
 
 ## Requirements
 
-- `jq` (required for session-start hook): `brew install jq` / `apt install jq`
-- `jq` and Node.js 18+ for contributors (version bump script, MCP servers)
+**Users:** none. The session-start hook is pure bash (3.2+) and needs no external
+tools, so the toolkit works on a stock macOS or Linux box.
+
+**Contributors:** `jq` (`brew install jq` / `apt install jq`) for the version-bump
+and test scripts, and `shellcheck` (`brew install shellcheck`) for the lint step.
 
 ## License
 
