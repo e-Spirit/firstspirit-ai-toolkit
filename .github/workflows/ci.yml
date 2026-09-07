@@ -15,8 +15,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Shellcheck
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y shellcheck
+          shellcheck --severity=warning \
+            hooks/session-start hooks/run-hook.cmd scripts/*.sh scripts/lib/*.sh
+
       - name: Check version consistency
         run: ./scripts/bump-version.sh --check
 
       - name: Lint skills
         run: ./scripts/lint-skills.sh
+
+      - name: Test manifests
+        run: ./scripts/test-manifests.sh
+
+      - name: Test hooks
+        run: ./scripts/test-hooks.sh
