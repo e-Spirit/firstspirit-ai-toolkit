@@ -60,24 +60,45 @@ case "$CMD" in
     ;;
 
   --audit)
+    if ! git -C "$REPO_ROOT" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+      echo "Error: --audit needs a git work tree, so it can tell tracked files" >&2
+      echo "       from build output and local scratch directories." >&2
+      exit 1
+    fi
     current_ver="$(jq -r '.version' "$REPO_ROOT/package.json")"
     echo "Auditing for undeclared occurrences of $current_ver..."
-    declared_paths=()
-    while IFS= read -r entry; do
-      declared_paths+=("$(echo "$entry" | jq -r '.path')")
-    done < <(jq -c '.files[]' "$CONFIG")
-    exclude_args=()
+
+    # Exclusions are git pathspecs, and the search runs over tracked files only.
+    # The previous implementation used `grep -r` with --exclude/--include, and
+    # every file exclusion was silently defeated:
+    #
+    #   1. BSD grep resolves --include and --exclude in command-line order, last
+    #      match winning. The old code appended the --include=*.json / *.md
+    #      filters *after* the exclusions, so each --exclude=<file> was undone by
+    #      a later --include that also matched it. --exclude-dir=docs survived
+    #      only because nothing re-included it. Verified against BSD grep 2.6.0:
+    #      moving the excludes last fixes it, which is a trap waiting to be
+    #      re-sprung by anyone appending a flag.
+    #   2. Exclusions matched on basename, so --exclude=plugin.json hid all three
+    #      of our plugin.json files *and* any undeclared file that happened to
+    #      share the name. Full repo-relative paths are what we mean.
+    #   3. grep has no notion of gitignore, so build output and local scratch
+    #      directories were audited as if they shipped.
+    pathspecs=()
     while IFS= read -r exc; do
-      exclude_args+=(--exclude-dir="$exc" --exclude="$exc")
+      [ -n "$exc" ] || continue
+      pathspecs+=(":!$exc" ":!$exc/**")
     done < <(jq -r '.audit.exclude[]' "$CONFIG")
-    for p in "${declared_paths[@]}"; do
-      exclude_args+=(--exclude="$(basename "$p")")
-    done
-    grep -r "$current_ver" "$REPO_ROOT" \
-      "${exclude_args[@]}" \
-      --include="*.json" --include="*.yaml" --include="*.yml" \
-      --include="*.md" \
-      -l 2>/dev/null || echo "No undeclared occurrences found."
+    while IFS= read -r entry; do
+      pathspecs+=(":!$(echo "$entry" | jq -r '.path')")
+    done < <(jq -c '.files[]' "$CONFIG")
+
+    # -F: the version is a literal, and its dots are not wildcards.
+    if hits="$(git -C "$REPO_ROOT" grep -lIF -e "$current_ver" -- "${pathspecs[@]}")"; then
+      echo "$hits"
+    else
+      echo "No undeclared occurrences found."
+    fi
     ;;
 
   ""|--*)

@@ -211,4 +211,34 @@ else
     "the manifest table does not tie that file to Codex"
 fi
 
+echo "== the version audit finds undeclared versions and honours its excludes =="
+# Run against a throwaway git repo rather than this one, so the probe files
+# never touch the real tree. A git work tree is required because --audit scopes
+# itself to tracked files.
+AUDIT_TMP="$(mktemp -d)"
+trap 'rm -rf "$AUDIT_TMP"' EXIT
+(
+  cd "$AUDIT_TMP" || exit 1
+  git init -q .
+  mkdir -p scripts/lib docs
+  cp "$REPO_ROOT/scripts/bump-version.sh" scripts/
+  printf '{"version":"9.9.9"}\n' > package.json
+  printf '{"files":[{"path":"package.json","field":"version"}],"audit":{"exclude":["docs"]}}\n' \
+    > .version-bump.json
+  printf 'stray 9.9.9\n'   > stray.md          # undeclared: must be reported
+  printf 'excluded 9.9.9\n' > docs/note.md     # under an excluded path
+  git add -A
+) >/dev/null 2>&1
+
+AUDIT_OUT="$(cd "$AUDIT_TMP" && ./scripts/bump-version.sh --audit 2>&1)"
+assert_contains "reports an undeclared version in a tracked file" "$AUDIT_OUT" "stray.md"
+# This is the assertion the old implementation failed: package.json is a
+# declared path, but its exclusion was overridden by a later --include filter.
+assert_not_contains "does not report a declared path" "$AUDIT_OUT" "package.json"
+assert_not_contains "does not report an excluded path" "$AUDIT_OUT" "docs/note.md"
+
+AUDIT_CLEAN="$(cd "$AUDIT_TMP" && rm -f stray.md && git add -A >/dev/null 2>&1; \
+  cd "$AUDIT_TMP" && ./scripts/bump-version.sh --audit 2>&1)"
+assert_contains "says so when nothing is undeclared" "$AUDIT_CLEAN" "No undeclared occurrences found."
+
 finish
