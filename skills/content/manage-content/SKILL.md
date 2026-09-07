@@ -13,5 +13,4 @@ Use this skill when working with FirstSpirit content stores, datasets, or conten
 
 ## Instructions
 
-Add FirstSpirit-specific content management instructions here. Reference the
-`firstspirit-api` MCP server for programmatic content access.
+Add FirstSpirit-specific content management instructions here.
