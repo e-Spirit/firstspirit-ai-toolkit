@@ -9,9 +9,16 @@
   },
   "license": "MIT",
   "homepage": "https://github.com/e-Spirit/firstspirit-ai-toolkit",
-  "skills": "./skills/",
+  "skills": [
+    "./skills",
+    "./skills/content",
+    "./skills/templating",
+    "./skills/project",
+    "./skills/deployment",
+    "./skills/diagnostics"
+  ],
   "brandColor": "#0066CC",
-  "defaultPrompt": "You are working in a FirstSpirit CMS project. Use the firstspirit-ai-toolkit skills to assist with content management, templating, project setup, deployment, and diagnostics.",
+  "defaultPrompt": "If this project involves FirstSpirit CMS, use the firstspirit-ai-toolkit skills for content management, templating, project setup, deployment, and diagnostics. If it does not, ignore the toolkit entirely and do not mention it.",
   "capabilities": [
     "skills"
   ],

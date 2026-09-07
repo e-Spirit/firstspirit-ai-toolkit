@@ -1,14 +1,16 @@
 {
-  "name": "firstspirit-ai-toolkit",
+  "name": "firstspirit",
+  "description": "Skills and tools for building and managing FirstSpirit CMS projects with AI",
   "interface": {
     "displayName": "FirstSpirit AI Toolkit"
   },
   "plugins": [
     {
       "name": "firstspirit-ai-toolkit",
+      "version": "0.1.0",
       "source": {
-        "source": "url",
-        "url": "./"
+        "source": "local",
+        "path": "./"
       },
       "policy": {
         "installation": "AVAILABLE",

@@ -1,12 +1,19 @@
 {
-  "name": "firstspirit-ai-toolkit",
+  "name": "firstspirit",
   "owner": {
     "name": "Guy Brown",
     "email": "guy.brown@rezolve.com"
   },
+  "metadata": {
+    "description": "FirstSpirit CMS skills for AI coding assistants",
+    "version": "0.1.0"
+  },
   "plugins": [
     {
       "name": "firstspirit-ai-toolkit",
+      "displayName": "FirstSpirit AI Toolkit",
+      "description": "Skills and tools for building and managing FirstSpirit CMS projects with AI",
+      "category": "Developer Tools",
       "version": "0.1.0",
       "source": "./"
     }
