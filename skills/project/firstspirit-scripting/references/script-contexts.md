@@ -61,18 +61,40 @@ context.is(Env.WEBEDIT);                 // true in ContentCreator
 ```
 
 The method is `BaseContext.is(Env)` — **not** `isEnv(...)`, which does not exist
-in the API. `Env` is `de.espirit.firstspirit.access.BaseContext.Env`. Method and
-values verified against `fs-api/`, the ODFS `execution-envir` page
-(`context.is(BaseContext.Env.WEBEDIT)`), and the FS 5.2.261001 API dump:
+in the API. `Env` is `de.espirit.firstspirit.access.BaseContext.Env`. The full enum,
+from the FS 5.2 source (`BaseContext.java`, confirmed 2026-09-03), has **11 values**:
 
 | `Env` value | True when the script runs… |
 | --- | --- |
 | `WEBEDIT` | in **ContentCreator** |
-| `PREVIEW` | in the **SiteArchitect** Java client / preview |
+| `PREVIEW` | in **preview** |
 | `GENERATION` | during **generation** |
-| `AUTH_CLIENT`, `WEBSTART_CONFIG_CLIENT` | in the auth / web-start config clients |
+| `ARCHITECT` | in **SiteArchitect** (Java client) |
+| `WEB` | in the **web** client |
+| `MANAGER` | in **ServerManager** |
+| `FS_BUTTON` | triggered by an **FS_BUTTON** in a template |
+| `DROP` | during a **drag-and-drop** operation |
+| `HEADLESS` | in **headless** mode |
+| `FORM` | in a **form** context |
+| `REPORT` | in a **report** context |
+
+> **Correction (2026-09-03).** An earlier version of this table listed `AUTH_CLIENT` and
+> `WEBSTART_CONFIG_CLIENT` — **neither exists** in `BaseContext.Env`. They came from the
+> AI-sibling doc's Env list, "salvaged" as verified; that was wrong. The extracted `fs-api/`
+> list and the FS 5.2.261001 `api-methods.txt` dump do **not** capture enum constants, so
+> neither could confirm or deny them — the set must be read from `BaseContext.java` source
+> (thanks to the PS source-checkout validation). The glosses for `ARCHITECT`/`WEB`/`MANAGER`/
+> `FORM`/`REPORT` are name-inferred; confirm the exact trigger against source if you branch on them.
 
 > `context.is(Env.WEBEDIT)` replaces the deprecated `isWebClient` property.
+>
+> ⚠️ **Known doc trap — ignore it.** The official `ScriptContext` Javadoc
+> (`docs.e-spirit.com/odfs/access/de/espirit/firstspirit/access/ScriptContext.html`), in its
+> **"Common properties"** note, states: *"isWebClient … has been deprecated with 5.0.12, use
+> `#isEnv(Env.WEBEDIT)` instead."* **That method name is wrong** — the real inherited method is
+> `is(BaseContext.Env)`; there is no `isEnv`. This stale comment is the likely origin of the
+> `isEnv` error (ours and the AI-sibling doc's). Do **not** copy the method name from that comment;
+> the method-summary/inherited-methods section of the same page correctly shows `is(BaseContext.Env)`.
 > Use `WEBEDIT` vs `PREVIEW` to branch between ContentCreator and SiteArchitect
 > behaviour.
 
