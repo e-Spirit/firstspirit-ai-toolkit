@@ -1,0 +1,1 @@
+If the current project involves FirstSpirit CMS, read `skills/using-firstspirit-toolkit/SKILL.md` for the available skills and when to use them. If the project does not involve FirstSpirit, ignore that file entirely and do not mention it.

@@ -3,6 +3,8 @@
     { "path": "package.json", "field": "version" },
     { "path": ".claude-plugin/plugin.json", "field": "version" },
     { "path": ".claude-plugin/marketplace.json", "field": "plugins.0.version" },
+    { "path": ".claude-plugin/marketplace.json", "field": "metadata.version" },
+    { "path": ".agents/plugins/marketplace.json", "field": "plugins.0.version" },
     { "path": ".codex-plugin/plugin.json", "field": "version" },
     { "path": ".cursor-plugin/plugin.json", "field": "version" },
     { "path": "gemini-extension.json", "field": "version" }
@@ -13,7 +15,6 @@
       "RELEASE-NOTES.md",
       "node_modules",
       "docs",
-      "mcp-servers",
       "evals"
     ]
   }
