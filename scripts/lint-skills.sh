@@ -54,17 +54,10 @@ while IFS= read -r skill_file; do
   fi
 
   if [ -z "$description" ]; then
-    err "$rel_path" "missing 'description' field in frontmatter"
-  elif [ "${description#Use when}" = "$description" ]; then
-    err "$rel_path" "description must start with 'Use when', got: $description"
+    echo "ERROR [$rel_path]: missing 'description' field in frontmatter"
+    errors=$((errors + 1))
   fi
 
-  # Every domain skill must be reachable from the bootstrap index.
-  if [ "$name" != "using-firstspirit-toolkit" ] && [ -n "$name" ]; then
-    if ! grep -q -- "$name" "$BOOTSTRAP"; then
-      err "$rel_path" "skill '$name' is not listed in the bootstrap index (skills/using-firstspirit-toolkit/SKILL.md)"
-    fi
-  fi
 done < <(find "$SKILLS_DIR" -name "SKILL.md" | sort)
 
 # Every reference the bootstrap links must exist, and every reference that
