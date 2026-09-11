@@ -33,6 +33,9 @@ When the task involves FirstSpirit, check whether one of the skills below fits b
 ### Deployment (`skills/deployment/`)
 - **firstspirit-external-sync-export** — Use when exporting or importing a FirstSpirit project via fs-cli (FSDevTools / external synchronisation) — covers installation, connection, authentication, export/import commands, and troubleshooting.
 
+### Diagnostics (`skills/diagnostics/`)
+- **firstspirit-verify-api-contracts** — Use when you need to know what a FirstSpirit API actually returns before writing a module or script against it — measuring signatures and live behaviour against a running server with `javap`, a compiled probe, the Access API, or a throwaway schedule-task script.
+
 ## Platform Tool Mappings
 
 If you are running on a harness listed below, read the corresponding reference for how abstract operations map to that harness's real tool names:
