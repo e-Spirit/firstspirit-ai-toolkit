@@ -49,6 +49,18 @@ langAgent = context.requireSpecialist(LanguageAgent.TYPE);
 Always resolve a `Language` before reading language-dependent values; defaulting
 to the master language is the common fallback.
 
+> **Language-dependent release & permissions (recent — verify against the current
+> Javadoc).** As of FirstSpirit **2026.4** the **release** state is language-aware
+> (an element can be approved/published per project language, not all-or-nothing),
+> and **2026.7** adds **language-dependent user permissions** (editing restricted
+> per project language). Release-notes-named entry points to confirm before use:
+> `LanguageDataProvider#getFormData` (2026.3), `IDProviderChange#isFirstRelease(Language…)`
+> / `hasFirstRelease()` (2026.9), and language-specific release info on
+> `IDProviderEventAgent` (2025.13). Treat the method names as pointers sourced from
+> the release notes, not confirmed signatures — grep the Javadoc before relying on
+> them; the concept (release/permissions now carry a `Language` dimension) is the
+> durable part.
+
 ## `TemplateSet` — output channels
 
 A project defines one or more **template sets** (output channels: HTML, JSON, …).

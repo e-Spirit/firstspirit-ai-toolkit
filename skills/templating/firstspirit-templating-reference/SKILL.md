@@ -11,7 +11,9 @@ description: >-
   component produces, how to access it in the output channel, or whether
   something is deprecated — e.g. "syntax for CMS_FOR", "which input component
   for a single choice", "what datatype does FS_REFERENCE produce", "how do I
-  output a date", "escape a value against XSS", "is FS_LIST still supported". It
+  output a date", "escape a value against XSS", "is FS_LIST still supported". Also
+  for reviewing existing rules and diagnosing rule misbehaviour — e.g. "review my
+  Ruleset.xml", "why does this field stay invalid", "one-way rule". It
   is also the content-interpretation companion to downstream analysis
   (that skill owns export structure; this one explains what is inside
   GomSource.xml / Ruleset.xml / ChannelSource files). Pair with

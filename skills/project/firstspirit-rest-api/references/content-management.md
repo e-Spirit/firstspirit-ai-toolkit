@@ -360,13 +360,29 @@ curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
 
 ## Media
 
-> **The MediaStore cannot be enumerated over REST.** `GET …/media/` answers **`405`**, not a
-> list — search by uid, or enumerate server-side via BeanShell. A medium's **type is immutable**
-> (`PATCH`/`PUT` on `…/media/{uid}` answer `405`) and there is no delete verb, so PICTURE-vs-FILE
-> is a one-shot decision; and `type` is only a *declaration* — the server does not check it
-> against the bytes. Creating a medium is **two calls**: `POST …/media/` mints an empty element,
-> `PUT …/media/{uid}/data` (multipart part named `file`) fills it. *(Confirmed live — source: PS
-> website-migration tool, `knowledge/fs-facts.md` §1–§2.)*
+> **⚠ Version drift — re-tested on project 131690, 2026-09-11.** Two of the facts below moved
+> since the PS migration measurement (2026-08-27):
+> - **`GET …/media/` now enumerates the MediaStore** — returns **`200`** with a JSON array
+>   (was `405`). `?type=PICTURE` / `?type=FILE` filter it; each element carries a `location`
+>   folder path. `OPTIONS …/media/` → `Allow: GET,HEAD,POST,OPTIONS`. So BeanShell enumeration
+>   is no longer required.
+> - **`…/media/{uid}` now allows `DELETE`** — `OPTIONS` → `Allow: DELETE,GET,HEAD,OPTIONS`.
+>   A medium CAN be deleted (was "no delete verb"), so a PICTURE-vs-FILE mistake is now
+>   recoverable by delete + recreate rather than being one-shot.
+>
+> **Still true (re-confirmed 2026-09-11):**
+> - A medium's **type is immutable via the element endpoint**: `OPTIONS …/media/{uid}` has **no
+>   `PATCH`/`PUT`** in `Allow`, so you cannot change `type` in place. `type` is only a
+>   *declaration* — the server does not check it against the bytes.
+> - Creating a medium is **two calls**: `POST …/media/` mints an empty element (`Allow` includes
+>   `POST`), `PUT …/media/{uid}/data` (multipart part named `file`) fills it
+>   (`OPTIONS …/media/{uid}/data` → `Allow: PUT,GET,HEAD,OPTIONS`).
+> - **`GET …/medium-folders/{uid}` lists subfolders only** (`children`), not media — but this no
+>   longer blocks enumeration, since `GET …/media/` returns every medium with its `location`.
+>
+> *(Original facts confirmed live 2026-08-27 — source: PS website-migration tool,
+> `knowledge/fs-facts.md` §1–§2. Drift and re-confirmation verified via `OPTIONS` Allow headers,
+> 2026-09-11, ROI test instance.)*
 
 ### Create Medium
 ```bash

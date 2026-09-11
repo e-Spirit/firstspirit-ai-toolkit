@@ -127,6 +127,16 @@ context.doTransition("release");              // by reference name
 // context.gotoErrorState("could not release", someThrowable);
 ```
 
+> **Language-dependent release & permissions (recent — verify).** As of FirstSpirit
+> **2026.4** release is language-aware — an element can be approved/published for
+> **specific project languages**, not only all-or-nothing — and **2026.7** adds
+> **language-dependent user permissions** (editing gated per project language). So a
+> release transition or a permission check may now carry a `Language` dimension;
+> don't assume a single global release/permission state. The API entry points
+> (e.g. `LanguageDataProvider#getFormData`, language-specific release info on
+> `IDProviderEventAgent`) are release-notes-sourced — confirm against the Javadoc
+> (see `firstspirit-api-reference`) before scripting against them.
+
 ## Call a script from a template (`$CMS_RENDER$`)
 
 Template side (page/section/link template or format template):
