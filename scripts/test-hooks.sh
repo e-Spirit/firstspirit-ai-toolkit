@@ -59,19 +59,25 @@ PLAIN="$(make_plain_fixture plain)"
 
 echo "== gating: FirstSpirit project loads the full index =="
 out="$(run_hook "$FS")"
+# A string that appears in the bootstrap index itself rather than in any one
+# skill, so these tests keep testing the gate when the skill set changes. A
+# skill name does not survive that: once it is gone from the index, the
+# positive assertions fail and — worse — the negative ones pass vacuously.
+INDEX_MARKER="Available Skills"
+
 assert_contains "marker dir injects the bootstrap skill" "$out" "name: using-firstspirit-toolkit"
-assert_contains "marker dir injects the skill index"     "$out" "manage-content"
+assert_contains "marker dir injects the skill index"     "$out" "$INDEX_MARKER"
 
 echo "== gating: plain project stays quiet =="
 out="$(run_hook "$PLAIN")"
 assert_contains     "plain dir injects the quiet line" "$out" "FirstSpirit AI Toolkit is available"
-assert_not_contains "plain dir omits the skill index"  "$out" "manage-content"
+assert_not_contains "plain dir omits the skill index"  "$out" "$INDEX_MARKER"
 
 echo "== gating: env override wins in both directions =="
 out="$(run_hook "$PLAIN" FIRSTSPIRIT_PROJECT=1)"
-assert_contains "FIRSTSPIRIT_PROJECT=1 forces the index on" "$out" "manage-content"
+assert_contains "FIRSTSPIRIT_PROJECT=1 forces the index on" "$out" "$INDEX_MARKER"
 out="$(run_hook "$FS" FIRSTSPIRIT_PROJECT=0)"
-assert_not_contains "FIRSTSPIRIT_PROJECT=0 forces the index off" "$out" "manage-content"
+assert_not_contains "FIRSTSPIRIT_PROJECT=0 forces the index off" "$out" "$INDEX_MARKER"
 
 echo "== envelope: one shape per harness =="
 out="$(run_hook "$FS" CLAUDE_PLUGIN_ROOT=/plugin)"
@@ -154,7 +160,7 @@ cat > "$FSXA/package.json" <<'JSON'
 }
 JSON
 out="$(run_hook "$FSXA")"
-assert_contains "an fsxa-api dependency counts as FirstSpirit" "$out" "manage-content"
+assert_contains "an fsxa-api dependency counts as FirstSpirit" "$out" "$INDEX_MARKER"
 
 echo "== a plain JS project is still not FirstSpirit =="
 PLAINJS="$TMPROOT/plain-js"
@@ -168,13 +174,13 @@ cat > "$PLAINJS/package.json" <<'JSON'
 }
 JSON
 out="$(run_hook "$PLAINJS")"
-assert_not_contains "an unrelated package.json is not FirstSpirit" "$out" "manage-content"
+assert_not_contains "an unrelated package.json is not FirstSpirit" "$out" "$INDEX_MARKER"
 
 echo "== the detector does not descend into dependency trees =="
 NOISY="$TMPROOT/noisy"
 mkdir -p "$NOISY/node_modules/some-pkg/test/fixtures"
 : > "$NOISY/node_modules/some-pkg/test/fixtures/.firstspirit"
 out="$(run_hook "$NOISY")"
-assert_not_contains "a marker inside node_modules is ignored" "$out" "manage-content"
+assert_not_contains "a marker inside node_modules is ignored" "$out" "$INDEX_MARKER"
 
 finish
