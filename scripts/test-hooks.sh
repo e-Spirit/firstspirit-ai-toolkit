@@ -57,7 +57,6 @@ hook_exit() {
 FS="$(make_fs_fixture fsproj)"
 PLAIN="$(make_plain_fixture plain)"
 
-echo "== gating: FirstSpirit project loads the full index =="
 out="$(run_hook "$FS")"
 # A string that appears in the bootstrap index itself rather than in any one
 # skill, so these tests keep testing the gate when the skill set changes. A
@@ -65,6 +64,21 @@ out="$(run_hook "$FS")"
 # positive assertions fail and — worse — the negative ones pass vacuously.
 INDEX_MARKER="Available Skills"
 
+echo "== the gating marker is a real string in the index =="
+# Both assert_contains and assert_not_contains pass when the needle is absent
+# from the haystack for the wrong reason — the positive loudly, the negative
+# silently. That is how the manage-content assertions rotted: four tests meant to
+# prove the index is NOT loaded stayed green through a fully sabotaged gate. Tie
+# the marker to the file it is supposed to come from, so a rewrite of the index
+# fails here instead of quietly disarming every gating assertion.
+if grep -qF "$INDEX_MARKER" "$REPO_ROOT/skills/using-firstspirit-toolkit/SKILL.md"; then
+  pass "INDEX_MARKER appears in the bootstrap index"
+else
+  fail "INDEX_MARKER appears in the bootstrap index" \
+    "gating assertions can no longer fail — update INDEX_MARKER to a string the index contains"
+fi
+
+echo "== gating: FirstSpirit project loads the full index =="
 assert_contains "marker dir injects the bootstrap skill" "$out" "name: using-firstspirit-toolkit"
 assert_contains "marker dir injects the skill index"     "$out" "$INDEX_MARKER"
 
