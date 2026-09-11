@@ -197,4 +197,30 @@ mkdir -p "$NOISY/node_modules/some-pkg/test/fixtures"
 out="$(run_hook "$NOISY")"
 assert_not_contains "a marker inside node_modules is ignored" "$out" "$INDEX_MARKER"
 
+echo "== a module descriptor must name FirstSpirit to count =="
+# Deliberate: module.xml is a generic filename, so the detector requires
+# de.espirit / firstspirit inside it. Asserted here so the README bullet and the
+# code cannot drift apart again.
+BAREMOD="$TMPROOT/bare-module"
+mkdir -p "$BAREMOD"
+cat > "$BAREMOD/module.xml" <<'XML'
+<module>
+  <name>unrelated-plugin</name>
+  <version>1.0.0</version>
+</module>
+XML
+out="$(run_hook "$BAREMOD")"
+assert_not_contains "a module.xml that never names FirstSpirit is not detected" "$out" "$INDEX_MARKER"
+
+NAMEDMOD="$TMPROOT/named-module"
+mkdir -p "$NAMEDMOD"
+cat > "$NAMEDMOD/module.xml" <<'XML'
+<module>
+  <name>my-fs-module</name>
+  <class>de.espirit.firstspirit.module.ModuleImpl</class>
+</module>
+XML
+out="$(run_hook "$NAMEDMOD")"
+assert_contains "a module.xml naming de.espirit is detected" "$out" "$INDEX_MARKER"
+
 finish

@@ -145,8 +145,10 @@ any of these is present:
 
 - a `.firstspirit` marker file (empty file is enough), or `fs-project.yaml`;
 - an external-sync export tree (the `FS_References.txt` / `FS_Info.txt` sidecars);
-- a `module.xml` / `module-isolated.xml` or a build file (`pom.xml`, `build.gradle`)
-  that references FirstSpirit (`de.espirit…`, `fs-isolated-runtime`, `fs-access`);
+- a `module.xml` / `module-isolated.xml` that names FirstSpirit (`de.espirit`,
+  `firstspirit`) — the filename alone is too generic to count — or a build file
+  (`pom.xml`, `build.gradle`) that depends on the Access API or isolated runtime
+  (`fs-isolated-runtime`, `fs-access`, `de.espirit.firstspirit`);
 - a server or CLI descriptor (`fs-server.conf`, `fs-cli.yaml`) or a built `.fsm`;
 - a decoupled frontend depending on FSXA (`fsxa-api`, `fsxa-pattern-library`).
 
