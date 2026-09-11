@@ -133,8 +133,6 @@ assert_json_field "marketplace entry has a displayName" \
 assert_json_field "marketplace entry has a description" \
   "$REPO_ROOT/.claude-plugin/marketplace.json" \
   'if (.plugins[0].description | length) > 0 then "yes" else "no" end' "yes"
-assert_json_field "claude hook declares a timeout" \
-  "$REPO_ROOT/hooks/hooks.json" '.hooks.SessionStart[0].hooks[0].timeout' "10"
 
 echo "== the codex default prompt does not presume FirstSpirit =="
 assert_not_contains "defaultPrompt is not an unconditional assertion" \
@@ -277,6 +275,29 @@ as_claude="$(CLAUDE_PLUGIN_ROOT="$REPO_ROOT" bash -c "eval printf '%s' $HOOK_TOK
 assert_eq "resolves for Claude Code" "$REPO_ROOT/hooks/run-hook.cmd" "$as_claude"
 
 # Gemini: substitutes ${extensionPath} itself, sets no variable of its own.
+# Gemini substitutes the bare ${extensionPath} token only. It does NOT
+# substitute an occurrence nested inside a shell default like
+# ${CLAUDE_PLUGIN_ROOT:-${extensionPath}} — measured against Gemini CLI 0.46.0,
+# where that form reached the shell verbatim and collapsed to /hooks/run-hook.cmd.
+# Substituting anywhere in the string, as this test used to, models a Gemini
+# that does not exist and passes a command the real one cannot resolve.
+case "$HOOK_TOKEN" in
+  *'${CLAUDE_PLUGIN_ROOT:-'*|*':-${extensionPath}}'*)
+    fail "no \${extensionPath} nested in a shell default" \
+         "Gemini does not substitute a nested token: $HOOK_TOKEN" ;;
+  *) pass "no \${extensionPath} nested in a shell default" ;;
+esac
+
+# Gemini reads "timeout" as milliseconds where Claude reads seconds, so one
+# shared value cannot serve both: 10 kills the hook after 10ms under Gemini.
+# Omitting it lets each harness apply its own default.
+if [ "$(jq -r '.hooks.SessionStart[0].hooks[0] | has("timeout")' "$REPO_ROOT/hooks/hooks.json")" = "true" ]; then
+  fail "no shared timeout in the auto-discovered hook" \
+       "timeout means seconds to Claude and milliseconds to Gemini"
+else
+  pass "no shared timeout in the auto-discovered hook"
+fi
+
 gemini_token="${HOOK_TOKEN//\$\{extensionPath\}/$REPO_ROOT}"
 as_gemini="$(env -u CLAUDE_PLUGIN_ROOT bash -c "eval printf '%s' $gemini_token" 2>/dev/null)"
 assert_eq "resolves for Gemini CLI" "$REPO_ROOT/hooks/run-hook.cmd" "$as_gemini"
