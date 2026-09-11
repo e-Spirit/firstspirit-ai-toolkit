@@ -241,4 +241,57 @@ AUDIT_CLEAN="$(cd "$AUDIT_TMP" && rm -f stray.md && git add -A >/dev/null 2>&1; 
   cd "$AUDIT_TMP" && ./scripts/bump-version.sh --audit 2>&1)"
 assert_contains "says so when nothing is undeclared" "$AUDIT_CLEAN" "No undeclared occurrences found."
 
+echo "== every declared skill path exists and holds a skill =="
+# The reachability check above walks directory -> manifest. This is the other
+# direction, and nothing tested it: all three manifests declared
+# ./skills/content and ./skills/diagnostics for a week after the skills there
+# were moved away, and the suite stayed green. A declaration pointing at nothing
+# is at best dead weight in every harness that reads it.
+for m in .claude-plugin/plugin.json .codex-plugin/plugin.json .cursor-plugin/plugin.json; do
+  while IFS= read -r p; do
+    [ -n "$p" ] || continue
+    d="$REPO_ROOT/${p#./}"
+    if [ ! -d "$d" ]; then
+      fail "$m: $p exists" "declared skill path is not a directory"
+    elif [ -z "$(find "$d" -maxdepth 2 -name SKILL.md -print -quit 2>/dev/null)" ]; then
+      fail "$m: $p holds a skill" "no SKILL.md within one level of $p"
+    else
+      pass "$m: $p holds a skill"
+    fi
+  done < <(jq -r '(.skills // [])[]' "$REPO_ROOT/$m")
+done
+
+echo "== the auto-discovered hook resolves under both harnesses that read it =="
+# Claude Code and Gemini CLI both find hooks/hooks.json by convention:
+# .claude-plugin/plugin.json declares no "hooks" key, and a Gemini extension
+# cannot declare one at all. The two expand the command differently — Claude
+# exports CLAUDE_PLUGIN_ROOT, Gemini textually substitutes ${extensionPath}
+# before any shell sees the string and exports nothing — so the one command must
+# satisfy both. Left unresolved it degrades to an absolute /hooks/run-hook.cmd
+# and the harness reports a failed hook on every session.
+HOOK_CMD="$(jq -r '.hooks.SessionStart[0].hooks[0].command' "$REPO_ROOT/hooks/hooks.json")"
+HOOK_TOKEN="${HOOK_CMD%% session-start}"
+
+# Claude: variable exported, ${extensionPath} left untouched.
+as_claude="$(CLAUDE_PLUGIN_ROOT="$REPO_ROOT" bash -c "eval printf '%s' $HOOK_TOKEN" 2>/dev/null)"
+assert_eq "resolves for Claude Code" "$REPO_ROOT/hooks/run-hook.cmd" "$as_claude"
+
+# Gemini: substitutes ${extensionPath} itself, sets no variable of its own.
+gemini_token="${HOOK_TOKEN//\$\{extensionPath\}/$REPO_ROOT}"
+as_gemini="$(env -u CLAUDE_PLUGIN_ROOT bash -c "eval printf '%s' $gemini_token" 2>/dev/null)"
+assert_eq "resolves for Gemini CLI" "$REPO_ROOT/hooks/run-hook.cmd" "$as_gemini"
+
+# The specific failure the tester saw: an unresolved variable leaves a path
+# rooted at /, which exists as a string and fails as a command.
+case "$as_gemini" in
+  /hooks/*) fail "does not degrade to an absolute /hooks path" "resolved to $as_gemini" ;;
+  *)        pass "does not degrade to an absolute /hooks path" ;;
+esac
+
+if [ -x "$as_gemini" ]; then
+  pass "the resolved hook entry point is executable"
+else
+  fail "the resolved hook entry point is executable" "not executable: $as_gemini"
+fi
+
 finish

@@ -56,7 +56,7 @@ Match the harness's own format. Current examples in this repo:
 | GitHub Copilot | `.github/hooks/firstspirit-ai-toolkit.json` + `.claude-plugin/plugin.json` | hook — `SessionStart` via `.github/hooks/`; conditional loading |
 | Codex | `.codex-plugin/plugin.json` (`skills`, `sessionStart.skill`, `defaultPrompt`) — plus `.agents/plugins/marketplace.json`, the Codex marketplace registry read by the ChatGPT desktop app | manifest `sessionStart.skill` |
 | Cursor | `.cursor-plugin/plugin.json` (`skills`, `hooks` pointer) | hook — `hooks/hooks-cursor.json` |
-| Gemini CLI | root `gemini-extension.json` (`contextFileName`) | context file — `GEMINI.md` |
+| Gemini CLI | root `gemini-extension.json` (`contextFileName`) | auto-discovered `hooks/hooks.json` (shared with Claude Code) + `GEMINI.md` context |
 
 Minimum every manifest needs: `name`, `version`, and a way to reach the skills (a
 `skills` path, or the harness's own auto-discovery). Copy the closest existing
@@ -107,10 +107,25 @@ Pick the mechanism the harness supports:
   `"sessionStart": { "skill": "using-firstspirit-toolkit" }`. This loads the skill
   **unconditionally** — load-time gating is not available, so behaviour on
   non-FirstSpirit projects relies entirely on the skill's self-gating.
-- **Context file** (Gemini CLI): create a root context file (`GEMINI.md`) that
-  file-references the bootstrap skill, e.g.
-  `@./skills/using-firstspirit-toolkit/SKILL.md`. Also loads unconditionally;
-  relies on self-gating.
+- **Auto-discovered hook file** (Gemini CLI): Gemini loads `hooks/hooks.json`
+  from an installed extension automatically — the path is a convention, not
+  something `gemini-extension.json` declares, and it is *the same path Claude
+  Code auto-discovers*. One file therefore serves both, and its command must
+  resolve for both: `${CLAUDE_PLUGIN_ROOT:-${extensionPath}}`. Gemini
+  substitutes `${extensionPath}` itself (supported in `gemini-extension.json`
+  and `hooks/hooks.json` only) before any shell runs and exports no variable of
+  its own; Claude exports `CLAUDE_PLUGIN_ROOT` and never evaluates the default.
+  Gemini's SessionStart output contract is
+  `{"hookSpecificOutput": {"additionalContext": "…"}}` — a subset of Claude's
+  envelope, so the shared `claude` shape satisfies it and needs no branch.
+
+  Do not "fix" a collision here by giving one harness its own copy of the file.
+  The harness you move off `hooks/hooks.json` may keep auto-discovering it
+  anyway and register a second hook that cannot resolve, which is the same
+  defect with the harnesses swapped.
+
+  `GEMINI.md` still file-references the bootstrap skill for context; the hook is
+  what gates it.
 - **Marketplace registry** (Codex, in addition to its plugin manifest):
   `.agents/plugins/marketplace.json` lists the plugin for the ChatGPT desktop
   app. A repo-local plugin uses `"source": { "source": "local", "path": "./" }` —
@@ -163,10 +178,16 @@ skill must activate before any code or instructions are generated.
 **Non-FirstSpirit project — the toolkit stays out of the way.** Run a fresh session
 in a plain directory and confirm:
 
-- hook-based harness (Claude Code, Cursor, GitHub Copilot): only the quiet discoverability line loads; no skill activates;
-- unconditional harness (Codex, Gemini): the skill loads but **self-gates** — ask an
+- hook-based harness (Claude Code, Cursor, GitHub Copilot, Gemini CLI): only the quiet discoverability line loads; no skill activates;
+- unconditional harness (Codex): the skill loads but **self-gates** — ask an
   unrelated, non-FirstSpirit question and confirm the assistant neither invokes nor
   mentions the FirstSpirit skills.
+
+Never verify either case by asking the assistant whether the toolkit loaded. The
+bootstrap skill instructs it to ignore the toolkit and not mention it when the
+task is not FirstSpirit, so a self-report is exactly the question the gate
+suppresses — testing has produced a confident "not loaded" with the index fully
+loaded. Run the hook directly, or ask a real FirstSpirit question.
 
 ### 6. Update documentation
 

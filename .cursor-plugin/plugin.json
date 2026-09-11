@@ -5,11 +5,9 @@
   "version": "0.1.0",
   "skills": [
     "./skills",
-    "./skills/content",
     "./skills/templating",
     "./skills/project",
-    "./skills/deployment",
-    "./skills/diagnostics"
+    "./skills/deployment"
   ],
   "hooks": "./hooks/hooks-cursor.json"
 }

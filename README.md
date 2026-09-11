@@ -126,26 +126,29 @@ Skills are organised into FirstSpirit domain categories:
 The toolkit is meant to stay out of the way on projects that have nothing to do
 with FirstSpirit. How it does that depends on what the harness supports.
 
-**Claude Code, GitHub Copilot and Cursor** run a session-start hook, so the skill
-index is only loaded when the project looks like FirstSpirit. On anything else the
-hook prints a single line telling the assistant where to find the index if the work
-turns out to be FirstSpirit after all — and nothing else is loaded.
+**Claude Code, GitHub Copilot, Cursor and Gemini CLI** run a session-start hook,
+so the skill index is only loaded when the project looks like FirstSpirit. On
+anything else the hook prints a single line telling the assistant where to find
+the index if the work turns out to be FirstSpirit after all — and nothing else is
+loaded.
 
-**Codex and Gemini CLI** have no session-start hook to run, so the index is always
-loaded. Gating there is done by the skill itself: its first section tells the
-assistant to ignore the toolkit entirely, and not mention it, unless the task
-actually involves FirstSpirit. The detection below and the `FIRSTSPIRIT_PROJECT`
-variable therefore have no effect on these two.
+**Codex** has no session-start hook to run, so the index is always loaded.
+Gating there is done by the skill itself: its first section tells the assistant
+to ignore the toolkit entirely, and not mention it, unless the task actually
+involves FirstSpirit. The detection below and the `FIRSTSPIRIT_PROJECT` variable
+therefore have no effect on Codex.
 
 #### How a FirstSpirit project is detected
 
-Used by the three hook-based harnesses above. A project counts as FirstSpirit if
+Used by the four hook-based harnesses above. A project counts as FirstSpirit if
 any of these is present:
 
 - a `.firstspirit` marker file (empty file is enough), or `fs-project.yaml`;
 - an external-sync export tree (the `FS_References.txt` / `FS_Info.txt` sidecars);
-- a `module.xml` / `module-isolated.xml` or a build file (`pom.xml`, `build.gradle`)
-  that references FirstSpirit (`de.espirit…`, `fs-isolated-runtime`, `fs-access`);
+- a `module.xml` / `module-isolated.xml` that names FirstSpirit (`de.espirit`,
+  `firstspirit`) — the filename alone is too generic to count — or a build file
+  (`pom.xml`, `build.gradle`) that depends on the Access API or isolated runtime
+  (`fs-isolated-runtime`, `fs-access`, `de.espirit.firstspirit`);
 - a server or CLI descriptor (`fs-server.conf`, `fs-cli.yaml`) or a built `.fsm`;
 - a decoupled frontend depending on FSXA (`fsxa-api`, `fsxa-pattern-library`).
 

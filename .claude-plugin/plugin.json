@@ -19,10 +19,8 @@
   ],
   "skills": [
     "./skills",
-    "./skills/content",
     "./skills/templating",
     "./skills/project",
-    "./skills/deployment",
-    "./skills/diagnostics"
+    "./skills/deployment"
   ]
 }
