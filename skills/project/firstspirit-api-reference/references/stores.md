@@ -64,6 +64,8 @@ Picture    media.getPicture(Language);           // if getType()==PICTURE
 File       media.getFile(Language);              // if getType()==FILE
 String     media.getFilename();
 PictureResolution picture.getPictureResolution(Resolution);  // per-resolution data — Picture has NO getResolution()
+Resolution context.requireSpecialist(ResolutionAgent.TYPE).getResolutionByName("thumb");  // Resolution by uid (or Project.getResolutionByName); @Nullable — there is no getResolution(String)
+int        pictureResolution.getWidth(); pictureResolution.getHeight();  // pixel size of this rendition
 Resolution pictureResolution.getResolution();     // the Resolution comes back from the PictureResolution
 byte[]     picture.getPreviewImage();            // preview bytes; getPreview() deprecated since 5.0, no getThumbnail()
 FormData   media.getMetaFormData();              // media metadata

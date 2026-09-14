@@ -9,8 +9,9 @@ description: >-
   transitions). Use this skill whenever you write, review, or debug a FirstSpirit
   script — for example "which context object do I get in a workflow script",
   "how do I lock and save an element in BeanShell", "how do I log from a script",
-  "how do I read a form field", or "how do I call a script from a template with
-  $CMS_RENDER$". Also use it whenever the user asks to write a BeanShell (or
+  "how do I read a form field", "how do I call a script from a template with
+  $CMS_RENDER$", or "how do I open a dialog / an element's data form from a client
+  script" (operations via OperationAgent). Also use it whenever the user asks to write a BeanShell (or
   "Bean Shell") script, even without naming FirstSpirit, and for `.bsh` script
   files — outside FirstSpirit, BeanShell is almost never used. Pair with
   the FirstSpirit ODFS documentation for deep API lookup and firstspirit-templating-reference for
