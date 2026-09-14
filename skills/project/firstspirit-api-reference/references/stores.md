@@ -63,7 +63,9 @@ int        media.getType();                      // Media.PICTURE or Media.FILE
 Picture    media.getPicture(Language);           // if getType()==PICTURE
 File       media.getFile(Language);              // if getType()==FILE
 String     media.getFilename();
-Resolution picture.getResolution();              // resolutions for a picture
+PictureResolution picture.getPictureResolution(Resolution);  // per-resolution data — Picture has NO getResolution()
+Resolution pictureResolution.getResolution();     // the Resolution comes back from the PictureResolution
+byte[]     picture.getPreviewImage();            // preview bytes; getPreview() deprecated since 5.0, no getThumbnail()
 FormData   media.getMetaFormData();              // media metadata
 ```
 

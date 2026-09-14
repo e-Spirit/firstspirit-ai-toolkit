@@ -29,6 +29,9 @@ Load credentials before any API call:
 ```bash
 source .env
 # Provides: $FS_USERNAME, $FS_PASSWORD, $FS_REST_BASE_URL, $FS_PROJECT_ID
+# In .env, SINGLE-QUOTE any value containing `$` (e.g. FS_PASSWORD='$ecret'): `source`
+# expands $… inside double-quoted or bare values, so the password silently becomes
+# empty and every call fails with a misleading 401.
 mkdir -p ./tmp   # JSON payloads go here; avoids shell-quoting issues
 ```
 
@@ -58,7 +61,7 @@ Wrong Content-Type = silent failure or 415 error. Follow these exactly:
 |----------|--------|----------------------|-------------|
 | `/gom` | PUT | `application/xml` | Raw XML: `<CMS_MODULE>...</CMS_MODULE>` |
 | `/rules` | PUT | `application/xml` | Raw XML: `<RULES>...</RULES>` |
-| `/channel-sources/{ts}` | PUT | `text/plain` | Raw template code (no JSON, no XML wrapper) |
+| `/channel-sources/{ts}` | PUT | `text/plain` | Raw template code (no JSON, no XML wrapper; `application/json` also accepted) |
 | `/form/{editor}` | PATCH | `application/json` | FormEditorDTO JSON (pages, sections **and datasets**) |
 | `/form/{editor}/{lang}` | PATCH | `application/json` | FormEditorDTO JSON |
 | Pages/PageRefs/Media create | POST | `application/json` | Create DTO JSON |
@@ -177,6 +180,7 @@ DELETE /projects/{id}/pages/{uid}/bodies/{body}/sections/{section}
 GET    /projects/{id}/pages/{uid}/bodies/{body}/sections/{section}/form
 GET|PATCH /projects/{id}/pages/{uid}/bodies/{body}/sections/{section}/form/{editor}
 GET|PATCH /projects/{id}/pages/{uid}/bodies/{body}/sections/{section}/form/{editor}/{lang}
+PATCH  /projects/{id}/pages/{uid}/bodies/{body}/sections/{section}/rename  # JSON: {"uid":"newName"}
 GET    /projects/{id}/pages/{uid}/form
 GET|PATCH /projects/{id}/pages/{uid}/form/{editor}
 GET|PATCH /projects/{id}/pages/{uid}/form/{editor}/{lang}
@@ -201,11 +205,14 @@ DELETE /projects/{id}/page-references/document-groups/{uid}
 
 ### Media
 ```
+GET    /projects/{id}/media/?type=FILE|PICTURE        # enumerate MediaStore (200; JSON array w/ location). Since 0.0.23-beta — was 405
 POST   /projects/{id}/media/                          # JSON create
 GET|DELETE /projects/{id}/media/{uid}
 GET|PUT /projects/{id}/media/{uid}/data                # GET=binary, PUT=multipart
 GET|PUT /projects/{id}/media/{uid}/data/{lang}
-GET    /projects/{id}/media/{uid}/data/resolution/{resUid}
+GET    /projects/{id}/media/{uid}/resolutions            # list picture resolutions + dimensions
+GET    /projects/{id}/media/{uid}/resolutions/{lang}
+GET    /projects/{id}/media/{uid}/data/resolution/{resUid}       # binary at a resolution
 GET    /projects/{id}/media/{uid}/data/resolution/{resUid}/{lang}
 PATCH  /projects/{id}/media/{uid}/rename                # JSON: {"uid":"newUid"}
 POST   /projects/{id}/media/{uid}/actions
