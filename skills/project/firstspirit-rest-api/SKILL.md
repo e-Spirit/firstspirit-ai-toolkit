@@ -57,8 +57,9 @@ Use `--data-binary` (not `-d`) so newlines in JSON are preserved.
 
 Every rule above is a claim about the REST module's behaviour, and the module is still in
 beta. `scripts/smoke-test.sh` probes each claim against the project in `.env` and prints
-PASS/FAIL per rule (read-only by default; `--write` adds a throwaway page that is deleted
-again, `--scripts` exercises `/scripts/…/execute`). Run it once on a new server or after a
+PASS/FAIL per rule (read-only by default; `--write` creates and deletes a throwaway page, page
+reference, medium, dataset and section template — use a test project; `--scripts` exercises
+`/scripts/…/execute`). Run it once on a new server or after a
 REST-module update; report any FAIL with the `./tmp/smoke/<run>/` folder attached. The run
 also keeps a snapshot of the server's OpenAPI spec (`./internal/openapi/<host>/`) and prints a
 WARN with a diff when the API surface changed since the last run — the cue to re-check the
