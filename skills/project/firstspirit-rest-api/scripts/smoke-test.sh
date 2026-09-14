@@ -28,7 +28,7 @@
 # O1 keeps a normalised copy of the server's OpenAPI spec per host under
 # ./internal/openapi/<host>/ (override: FS_OPENAPI_SNAPSHOTS) and WARNs with a
 # diff (<run>.diff.md) when the surface changed since the last run — the early
-# warning that a skill section may be stale. dev/claim-coverage.md maps probes
+# warning that a skill section may be stale. scripts/claim-coverage.md maps probes
 # and OpenAPI paths to skill sections.
 
 set -u
@@ -161,7 +161,7 @@ if is2xx && [ -n "$(jqr '.openapi // .swagger')" ]; then
       echo "## schemas (+ new, - gone, ~ changed)"; printf '%s\n' "$SCHEMAS"
     } > "$SNAP_HOST/$RUN.diff.md"
     warn O1 "OpenAPI surface CHANGED since $(basename "$PREV" .json) ($API_VERSION): +$(printf '%s' "$ADDED" | grep -c .) ops, -$(printf '%s' "$REMOVED" | grep -c .) ops, ~$(printf '%s' "$CHANGED" | grep -c .) paths, $(printf '%s' "$SCHEMAS" | grep -c .) schema deltas" \
-      "details in ${SNAP_HOST#./}/$RUN.diff.md — check the skill sections for the listed paths (dev/claim-coverage.md maps paths → sections)"
+      "details in ${SNAP_HOST#./}/$RUN.diff.md — check the skill sections for the listed paths (scripts/claim-coverage.md maps paths → sections)"
   fi
 else
   skip O1 "OpenAPI snapshot diff" "no spec body to snapshot (see R2b)"
@@ -411,7 +411,7 @@ if [ "$DO_WRITE" = 1 ]; then
     else fail W7 "release dry-run via /actions" "HTTP $STATUS: $(head -c 160 "$BODY")"; fi
   fi
 
-  # ---- Other throwaways (dev/claim-coverage.md tier 2): page reference, medium, dataset,
+  # ---- Other throwaways (scripts/claim-coverage.md tier 2): page reference, medium, dataset,
   # section template. Each is created, its documented behaviour probed, and deleted in
   # cleanup_extras — which runs BEFORE cleanup_page because the page reference points at the page.
   CREATED_PREF=""; CREATED_MEDIUM=""; CREATED_DS=""; CREATED_GID=""; CREATED_STPL=""
