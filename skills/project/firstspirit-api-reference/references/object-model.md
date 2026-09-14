@@ -46,6 +46,11 @@ Store.Type  getStore().getType();
 
 // Type
 ElementType getElementType();            // used by fs.type queries
+
+// References — see references/references.md
+ReferenceEntry[] getOutgoingReferences(); // @NotNull — what this element points at
+ReferenceEntry[] getIncomingReferences(); // @NotNull — what points at this element
+boolean          hasIncomingReferences(); // cheaper than getIncomingReferences().length > 0
 ```
 
 > **Iterate `getChildren(...)` with an iterator**, never by materialising a full

@@ -81,6 +81,7 @@ Loaded on demand — read the file that matches the question.
 | [references/agents.md](references/agents.md) | `SpecialistsBroker` (`requireSpecialist`/`requestSpecialist`) and the agent catalogue — StoreAgent, StoreElementAgent, QueryAgent, LanguageAgent, ProjectAgent, OperationAgent, ImageAgent, RenderingAgent, Url/PreviewUrlAgent, ModuleAdminAgent, … | You need to reach a store/service/operation and don't know which agent |
 | [references/values-and-data.md](references/values-and-data.md) | Value objects: `FormData`/`FormField`, `Language`/master language, `TemplateSet`, Content-Store `Dataset`/`Entity`/`EntityType`, editor values | You need to read/write field values, languages, or dataset content |
 | [references/querying.md](references/querying.md) | `QueryAgent` usage and the FirstSpirit query (`fs.*`) syntax with worked examples | You need to search the repository from code |
+| [references/references.md](references/references.md) | `ReferenceEntry` and the reference graph: `getOutgoingReferences()` / `getIncomingReferences()` / `hasIncomingReferences()` on every `StoreElement`, the nullable-`Set` and deprecated-namesake traps, the type constants, `isBroken()` semantics, and the "all media on a page and its sections" recipe | You need to know what an element points at, what points at it, or which references are broken |
 
 Visual: [assets/firstspirit-object-model.png](assets/firstspirit-object-model.png)
 — the DTA object-model poster (store trees mapped to interfaces).
