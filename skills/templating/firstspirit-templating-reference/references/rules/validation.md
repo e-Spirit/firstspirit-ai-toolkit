@@ -4,6 +4,10 @@ Correct, tested patterns for FirstSpirit validation rules.
 **Use these as the primary reference when writing rules. Do NOT use anti-patterns from the full documentation.**
 
 > **Key principle:** `<VALIDATION>` executes when `<WITH>` returns **FALSE**. For "must not be empty" checks, always negate with `<NOT>`.
+>
+> **Second principle:** `<IF>` is safe only for preconditions that cannot flip back within an
+> editing session (language, store context). A precondition on another **editable field**
+> belongs in `<WITH>` — in `<IF>` it produces a [one-way rule](#anti-pattern-the-one-way-rule).
 
 ### Validation scopes
 
@@ -76,10 +80,44 @@ Logic: NOT(ALL empty) = at least one filled. All three fields get marked invalid
 
 ## Conditional required field (only when another field is filled)
 
+> **Trap — the "one-way rule".** The obvious `<IF>`-based form of this rule can mark a field
+> invalid but never valid again. Use the version below; see
+> [Anti-pattern](#anti-pattern-the-one-way-rule) for why.
+
 ```xml
 <RULE>
-    <IF>
-        <NOT>
+    <WITH>
+        <OR>
+            <PROPERTY source="cs_picture" name="EMPTY"/>
+            <NOT>
+                <PROPERTY source="cs_description" name="EMPTY"/>
+            </NOT>
+        </OR>
+    </WITH>
+    <DO>
+        <VALIDATION scope="RELEASE">
+            <PROPERTY source="cs_description" name="VALID"/>
+            <MESSAGE lang="*" text="Description required when image is set!"/>
+            <MESSAGE lang="DE" text="Beschreibung erforderlich, wenn ein Bild gesetzt ist!"/>
+        </VALIDATION>
+    </DO>
+</RULE>
+```
+
+Logic: "picture set => description required", written as its equivalent "picture empty **OR**
+description filled". No `<IF>`, so the rule runs on every change and re-evaluates in both
+directions. `scope="RELEASE"` lets editors save work in progress.
+
+### Anti-pattern: the one-way rule
+
+**One-way rule** — practitioner term (used in FirstSpirit trainings and community posts; not
+official FirstSpirit terminology) for a rule that can move a field to invalid but never back,
+because its `<IF>` precondition stops the rule from running.
+
+```xml
+<RULE>
+    <IF>                                       <!-- WRONG: one-way rule -->
+        <NOT>                                  <!-- gates the whole rule, not the requirement -->
             <PROPERTY source="cs_picture" name="EMPTY"/>
         </NOT>
     </IF>
@@ -92,13 +130,52 @@ Logic: NOT(ALL empty) = at least one filled. All three fields get marked invalid
         <VALIDATION scope="RELEASE">
             <PROPERTY source="cs_description" name="VALID"/>
             <MESSAGE lang="*" text="Description required when image is set!"/>
-            <MESSAGE lang="DE" text="Der Editor darf nicht leer sein!"/>
         </VALIDATION>
     </DO>
 </RULE>
 ```
 
-Logic: IF picture exists, THEN description is required. Uses `scope="RELEASE"` for release-time validation.
+**What `<IF>` actually means.** It reads as *"if a picture is set, then a description is
+required."* It does not say that. `<IF>` gates **whether the rule executes at all**:
+
+> if a picture is set, evaluate this rule — otherwise leave this rule's verdict exactly as it is.
+
+`<IF>` is not the antecedent of an implication. It is an on/off switch for the rule, and when it
+switches off, the last verdict the rule left behind stays.
+
+**The failure.** In an open form:
+
+1. Set `cs_picture`, leave `cs_description` empty -> the rule runs and marks the description
+   invalid. Correct so far.
+2. Remove `cs_picture` again. The `<IF>` is now false, the rule no longer runs, and the invalid
+   verdict is never revisited — the field stays invalid although nothing requires it any more.
+3. Now type a description. **It stays invalid.** The rule that would clear the verdict is
+   switched off.
+
+Step 3 is the signature: the field cannot be repaired by any input. (SME observation; no known
+change in this behaviour.)
+
+**Why it survives development.** The failure depends on the order of actions, and the order that
+gets tested is the intended one — "a description is missing, so add a description." The path that
+breaks it is the editor's other reasonable choice: remove the picture instead, or having added it
+by accident to begin with. That path is rarely on the test list, so the rule ships looking correct.
+
+**How far the damage goes.** The stale verdict is session-local — it lives in the rule engine's
+state for the open form, not in the stored element. Saving, releasing and re-opening all
+re-evaluate the rules from scratch, so a release is not blocked and a re-opened form shows no
+phantom warning. The cost is editor confusion within one editing session, not corrupted content
+or a blocked workflow. Report it as a usability defect, not a broken release.
+
+**Detect.** In `Ruleset.xml`: a `<RULE>` whose `<IF>` tests a `PROPERTY source=` naming an
+**input component** and whose `<DO>` contains `<VALIDATION>`, with no complementary rule covering
+the inverse precondition.
+Not a hit: `<IF>` over `#global` (`LANG`, `MASTER`, store context) — those cannot leave a verdict
+that contradicts the current state. Not a hit: `<IF>` without `<VALIDATION>` (value-setting rules;
+see `value-manipulation.md`).
+
+**Repair.** Move the precondition into the value determination:
+`IF(A) + WITH(B)` -> `WITH(OR(NOT(A), B))`. The rule then always runs and recovers in both
+directions.
 
 ## Master language only validation
 

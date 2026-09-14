@@ -90,8 +90,8 @@ filter by class:
 
 ```
 //!BeanShell
-for (elem : folder.getChildren(MyClass.class, true).iterator()) {
-    print(elem.getSomeValue());
+for (page : folder.getChildren(Page.class, true).iterator()) {   // any element interface works as the filter
+    context.logInfo(page.getUid());
 }
 ```
 

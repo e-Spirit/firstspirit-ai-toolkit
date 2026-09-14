@@ -34,6 +34,10 @@ curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
 ```
 
 ### Rename Page
+Body is `RenameRequestDTO {name, language}` (both required; `{uid}` → 500). This sets the
+**display name** (`displayNames`), **not the uid** — a page's uid cannot be changed over REST in
+0.0.23-beta, it is fixed at creation. Observed: the name is applied to *all* languages regardless
+of the `language` value.
 ```bash
 curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
   -X PATCH -H "Content-Type: application/json" \
@@ -114,7 +118,13 @@ curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
 
 ### PATCH Pattern (write editor value)
 
-All PATCH bodies are `FormEditorDTO` JSON. **The API requires the full DTO**, including `configuration` (non-null), `description`, and for language-dependent editors `language`. Trying to send only `{name,type,content}` triggers 500 "parameter configuration specified as non-null is null".
+All PATCH bodies are `FormEditorDTO` JSON. **Always send the full DTO** (GET → mutate → PATCH), including `configuration` (non-null), `description`, and for language-dependent editors `language`.
+
+How strictly this is enforced **depends on the editor type** (verified 0.0.23-beta):
+- **FS_CATALOG nested editors** and **FS_REFERENCE** genuinely require the full DTO — omitting `configuration` triggers 500 "parameter configuration specified as non-null is null" (see [content-catalog.md](content-catalog.md)).
+- A **plain scalar editor** (`CMS_INPUT_TEXT`/`TEXTAREA`) will *accept* a minimal `{name,type,content}` PATCH (returns 200) on this version — the "always fails" rule is softer than it reads.
+
+Because you cannot tell per editor which case applies, the GET → mutate → PATCH round-trip is the one reliable pattern for all of them; don't hand-build minimal payloads.
 
 **Reliable pattern — GET → mutate → PATCH:**
 ```bash
@@ -360,13 +370,29 @@ curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
 
 ## Media
 
-> **The MediaStore cannot be enumerated over REST.** `GET …/media/` answers **`405`**, not a
-> list — search by uid, or enumerate server-side via BeanShell. A medium's **type is immutable**
-> (`PATCH`/`PUT` on `…/media/{uid}` answer `405`) and there is no delete verb, so PICTURE-vs-FILE
-> is a one-shot decision; and `type` is only a *declaration* — the server does not check it
-> against the bytes. Creating a medium is **two calls**: `POST …/media/` mints an empty element,
-> `PUT …/media/{uid}/data` (multipart part named `file`) fills it. *(Confirmed live — source: PS
-> website-migration tool, `knowledge/fs-facts.md` §1–§2.)*
+> **⚠ Version drift — re-tested live 2026-09-11 (REST `0.0.23-beta`).** Two of the facts below moved
+> since the PS migration measurement (2026-08-27):
+> - **`GET …/media/` now enumerates the MediaStore** — returns **`200`** with a JSON array
+>   (was `405`). `?type=PICTURE` / `?type=FILE` filter it; each element carries a `location`
+>   folder path. `OPTIONS …/media/` → `Allow: GET,HEAD,POST,OPTIONS`. So BeanShell enumeration
+>   is no longer required.
+> - **`…/media/{uid}` now allows `DELETE`** — `OPTIONS` → `Allow: DELETE,GET,HEAD,OPTIONS`.
+>   A medium CAN be deleted (was "no delete verb"), so a PICTURE-vs-FILE mistake is now
+>   recoverable by delete + recreate rather than being one-shot.
+>
+> **Still true (re-confirmed 2026-09-11):**
+> - A medium's **type is immutable via the element endpoint**: `OPTIONS …/media/{uid}` has **no
+>   `PATCH`/`PUT`** in `Allow`, so you cannot change `type` in place. `type` is only a
+>   *declaration* — the server does not check it against the bytes.
+> - Creating a medium is **two calls**: `POST …/media/` mints an empty element (`Allow` includes
+>   `POST`), `PUT …/media/{uid}/data` (multipart part named `file`) fills it
+>   (`OPTIONS …/media/{uid}/data` → `Allow: PUT,GET,HEAD,OPTIONS`).
+> - **`GET …/medium-folders/{uid}` lists subfolders only** (`children`), not media — but this no
+>   longer blocks enumeration, since `GET …/media/` returns every medium with its `location`.
+>
+> *(Original facts confirmed live 2026-08-27 — source: PS website-migration tool,
+> `knowledge/fs-facts.md` §1–§2. Drift and re-confirmation verified via `OPTIONS` Allow headers,
+> 2026-09-11, ROI test instance.)*
 
 ### Create Medium
 ```bash

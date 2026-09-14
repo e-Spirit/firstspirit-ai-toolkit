@@ -49,6 +49,18 @@ langAgent = context.requireSpecialist(LanguageAgent.TYPE);
 Always resolve a `Language` before reading language-dependent values; defaulting
 to the master language is the common fallback.
 
+> **Language-dependent release & permissions (recent — verify against the current
+> Javadoc).** As of FirstSpirit **2026.4** the **release** state is language-aware
+> (an element can be approved/published per project language, not all-or-nothing),
+> and **2026.7** adds **language-dependent user permissions** (editing restricted
+> per project language). Release-notes-named entry points to confirm before use:
+> `LanguageDataProvider#getFormData` (2026.3), `IDProviderChange#isFirstRelease(Language…)`
+> / `hasFirstRelease()` (2026.9), and language-specific release info on
+> `IDProviderEventAgent` (2025.13). Treat the method names as pointers sourced from
+> the release notes, not confirmed signatures — grep the Javadoc before relying on
+> them; the concept (release/permissions now carry a `Language` dimension) is the
+> durable part.
+
 ## `TemplateSet` — output channels
 
 A project defines one or more **template sets** (output channels: HTML, JSON, …).
@@ -79,7 +91,12 @@ Dataset one = ... ; // content2.getEntity(keyValue) -> Entity; wrap/lookup as ne
 
 ## Editor values
 
-Individual component values can also be read as typed **editor values** (e.g.
-text, picture, reference) via `FormField.getEditorValue()` — useful when you need
-the component's structured value rather than a plain object. For the mapping from
-input component to datatype, defer to `firstspirit-templating-reference`.
+`FormField` has **no `getEditorValue()`** (checked on the 5.2.240208 jar — its surface is
+`getName()`, `getType()`, `isSet()`, `isEmpty()`, `isDefault()`, `get()`, `set(Object)`,
+`setToDefault()`, `validate(T)`). The typed value simply comes from **`get()`**, and
+`getType()` tells you which class to expect — e.g. `String` for CMS_INPUT_TEXT,
+`TargetReference` for FS_REFERENCE, `DomElement` for CMS_INPUT_DOM. The `…EditorValue` classes
+in `de.espirit.firstspirit.access.editor` (`DomEditorValue`, `ReferenceEditorValue`, …) are the
+editor-side value types behind those; you meet them through the template/GOM layer, not via
+`FormField`. For the mapping from input component to datatype, defer to
+`firstspirit-templating-reference`.
