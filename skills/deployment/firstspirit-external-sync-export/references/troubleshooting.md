@@ -37,6 +37,17 @@ Same root cause as above — the launcher's `javap` probe on a JRE. Harmless on
 its own, but it's the tell that the `--add-opens` flags got dropped; expect the
 `InaccessibleObjectException` next. Fix as above.
 
+### Benign JVM warnings on Java 24+ (bundled JRE 25 with 5.2.2610xx launchers)
+```
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called … classgraph …
+WARNING: A restricted method in java.lang.System has been called
+WARNING: java.lang.System::load has been called by com.github.luben.zstd.util.Native$2 …
+WARNING: Use --enable-native-access=ALL-UNNAMED to avoid a warning for callers in this module
+```
+Printed at startup and after connecting; the run continues and exports normally. Not
+errors — ignore, or add `--enable-native-access=ALL-UNNAMED` to the `java` call to silence
+the second group. *(Observed 2026-09-14, fs-cli 4.8.9 on the launcher's JRE 25.0.3.)*
+
 ## Connect (gate 2)
 
 ### `Unexpected HTTP state: (400) … server=awselb/2.0 … http://<host>:443/…`
@@ -52,6 +63,21 @@ WebSocketHandshakeException … Connection with 'WebsocketFSHttpClient(ws://…:
 host, or the wrong port). **Fix:** for Cloud use `-c HTTPS -port 443`; for a
 self-hosted socket server use `-c SOCKET` with its socket port.
 → `connection-and-auth.md`.
+
+### `Wrong client build number <client>, must be at least <server>!` *after* "successfully connected"
+```
+INFO  FSHttpClient 'WebsocketFSHttpClient(wss://<host>/websocket/ClientIO/…)' successfully connected.
+ERROR Wrong client build number 260911, must be at least 261011! Client-Version: 5.2.260911, Server-Version: 5.2.261011.…
+de.espirit.firstspirit.common.ConnectError … Caused by: de.espirit.firstspirit.access.store.VersionMismatchException
+```
+**Cause:** the Access API jar in `lib/` is **older than the server build** — the websocket
+channel connects, then the server's version check refuses the client before authentication.
+The message tells you both builds. **Fix:** put the jar of the server's build (or newer) into
+`lib/` — on macOS the FSLauncher keeps one per build it has ever connected to,
+`~/.firstspirit/FSLauncher/jar/<build>_isolated/fs-isolated-client-*.jar`; the `test` command
+then reports `Connected to FirstSpirit server … of version <build>`. Keep exactly one API jar
+in `lib/`. → `fs-cli-setup.md` §2. *(Reproduced 2026-09-14: server 5.2.261011 rejected the
+5.2.260911 client jar; the 5.2.261011 jar connected.)*
 
 ## Authenticate (gate 3)
 
@@ -124,4 +150,5 @@ identifiers (a "whole project" is an explicit list). → `export-command.md`.
 
 ---
 *Every message here was reproduced on fs-cli 4.8.9 against a FirstSpirit
-5.2.260815 Cloud instance (2026-08-03). See `SOURCES.md`.*
+5.2.260815 Cloud instance (2026-08-03); the client-build-number and Java 25
+entries against a second, 5.2.261011 Cloud instance (2026-09-14). See `SOURCES.md`.*

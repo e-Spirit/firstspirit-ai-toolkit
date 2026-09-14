@@ -128,7 +128,7 @@ keyed by **table** name, so a table shared by several data sources appears once.
 | Option | Effect |
 |---|---|
 | `-sd`, `--syncDir <dir>` | target directory (default: current dir) |
-| `-rf`, `--resultFile <file>` | JSON result path (default `lastCommandResult.json`) |
+| `-rf`, `--resultFile <file>` | JSON result path (default `lastCommandResult.json`). *[observed]* On fs-cli 4.8.9 an `export` run with `-rf` exited 0 but wrote **no** result file — don't build automation on it; parse the `== SUMMARY ==` block and the exit code instead |
 | `--useReleaseState` | export the released state instead of the current (work) state |
 | `--keepObsoleteFiles` | keep files for elements no longer exported (default: delete them) |
 | `--excludeChildElements` | export the named elements without their children |
@@ -164,7 +164,19 @@ properties:
 ```
 
 Each element is several files (content, metadata, `FS_References.txt`,
-`FS_Info.txt`, `FS_Files.txt`, …) that together reconstruct the element.
+`FS_Info.txt`, `FS_Files.txt`, …) that together reconstruct the element. The sync root also
+gets a hidden `.FirstSpirit/` directory with two bookkeeping files per project
+(`Files_<project>_<id>.txt`, `Import_<project>_<id>.txt` — a manifest of every written file
+with checksum, size, timestamp and MIME type). Keep it: it is what makes the next run
+incremental. Stores you did not name are simply absent (a `pageref:` export creates only
+`SiteStore/` and `Global/`).
+
+**The obsolete-file rule in action.** Exporting into the same directory with a *smaller*
+identifier list deletes what the list no longer covers — observed 2026-09-14: a first run with
+`projectproperty:LANGUAGES projectproperty:RESOLUTIONS pageref:…`, then a second with only
+`projectproperty:LANGUAGES pageref:…`, reported `Deleted elements: 1 | project properties: 1
+… Resolutions ( deleted files: 1 )` and `Global/Project/Resolutions.xml` was gone. Use the
+same identifier list every run, or `--keepObsoleteFiles`.
 
 ## Reading the result
 
@@ -183,7 +195,7 @@ When the project is developed Git-first, the same export is expressed
 declaratively in `fs-project.yaml` (`externalSync.exportElements`) and run by a
 Bamboo plan, not by hand. That model — and the `features` /
 `designForQa|Prod|Subprojects` content-transport layer around it — is owned by
-**`firstspirit-cloud`** (Distributed development / Template Transport). Use it
+**the FirstSpirit Cloud documentation** (Distributed development / Template Transport). Use it
 for a maintained Cloud project; use the direct command here for a one-off pull.
 
 ---

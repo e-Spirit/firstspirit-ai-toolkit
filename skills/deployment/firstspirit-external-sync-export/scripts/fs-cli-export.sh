@@ -3,7 +3,7 @@
 # against a modern FirstSpirit server, without rediscovering the launcher's traps.
 #
 # It encodes three things this skill documents:
-#   1. a JRE/JDK >= the Access API jar's Java version (default: FirstSpirit's bundled JRE 21),
+#   1. a JRE/JDK >= the Access API jar's Java version (default: the FirstSpirit launcher's bundled JRE — 21 or 25 depending on the launcher build),
 #   2. the --add-opens flags the shipped launcher drops on a JRE (missing javap),
 #   3. HTTPS on 443 as the default connection mode (correct for FirstSpirit Cloud).
 #
@@ -18,7 +18,7 @@
 #   FS_CLI_HOME  path to the extracted fs-cli dir (contains bin/ lib/ conf/).
 #                Default: $FS_CLI_HOME, else ./fsdevtools/fs-cli, else ./fs-cli.
 #   JAVA_HOME    a JDK/JRE >= the Access API jar's Java version. If unset, tries
-#                the FirstSpirit FSLauncher bundled JRE 21, then /usr/libexec/java_home.
+#                the FirstSpirit FSLauncher bundled JRE (21+), then /usr/libexec/java_home.
 #   FS_HOST      server host (no scheme).                      [required for connecting commands]
 #   FS_PORT      port. Default 443.
 #   FS_CONN      connection mode HTTP|HTTPS|SOCKET. Default HTTPS.
