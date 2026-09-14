@@ -19,7 +19,7 @@ description: >
 1. **PATCH on `/form/{editor}` requires the complete FormEditorDTO** — always including `configuration`, `description`, `language` and (for FS_REFERENCE) the full `content` object. Never hand-craft the payload. Use **GET → jq → PATCH**: the GET response is valid PATCH input.
 2. **Never inline JSON with `-d '…'`**. Apostrophes/quotes in German content break shell parsing. Always write JSON to `./tmp/payload.json` and send with `--data-binary @./tmp/payload.json`.
 3. **Language suffix `/{LANG}` is required when `usesLanguages: true`** in the editor's configuration. Codes are **UPPERCASE** (`DE`, `EN`, `FR`). Check via `GET /projects/{id}/languages/`.
-4. **Content-Types are strict** (see table below). Wrong type = 415 or silent failure.
+4. **Content-Types are strict** (see table below). Wrong type is rejected — **`415` on some endpoints, `500` on others** (a `text/plain` PATCH to a JSON `/form/{editor}` returned `500`, not `415`), and in a few cases a silent failure. Do not rely on `415` specifically; just send the documented type.
 5. **Parallelize reads and independent writes.** GET of several fields, or PATCH of independent editors on the same section, can run concurrently. Only serialize when one call depends on the previous response.
 6. **Configuration is required on every nested editor in FS_CATALOG.** Empty `configuration: {}` causes 500. Preserve the configuration from GET.
 
@@ -53,9 +53,17 @@ curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
 ```
 Use `--data-binary` (not `-d`) so newlines in JSON are preserved.
 
+### Verify the skill against your server
+
+Every rule above is a claim about the REST module's behaviour, and the module is still in
+beta. `scripts/smoke-test.sh` probes each claim against the project in `.env` and prints
+PASS/FAIL per rule (read-only by default; `--write` adds a throwaway page that is deleted
+again, `--scripts` exercises `/scripts/…/execute`). Run it once on a new server or after a
+REST-module update; report any FAIL with the `./tmp/smoke/<run>/` folder attached.
+
 ## Critical Content-Type Rules
 
-Wrong Content-Type = silent failure or 415 error. Follow these exactly:
+Wrong Content-Type = silent failure, `415`, **or `500`** (the code varies by endpoint — e.g. a `text/plain` PATCH to a JSON `/form/{editor}` returns `500`). Follow these exactly:
 
 | Endpoint | Method | Content-Type (Request) | Body Format |
 |----------|--------|----------------------|-------------|
@@ -66,7 +74,7 @@ Wrong Content-Type = silent failure or 415 error. Follow these exactly:
 | `/form/{editor}/{lang}` | PATCH | `application/json` | FormEditorDTO JSON |
 | Pages/PageRefs/Media create | POST | `application/json` | Create DTO JSON |
 | `/media/{uid}/data` | PUT | `multipart/form-data` | File upload |
-| `/media/{uid}/rename` | PATCH | `application/json` | `{"uid":"newUid"}` |
+| `/media/{uid}/rename` | PATCH | `application/json` | `{"name":"…","language":"XX"}` (RenameRequestDTO — sets display name, **not** uid; `{uid}` → 500) |
 | `/{page,page-reference,medium}-folders/**` | PATCH | `application/json` | Folder property DTO |
 | `/scripts/{name}/template-sets/{ts}` | PUT | `text/plain` | Raw script code |
 | `/scripts/{name}/gom` | PUT | `text/xml` | Script GOM XML |
@@ -98,23 +106,30 @@ Standard sequence for copying an existing page, registering it in the SiteStore 
      -d '{"action":"copy"}' \
      "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/pages/{sourceUid}/actions"
    ```
-   Response contains the new `uid` (e.g. `{sourceUid}_2`).
+   Response contains the new server-assigned `uid` (e.g. `{sourceUid}_2`). **This uid is fixed** —
+   see the note in step 2. Capture it as `{copiedUid}` and use it for the rest of the playbook.
 
-2. **Rename the new page** *(∥ with step 3)*
+2. **Set the display name of the new page** *(∥ with step 3)*
    ```bash
    curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
      -X PATCH -H "Content-Type: application/json" \
-     -d '{"uid":"{newUid}"}' \
+     -d '{"name":"DMEXCO Cologne","language":"EN"}' \
      "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/pages/{copiedUid}/rename"
    ```
+   > **`/rename` sets the display name, not the uid** (verified 0.0.23-beta). The body is
+   > `RenameRequestDTO {name, language}` — sending `{uid}` returns **500**. It writes
+   > `displayNames` (observed: applied to *all* languages regardless of the `language` value);
+   > the element's uid is unchanged. **A page's uid cannot be changed over REST in this version** —
+   > it is fixed when the element is created (`copy` here, or `POST /pages/ {uid,…}`). If you need
+   > a specific uid, skip `copy` and create the page directly with your chosen uid.
 
 3. **Create PageReference in the SiteStore** *(∥ with step 2 — uses numeric page id, not the uid)*
    ```bash
    PAGE_ID=$(curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
-     "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/pages/{newUid}" | jq '.id')
+     "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/pages/{copiedUid}" | jq '.id')
    curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
      -X POST -H "Content-Type: application/json" \
-     -d "{\"uid\":\"{newUid}\",\"pageId\":$PAGE_ID,\"location\":\"/resources/discover/event/\"}" \
+     -d "{\"uid\":\"{copiedUid}\",\"pageId\":$PAGE_ID,\"location\":\"/resources/discover/event/\"}" \
      "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/page-references/"
    ```
 
@@ -172,7 +187,7 @@ GET|POST /projects/{id}/pages/
 GET|DELETE /projects/{id}/pages/{uid}
 GET    /projects/{id}/pages/{uid}?released=true
 POST   /projects/{id}/pages/{uid}/actions
-PATCH  /projects/{id}/pages/{uid}/rename
+PATCH  /projects/{id}/pages/{uid}/rename                 # JSON: {"name","language"} (display name, not uid)
 GET    /projects/{id}/pages/{uid}/bodies/
 GET    /projects/{id}/pages/{uid}/bodies/{body}
 PUT    /projects/{id}/pages/{uid}/bodies/{body}/sections/{section}
@@ -180,7 +195,7 @@ DELETE /projects/{id}/pages/{uid}/bodies/{body}/sections/{section}
 GET    /projects/{id}/pages/{uid}/bodies/{body}/sections/{section}/form
 GET|PATCH /projects/{id}/pages/{uid}/bodies/{body}/sections/{section}/form/{editor}
 GET|PATCH /projects/{id}/pages/{uid}/bodies/{body}/sections/{section}/form/{editor}/{lang}
-PATCH  /projects/{id}/pages/{uid}/bodies/{body}/sections/{section}/rename  # JSON: {"uid":"newName"}
+PATCH  /projects/{id}/pages/{uid}/bodies/{body}/sections/{section}/rename  # JSON: {"name":"newName"} (RenameSectionRequestDTO — name only, no language)
 GET    /projects/{id}/pages/{uid}/form
 GET|PATCH /projects/{id}/pages/{uid}/form/{editor}
 GET|PATCH /projects/{id}/pages/{uid}/form/{editor}/{lang}
@@ -196,7 +211,7 @@ GET    /projects/{id}/pages/{uid}/revisions/    GET .../revisions/{revisionId}
 GET|POST /projects/{id}/page-references/
 GET|DELETE /projects/{id}/page-references/{uid}
 POST   /projects/{id}/page-references/{uid}/actions
-PATCH  /projects/{id}/page-references/{uid}/rename
+PATCH  /projects/{id}/page-references/{uid}/rename        # JSON: {"name","language"} (display name, not uid)
 GET|PATCH /projects/{id}/page-references/{uid}/settings
 GET    /projects/{id}/page-references/{uid}/revisions/   GET .../revisions/{revisionId}
 GET|POST /projects/{id}/page-references/document-groups/
@@ -214,7 +229,7 @@ GET    /projects/{id}/media/{uid}/resolutions            # list picture resoluti
 GET    /projects/{id}/media/{uid}/resolutions/{lang}
 GET    /projects/{id}/media/{uid}/data/resolution/{resUid}       # binary at a resolution
 GET    /projects/{id}/media/{uid}/data/resolution/{resUid}/{lang}
-PATCH  /projects/{id}/media/{uid}/rename                # JSON: {"uid":"newUid"}
+PATCH  /projects/{id}/media/{uid}/rename                # JSON: {"name","language"} (display name, not uid)
 POST   /projects/{id}/media/{uid}/actions
 GET    /projects/{id}/media/{uid}/usages
 GET    /projects/{id}/media/{uid}/revisions/    GET .../revisions/{revisionId}
@@ -254,8 +269,20 @@ GET|POST /projects/{id}/scripts/
 GET|DELETE /projects/{id}/scripts/{name}
 GET|PUT /projects/{id}/scripts/{name}/gom              # XML
 GET|PUT /projects/{id}/scripts/{name}/template-sets/{ts}  # text/plain
-POST   /projects/{id}/scripts/{name}/execute           # JSON in, text/plain out
+POST   /projects/{id}/scripts/{name}/execute           # JSON in
 ```
+
+> **`POST /scripts/` does not fully honour the create DTO** (verified 0.0.23-beta): the stored
+> element comes back with `type: MENU` regardless of the `type` you send, and `description` is
+> dropped (`null`). Only `name` and `location` are reliably applied. Create the script, then set
+> the source via `PUT …/template-sets/{ts}`.
+>
+> **`POST …/scripts/{name}/execute` runs the script but does not echo its return value** — a
+> successful run answers `2xx` with an **empty body** (confirmed on a second project). *Errors*
+> **are** returned, though: a BeanShell parse/compile error comes back in the response body. So
+> treat a non-empty body as an error and verify success by read-back, not by the response. JSON in
+> the request body binds as script context variables; the REST execute context has no
+> `getElement()`, so element-dependent scripts cannot run here.
 
 ### Global Content
 ```
@@ -274,18 +301,22 @@ folder path within the store.
 
 ## Pagination
 
-List endpoints with large results return `PaginatedResponse`:
-```json
-{ "content": [...], "pageNumber": 0, "pageSize": 20, "hasNext": true }
-```
-Query params: `?page=0&size=20` (zero-based).
+> **As of `0.0.23-beta`, collection *listing* endpoints return a bare JSON array — parse with
+> `.[]`, not `.content[]`.** Verified against the live OpenAPI spec and server: *every* endpoint
+> ending in `/` (`/pages/`, `/media/`, `/scripts/`, `/data-sources/`, `/page-references/`,
+> `/languages/`, `/template-sets/`, all `/templates/…/`, …) responds with a top-level array, and
+> `?page`/`size` query params are **accepted but ignored** (`GET /pages/?size=5` returned all
+> 110). Do not rely on server-side paging for listings; fetch the array and slice client-side.
 
-**Exception — Template endpoints return a direct array**, not a paginated response:
 ```bash
-# Template listing → plain JSON array, use .[] not .content[]
-curl -s ... "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/templates/section-templates/" | jq '.[]'
+# Any listing → plain JSON array
+curl -s ... "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/pages/" | jq '.[].uid'
 ```
-Affected: `GET /templates/section-templates/`, `/page-templates/`, `/format-templates/`, `/link-templates/`.
+
+> **`GET …/search` is the exception — it *does* return `PaginatedResponseDTO`** and honours
+> `?page`/`size`: `{ "content": [...], "pageNumber": 0, "pageSize": 20, "hasNext": true }`
+> (zero-based). See [search-and-discovery.md](references/search-and-discovery.md). To be safe
+> against either shape, branch on `if type=="array" then .[] else .content[] end`.
 
 ## Actions Pattern
 
@@ -310,7 +341,8 @@ Actions: `copy`, `release`. Options for release:
 | 400 | Invalid input, unsupported operation, duplicate name |
 | 404 | Element/language/template not found |
 | 409 | Conflict (duplicate reference) |
-| 415 | Wrong Content-Type |
+| 415 | Wrong Content-Type (some endpoints return `500` instead — see Critical Content-Type Rules) |
+| 500 | Server error — also seen for: wrong Content-Type on `/form/{editor}`; `{uid}` sent to a `/rename` (wants `{name,language}`); missing/`null` `configuration` on an FS_CATALOG editor; `null` RADIOBUTTON in a constructed card |
 
 <!-- feedback-footer:v1 -->
 

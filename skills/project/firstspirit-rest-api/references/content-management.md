@@ -34,6 +34,10 @@ curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
 ```
 
 ### Rename Page
+Body is `RenameRequestDTO {name, language}` (both required; `{uid}` → 500). This sets the
+**display name** (`displayNames`), **not the uid** — a page's uid cannot be changed over REST in
+0.0.23-beta, it is fixed at creation. Observed: the name is applied to *all* languages regardless
+of the `language` value.
 ```bash
 curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
   -X PATCH -H "Content-Type: application/json" \
@@ -114,7 +118,13 @@ curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
 
 ### PATCH Pattern (write editor value)
 
-All PATCH bodies are `FormEditorDTO` JSON. **The API requires the full DTO**, including `configuration` (non-null), `description`, and for language-dependent editors `language`. Trying to send only `{name,type,content}` triggers 500 "parameter configuration specified as non-null is null".
+All PATCH bodies are `FormEditorDTO` JSON. **Always send the full DTO** (GET → mutate → PATCH), including `configuration` (non-null), `description`, and for language-dependent editors `language`.
+
+How strictly this is enforced **depends on the editor type** (verified 0.0.23-beta):
+- **FS_CATALOG nested editors** and **FS_REFERENCE** genuinely require the full DTO — omitting `configuration` triggers 500 "parameter configuration specified as non-null is null" (see [content-catalog.md](content-catalog.md)).
+- A **plain scalar editor** (`CMS_INPUT_TEXT`/`TEXTAREA`) will *accept* a minimal `{name,type,content}` PATCH (returns 200) on this version — the "always fails" rule is softer than it reads.
+
+Because you cannot tell per editor which case applies, the GET → mutate → PATCH round-trip is the one reliable pattern for all of them; don't hand-build minimal payloads.
 
 **Reliable pattern — GET → mutate → PATCH:**
 ```bash
@@ -360,7 +370,7 @@ curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
 
 ## Media
 
-> **⚠ Version drift — re-tested on project 131690, 2026-09-11.** Two of the facts below moved
+> **⚠ Version drift — re-tested live 2026-09-11 (REST `0.0.23-beta`).** Two of the facts below moved
 > since the PS migration measurement (2026-08-27):
 > - **`GET …/media/` now enumerates the MediaStore** — returns **`200`** with a JSON array
 >   (was `405`). `?type=PICTURE` / `?type=FILE` filter it; each element carries a `location`
