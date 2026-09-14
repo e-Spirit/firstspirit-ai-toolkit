@@ -91,7 +91,12 @@ Dataset one = ... ; // content2.getEntity(keyValue) -> Entity; wrap/lookup as ne
 
 ## Editor values
 
-Individual component values can also be read as typed **editor values** (e.g.
-text, picture, reference) via `FormField.getEditorValue()` — useful when you need
-the component's structured value rather than a plain object. For the mapping from
-input component to datatype, defer to `firstspirit-templating-reference`.
+`FormField` has **no `getEditorValue()`** (checked on the 5.2.240208 jar — its surface is
+`getName()`, `getType()`, `isSet()`, `isEmpty()`, `isDefault()`, `get()`, `set(Object)`,
+`setToDefault()`, `validate(T)`). The typed value simply comes from **`get()`**, and
+`getType()` tells you which class to expect — e.g. `String` for CMS_INPUT_TEXT,
+`TargetReference` for FS_REFERENCE, `DomElement` for CMS_INPUT_DOM. The `…EditorValue` classes
+in `de.espirit.firstspirit.access.editor` (`DomEditorValue`, `ReferenceEditorValue`, …) are the
+editor-side value types behind those; you meet them through the template/GOM layer, not via
+`FormField`. For the mapping from input component to datatype, defer to
+`firstspirit-templating-reference`.
