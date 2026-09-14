@@ -21,6 +21,12 @@
 #
 # Raw responses land in ./tmp/smoke/<run>/ (numbered) with requests.log — attach
 # the folder when you report a FAIL. Exit code 1 if anything failed.
+#
+# O1 keeps a normalised copy of the server's OpenAPI spec per host under
+# ./internal/openapi/<host>/ (override: FS_OPENAPI_SNAPSHOTS) and WARNs with a
+# diff (<run>.diff.md) when the surface changed since the last run — the early
+# warning that a skill section may be stale. dev/claim-coverage.md maps probes
+# and OpenAPI paths to skill sections.
 
 set -u
 
@@ -42,10 +48,11 @@ for tool in curl jq; do
 done
 
 # ---- result bookkeeping ------------------------------------------------------
-PASS=0; FAIL=0; SKIP=0
+PASS=0; FAIL=0; SKIP=0; WARN=0
 pass() { PASS=$((PASS+1)); printf '  PASS  %-5s %s\n' "$1" "$2"; }
 fail() { FAIL=$((FAIL+1)); printf '  FAIL  %-5s %s\n            -> %s\n' "$1" "$2" "$3"; }
 skip() { SKIP=$((SKIP+1)); printf '  SKIP  %-5s %s\n            -> %s\n' "$1" "$2" "$3"; }
+warn() { WARN=$((WARN+1)); printf '  WARN  %-5s %s\n            -> %s\n' "$1" "$2" "$3"; }   # server changed, skill may be stale; not a failure
 say()  { printf '\n%s\n' "$1"; }
 
 # ---- .env: the §4.8 check happens BEFORE sourcing ----------------------------
@@ -105,6 +112,50 @@ esac
 req GET "${FS_REST_BASE_URL%/rest/v1}/rest/v3/api-docs"
 if is2xx && [ -n "$(jqr '.openapi // .swagger')" ]; then pass R2b "OpenAPI spec served at /rest/v3/api-docs (openapi $(jqr '.openapi // .swagger'))"
 else skip R2b "OpenAPI spec at /rest/v3/api-docs" "HTTP $STATUS — spec endpoint may be disabled; not a skill error"; fi
+
+# O1 — OpenAPI snapshot diff. The API is beta and moves between module versions; every other
+# probe checks one claim, this one checks whether the SURFACE changed at all since the last run
+# against this host. Normalised spec (sorted keys) is kept per host under $SNAP_DIR; a new file
+# is written only when it differs from the newest one there. Changes are WARN, not FAIL: the
+# server moved, the skill may be stale — re-read the affected sections.
+SNAP_DIR="${FS_OPENAPI_SNAPSHOTS:-./internal/openapi}"
+if is2xx && [ -n "$(jqr '.openapi // .swagger')" ]; then
+  HOST="$(printf '%s' "$FS_REST_BASE_URL" | sed -E 's#^[a-z]+://##; s#[/:].*##')"
+  SNAP_HOST="$SNAP_DIR/$HOST"; mkdir -p "$SNAP_HOST"
+  NEW="$OUT/openapi.json"; jq -S . "$BODY" > "$NEW"
+  API_VERSION="$(jq -r '.info.version // ("openapi " + .openapi)' "$NEW")"   # the spec carries no module version (0.0.23-beta)
+  N_PATHS="$(jq '.paths | length' "$NEW")"
+  PREV="$(ls -1 "$SNAP_HOST"/*.json 2>/dev/null | sort | tail -1)"
+  if [ -z "$PREV" ]; then
+    cp "$NEW" "$SNAP_HOST/$RUN.json"
+    pass O1 "OpenAPI snapshot recorded for $HOST ($API_VERSION, $N_PATHS paths) → ${SNAP_HOST#./}/$RUN.json"
+  elif cmp -s "$PREV" "$NEW"; then
+    pass O1 "OpenAPI surface unchanged since $(basename "$PREV" .json) ($API_VERSION, $N_PATHS paths)"
+  else
+    # operations = "METHOD /path" lines; changed = same path, different definition
+    ops() { jq -r '.paths | to_entries[] | .key as $p | .value | keys[] | select(test("^(get|put|post|patch|delete|head|options)$")) | ascii_upcase + " " + $p' "$1" | sort; }
+    ops "$PREV" > "$OUT/openapi-prev.ops"; ops "$NEW" > "$OUT/openapi-new.ops"
+    ADDED="$(comm -13 "$OUT/openapi-prev.ops" "$OUT/openapi-new.ops")"
+    REMOVED="$(comm -23 "$OUT/openapi-prev.ops" "$OUT/openapi-new.ops")"
+    CHANGED="$(jq -rn --slurpfile a "$PREV" --slurpfile b "$NEW" \
+      '[ ($a[0].paths | keys[]) as $k | select($b[0].paths[$k] != null and $a[0].paths[$k] != $b[0].paths[$k]) | $k ] | .[]')"
+    SCHEMAS="$(jq -rn --slurpfile a "$PREV" --slurpfile b "$NEW" \
+      '(($a[0].components.schemas // {}) | keys) as $ka | (($b[0].components.schemas // {}) | keys) as $kb
+       | [ ($kb - $ka | .[] | "+" + .), ($ka - $kb | .[] | "-" + .),
+           ( ($ka - ($ka - $kb))[] | select($a[0].components.schemas[.] != $b[0].components.schemas[.]) | "~" + . ) ] | .[]')"
+    cp "$NEW" "$SNAP_HOST/$RUN.json"
+    { echo "# OpenAPI diff $HOST: $(basename "$PREV" .json) → $RUN ($API_VERSION)"
+      echo "## added operations";   printf '%s\n' "$ADDED"
+      echo "## removed operations"; printf '%s\n' "$REMOVED"
+      echo "## changed paths";      printf '%s\n' "$CHANGED"
+      echo "## schemas (+ new, - gone, ~ changed)"; printf '%s\n' "$SCHEMAS"
+    } > "$SNAP_HOST/$RUN.diff.md"
+    warn O1 "OpenAPI surface CHANGED since $(basename "$PREV" .json) ($API_VERSION): +$(printf '%s' "$ADDED" | grep -c .) ops, -$(printf '%s' "$REMOVED" | grep -c .) ops, ~$(printf '%s' "$CHANGED" | grep -c .) paths, $(printf '%s' "$SCHEMAS" | grep -c .) schema deltas" \
+      "details in ${SNAP_HOST#./}/$RUN.diff.md — check the skill sections for the listed paths (dev/claim-coverage.md maps paths → sections)"
+  fi
+else
+  skip O1 "OpenAPI snapshot diff" "no spec body to snapshot (see R2b)"
+fi
 
 # R3 — languages are listed, abbreviations UPPERCASE
 req GET "$P/languages/"
@@ -441,5 +492,5 @@ if [ "$DO_SCRIPTS" = 1 ]; then
 fi
 
 # ---- Summary -----------------------------------------------------------------
-say "Summary: $PASS passed, $FAIL failed, $SKIP skipped — responses in $OUT"
+say "Summary: $PASS passed, $FAIL failed, $SKIP skipped, $WARN warning(s) — responses in $OUT"
 [ "$FAIL" -eq 0 ]
