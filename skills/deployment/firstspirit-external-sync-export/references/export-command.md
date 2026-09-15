@@ -201,4 +201,4 @@ for a maintained Cloud project; use the direct command here for a one-off pull.
 ---
 *Sources: fs-cli 4.8.9 `help export`; a verified whole-project export
 (8,746 elements, ~498 MB) from a FirstSpirit 5.2.260815 Cloud instance
-(2026-08-03). See `SOURCES.md`.*
+(2026-08-03).*

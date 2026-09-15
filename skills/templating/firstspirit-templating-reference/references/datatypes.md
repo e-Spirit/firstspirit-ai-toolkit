@@ -166,7 +166,7 @@ resolution: `$CMS_RENDER(template:"internal_link_render", ref:lt_pageRef)$`, whi
 ### Guarding and preview hooks
 
 - **Null/empty guards differ by type:** `CMS_INPUT_LINK` → `!st_x.isNull()`; `FS_REFERENCE` / `FS_INDEX` / `FS_CATALOG` → `!st_x.isEmpty()`. `.isEmpty` and `.isEmpty()` (with parens) are both accepted.
-- **ContentCreator/TPP inline-edit hooks** appear alongside edited values: `previewId(element:st_x)` (emit as a `data-preview-id`) and `editorId(reloadPreview:true)`. These are the headless-preview counterparts to `fsbutton(...)`; detail belongs to `firstspirit-headless`.
+- **ContentCreator/TPP inline-edit hooks** appear alongside edited values: `previewId(element:st_x)` (emit as a `data-preview-id`) and `editorId(reloadPreview:true)`. These are the headless-preview counterparts to `fsbutton(...)`; detail belongs to the FirstSpirit headless delivery documentation (CaaS, TPP).
 
 ### FS_BUTTON — two use cases
 
@@ -197,8 +197,8 @@ $CMS_END_IF$
 
 ## Sources
 
-Datatypes verified against the GOM component definitions (`Returns`) and the source datatype pages under
-`_source/…/template-syntax/data-types/`. Access idioms reflect production usage (Manon) where the
+Datatypes verified against the GOM component definitions (`Returns`) and the official datatype pages of the
+template-syntax documentation. Access idioms reflect production usage where the
 source pages were thin or stale, and were cross-checked against three official e-Spirit reference
 projects (Connect for Commerce, SAP Commerce Cloud / ContentConnect, COMS Marketplace) — all
 headless/CaaS, deploying without errors. Where an idiom is corroborated or, conversely, not

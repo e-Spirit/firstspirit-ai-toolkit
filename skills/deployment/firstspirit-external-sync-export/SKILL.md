@@ -36,6 +36,10 @@ description: >-
   project to another server", even when the word "skill" is not used. For the
   Git-based development pipeline (Bamboo, fs-project.yaml, Template Transport) and
   Cloud constraints use the FirstSpirit Cloud documentation; this skill is the direct/local fs-cli run.
+metadata:
+  source-commit: "978980c"
+  published: "2026-09-15"
+  toolkit-version: "0.2.0"
 ---
 
 > **Beta.** Early public release. Feedback welcome; behaviour and structure may change.

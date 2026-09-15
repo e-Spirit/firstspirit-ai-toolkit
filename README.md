@@ -171,6 +171,15 @@ tools, so the toolkit works on a stock macOS or Linux box.
 **Contributors:** `jq` (`brew install jq` / `apt install jq`) for the version-bump
 and test scripts, and `shellcheck` (`brew install shellcheck`) for the lint step.
 
-## License
+## License and legal
 
-MIT © Guy Brown
+MIT © 2026 Crownpeak Technology GmbH — see [LICENSE](LICENSE). FirstSpirit is a product of
+Crownpeak Technology GmbH, a Rezolve Ai PLC company.
+
+[Imprint](https://www.firstspirit.com/policies/imprint/) ·
+[Legal](https://www.firstspirit.com/policies/legal/) ·
+[Privacy policy](https://www.firstspirit.com/policies/privacy-policy/)
+
+FirstSpirit is a trademark of Crownpeak Technology GmbH. Claude, GitHub Copilot, Codex, Gemini
+and Cursor are trademarks of their respective owners; this toolkit is not affiliated with or
+endorsed by them.

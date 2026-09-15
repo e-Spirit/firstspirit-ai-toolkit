@@ -114,5 +114,5 @@ only `.convert2`:
 
 `.convert2` is **HTML** escaping, not JSON escaping — only `.toJSON` is safe for a JSON sink. See
 `string-operations.md` → Output escaping. The deep CaaS/TPP mechanics of custom-JSON headless
-delivery (preview vs release, previewId/TPP ids) belong to `firstspirit-headless`; this section is
+delivery (preview vs release, previewId/TPP ids) belong to the FirstSpirit headless delivery documentation (CaaS, TPP); this section is
 just the template-language technique for assembling the output.

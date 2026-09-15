@@ -17,8 +17,12 @@ description: >-
   is also the content-interpretation companion to downstream analysis
   (that skill owns export structure; this one explains what is inside
   GomSource.xml / Ruleset.xml / ChannelSource files). Pair with
-  firstspirit-template-design for design judgement and naming conventions, and
+  the template-design guidelines for design judgement and naming conventions, and
   firstspirit-scripting for BeanShell / Access-API.
+metadata:
+  source-commit: "6ad95ec"
+  published: "2026-09-15"
+  toolkit-version: "0.2.0"
 ---
 
 > **Beta.** Early public release. Feedback welcome; behaviour and structure may change.
@@ -31,7 +35,7 @@ component, the datatype a component yields and how to read it, the applicable ru
 something is deprecated.
 
 This skill states **facts about the language**. Design judgement (what good looks like, naming
-conventions/prefixes) lives in `firstspirit-template-design`; scripting (BeanShell, Access API)
+conventions/prefixes) lives in the template-design guidelines (not part of this toolkit); scripting (BeanShell, Access API)
 in `firstspirit-scripting`; export structure in downstream analysis.
 
 ## How to use this skill
@@ -42,7 +46,7 @@ in `firstspirit-scripting`; export structure in downstream analysis.
   (JSON/CaaS) differs for some questions; so does SiteArchitect (the Java client, being phased
   out) vs. ContentCreator. Note which applies when it matters.
 - **Defer design decisions.** When the real question is "which design is right" or "what should
-  I name this", hand off to `firstspirit-template-design`.
+  I name this", hand off to the project's template-design guidelines (a separate skill, not part of this toolkit).
 
 ## Most-common lookups
 

@@ -12,10 +12,9 @@ iteration, store navigation), this file shows fuller, task-shaped scenarios.
 > "IDE-to-script workflow" below.
 >
 > Provenance/verification: distilled from DTA training sources; the same
-> expert-verification caveat as the rest of this skill applies (see
-> [REVIEW-TODO.md](../REVIEW-TODO.md)). The advanced SE/Core patterns
-> (script-as-library, JS bridge, AI Suite) live in
-> [analysis/se-core-scripts-findings.md](../analysis/se-core-scripts-findings.md).
+> expert-verification caveat as the rest of this skill applies. The advanced SE/Core
+> patterns (script-as-library, JS bridge, AI Suite) are catalogued in the skill's
+> development notes and are not yet distilled into this reference.
 
 ---
 
@@ -206,5 +205,5 @@ The `docu-design-master-project` scripts show further real patterns — a
 **script-as-library** include (`eval(getScriptByName(...).getChannelSource(...))`),
 a **BeanShell ⇄ ContentCreator JavaScript** bridge, the **`prm_` render-parameter**
 convention for FS_BUTTON / `$CMS_RENDER$` field-fill scripts, and **AI-Suite**
-integration. These are catalogued (with open questions for an expert) in
-[analysis/se-core-scripts-findings.md](../analysis/se-core-scripts-findings.md).
+integration. These are catalogued, with open questions for an expert, in the skill's
+development notes; they are not yet distilled into this reference.

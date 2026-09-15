@@ -9,3 +9,6 @@ coverage/
 docs/plans/
 docs/specs/
 docs/superpowers/
+# output of the skills' scripts when run inside this checkout (shared results/ + logs/ layout)
+results/
+logs/
