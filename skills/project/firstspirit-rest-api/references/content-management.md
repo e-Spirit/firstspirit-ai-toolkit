@@ -345,13 +345,22 @@ curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
 ```
 `location` is the folder path in the SiteStore (e.g., `/` for root, `/products/` for subfolder).
 
-### Set as Start Node
+### Page Reference Settings (filename, sitemap)
+`…/settings` is a `PageReferenceSettingsDTO` with exactly two fields — `filename` (output
+filename) and `showInSitemap`. GET it, change a field, PATCH the whole object back:
 ```bash
 curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
+  "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/page-references/homepage/settings" > ./tmp/settings.json
+jq '.showInSitemap = false' ./tmp/settings.json > ./tmp/settings.patch.json
+curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
   -X PATCH -H "Content-Type: application/json" \
-  -d '{"startNode":true}' \
+  --data-binary @./tmp/settings.patch.json \
   "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/page-references/homepage/settings"
 ```
+There is **no `startNode` field** here or anywhere else in the REST API (0.0.23-beta OpenAPI
+spec, verified 2026-09-14; smoke-test W11) — the start node of a site folder cannot be set over
+REST. Use SiteArchitect or the Access API (`SiteStoreFolder.setStartNode(StartNode)` — a
+`PageRef` is a `StartNode`).
 
 ### Document Groups
 ```bash
@@ -426,6 +435,17 @@ curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
   -o thumb.jpg \
   "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/media/hero_image/data/resolution/thumbnail"
 ```
+
+### List Resolutions
+Which renditions exist for a picture, with pixel size and whether the file is stored or
+computed on demand (`ORIGINAL` is always present). Append `/{LANG}` for language-dependent
+media.
+```bash
+curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
+  "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/media/hero_image/resolutions" \
+  | jq -r '.[] | "\(.uid)\t\(.width)x\(.height)\t\(.mimeType)\tstored=\(.stored)"'
+```
+*(Observed 2026-09-14, REST 0.0.23-beta; smoke-test W15b.)*
 
 ---
 

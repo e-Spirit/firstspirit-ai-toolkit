@@ -35,7 +35,7 @@ description: >-
   "layer mapping", "connect fs-cli to Cloud", "export a project to git", "move a
   project to another server", even when the word "skill" is not used. For the
   Git-based development pipeline (Bamboo, fs-project.yaml, Template Transport) and
-  Cloud constraints use firstspirit-cloud; this skill is the direct/local fs-cli run.
+  Cloud constraints use the FirstSpirit Cloud documentation; this skill is the direct/local fs-cli run.
 ---
 
 > **Beta.** Early public release. Feedback welcome; behaviour and structure may change.
@@ -61,7 +61,7 @@ There are two ways a project gets exported. Pick before you start.
   server-side from an `fs-project.yaml` and commits the result to Git — the
   `externalSync.exportElements` / `designForQa|Prod|Subprojects` model. This is
   the *maintained* export of a Cloud project, not an ad-hoc pull. It is owned by
-  **`firstspirit-cloud`** (Distributed development, Template Transport). If the
+  **the FirstSpirit Cloud documentation** (Distributed development, Template Transport). If the
   project already has such a repo, use it instead of a manual run; this skill
   does not restate that workflow.
 
@@ -101,6 +101,12 @@ FS_USER=<login> FS_PWD=<password> \
   scripts/fs-cli-export.sh \
   export projectproperty:ALL templatestore pagestore sitestore mediastore globalstore contentstore
 ```
+
+Each run keeps fs-cli's (password-redacted) output in
+`results/firstspirit-external-sync-export/<run>/fs-cli.log` and appends one summary line to
+`logs/firstspirit-external-sync-export.log` — under `FS_OUT_ROOT`, else the skills monorepo
+root, else the working directory; add `results/` and `logs/` to your project's `.gitignore` when
+you run it inside a repo. The export itself goes to `FS_SYNC_DIR`.
 
 Read `references/export-command.md` before trusting the identifier list — a
 "whole project" is a choice, and entities (database content) and schemas need

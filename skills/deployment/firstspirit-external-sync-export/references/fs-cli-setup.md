@@ -87,7 +87,10 @@ this version of the Java Runtime only recognizes class file versions up to 61.0
 Use a JDK/JRE whose major version is at least the jar's. A FirstSpirit client
 install already bundles a matching runtime — on macOS,
 `~/.firstspirit/FSLauncher/jre/<ver>/jre-mac-arm/<jdk>/Contents/Home` (or
-`jre-mac` on Intel). Point `JAVA_HOME` at it.
+`jre-mac` on Intel). Point `JAVA_HOME` at it. The bundled version moves with the
+server line: 5.2.2608xx launchers shipped Java 21, the 5.2.2610xx launcher ships
+**Java 25** (`jre/25.0.3/`) — newer is fine, it only adds the benign warnings listed in
+`troubleshooting.md`.
 
 ### 3b. The launcher's `--add-opens` flags get silently dropped on a JRE
 

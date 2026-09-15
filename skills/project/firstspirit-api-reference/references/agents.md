@@ -54,7 +54,7 @@ The agents you reach for most (all via `requireSpecialist(X.TYPE)`):
 | `QueryAgent` | Repository search via `fs.*` query syntax — see [querying.md](querying.md) |
 | `ProjectAgent` | The current `Project`, its languages, resolutions, config |
 | `LanguageAgent` | Project `Language`s, the master language, language lookup |
-| `OperationAgent` | GUI/editorial **operations** (open element, show dialogs, request messages) via `OperationType` |
+| `OperationAgent` | GUI/editorial **operations** via `getOperation(<Operation>.TYPE)` — `RequestOperation` (messages/questions), `OpenElementDataFormOperation` / `OpenElementMetaFormOperation` (open an element's form), `ShowFormDialogOperation`, `PreviewOperation`, `ClientScriptOperation` (all `de.espirit.firstspirit.ui.operations`); operations are not specialists — never `requireSpecialist(<Operation>.TYPE)` |
 | `WorkflowAgent` | Run / continue workflows on objects headlessly (no UI) |
 | `UserAgent` | Information about the current user |
 | `ResolutionAgent` | Access project image resolutions |

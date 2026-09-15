@@ -8,7 +8,9 @@
 #
 # Usage:
 #   scripts/smoke-test.sh                 read-only probes (safe on any project)
-#   scripts/smoke-test.sh --write         + creates a throwaway page, patches it, deletes it
+#   scripts/smoke-test.sh --write         + throwaways: page (patched, renamed), page reference,
+#                                           medium (uploaded), dataset (patched), section template
+#                                           (GOM written) — all deleted again. Use a test project.
 #   scripts/smoke-test.sh --scripts       + creates a throwaway script, exercises /execute, deletes it
 #   scripts/smoke-test.sh --all           everything
 #   scripts/smoke-test.sh --env path/.env use another env file (default ./.env)
@@ -18,9 +20,20 @@
 #   FS_TEST_PAGE            uid of an existing page with at least one section
 #   FS_TEST_PAGE_TEMPLATE   uid of a page template the throwaway page is created from
 #   FS_TEST_SECTION_TEMPLATE uid of a section template for the throwaway section
+#   FS_TEST_DATA_SOURCE     uid of a data source whose datasets have a CMS_INPUT_TEXT editor
 #
-# Raw responses land in ./tmp/smoke/<run>/ (numbered) with requests.log — attach
-# the folder when you report a FAIL. Exit code 1 if anything failed.
+# Raw responses land in results/firstspirit-rest-api/<run>/ (numbered) with requests.log —
+# attach the folder when you report a FAIL — and one summary line per run is appended to
+# logs/firstspirit-rest-api.log. Both live under the output root: $FS_OUT_ROOT if set, else
+# the nearest parent directory holding tracked-skills.tsv (the skills monorepo), else the
+# working directory. This is the portfolio's shared output layout; the directories are
+# git-ignored. Exit code 1 if anything failed.
+#
+# O1 keeps a normalised copy of the server's OpenAPI spec per host under
+# ./internal/openapi/<host>/ (override: FS_OPENAPI_SNAPSHOTS) and WARNs with a
+# diff (<run>.diff.md) when the surface changed since the last run — the early
+# warning that a skill section may be stale. scripts/claim-coverage.md maps probes
+# and OpenAPI paths to skill sections.
 
 set -u
 
@@ -31,7 +44,7 @@ while [ $# -gt 0 ]; do
     --scripts) DO_SCRIPTS=1 ;;
     --all)     DO_WRITE=1; DO_SCRIPTS=1 ;;
     --env)     shift; ENV_FILE="${1:?--env needs a path}" ;;
-    -h|--help) sed -n '2,24p' "$0"; exit 0 ;;
+    -h|--help) sed -n '2,33p' "$0"; exit 0 ;;
     *) echo "unknown option: $1" >&2; exit 2 ;;
   esac
   shift
@@ -42,10 +55,11 @@ for tool in curl jq; do
 done
 
 # ---- result bookkeeping ------------------------------------------------------
-PASS=0; FAIL=0; SKIP=0
+PASS=0; FAIL=0; SKIP=0; WARN=0
 pass() { PASS=$((PASS+1)); printf '  PASS  %-5s %s\n' "$1" "$2"; }
 fail() { FAIL=$((FAIL+1)); printf '  FAIL  %-5s %s\n            -> %s\n' "$1" "$2" "$3"; }
 skip() { SKIP=$((SKIP+1)); printf '  SKIP  %-5s %s\n            -> %s\n' "$1" "$2" "$3"; }
+warn() { WARN=$((WARN+1)); printf '  WARN  %-5s %s\n            -> %s\n' "$1" "$2" "$3"; }   # server changed, skill may be stale; not a failure
 say()  { printf '\n%s\n' "$1"; }
 
 # ---- .env: the §4.8 check happens BEFORE sourcing ----------------------------
@@ -68,8 +82,18 @@ for v in FS_USERNAME FS_PASSWORD FS_REST_BASE_URL FS_PROJECT_ID; do
 done
 FS_REST_BASE_URL="${FS_REST_BASE_URL%/}"
 
-RUN="$(date +%Y%m%d-%H%M%S)"
-OUT="./tmp/smoke/$RUN"; mkdir -p "$OUT"
+# Output root of the shared results/ + logs/ layout (see header).
+out_root() {
+  if [ -n "${FS_OUT_ROOT:-}" ]; then printf '%s' "$FS_OUT_ROOT"; return; fi
+  local d="$PWD"
+  while [ "$d" != / ]; do [ -f "$d/tracked-skills.tsv" ] && { printf '%s' "$d"; return; }; d="$(dirname "$d")"; done
+  printf '%s' "$PWD"
+}
+ROOT_OUT="$(out_root)"
+RUN="$(date +%Y-%m-%d-%H%M%S)"
+OUT="$ROOT_OUT/results/firstspirit-rest-api/$RUN"; [ -e "$OUT" ] && OUT="$OUT-$$"; mkdir -p "$OUT"
+RUNLOG="$ROOT_OUT/logs/firstspirit-rest-api.log"; mkdir -p "$ROOT_OUT/logs"
+STARTED="$(date +%s)"
 LOG="$OUT/requests.log"; : > "$LOG"
 N=0
 P="$FS_REST_BASE_URL/projects/$FS_PROJECT_ID"
@@ -83,6 +107,13 @@ req() {
   [ -n "$data" ] && args+=(--data-binary "@$data")
   STATUS="$(curl "${args[@]}" "$u" 2>>"$LOG" || echo 000)"
   printf '%03d  %-6s %s  -> %s\n' "$N" "$m" "${u#"$FS_REST_BASE_URL"}" "$STATUS" >> "$LOG"
+}
+# reqform METHOD URL FILE  -> multipart upload, part named "file" (media data)
+reqform() {
+  local m="$1" u="$2" f="$3"
+  N=$((N+1)); BODY="$OUT/$(printf '%03d' "$N").body"
+  STATUS="$(curl -s -u "$FS_USERNAME:$FS_PASSWORD" -X "$m" -F "file=@$f" -o "$BODY" -w '%{http_code}' "$u" 2>>"$LOG" || echo 000)"
+  printf '%03d  %-6s %s  -> %s  (multipart %s)\n' "$N" "$m" "${u#"$FS_REST_BASE_URL"}" "$STATUS" "$(basename "$f")" >> "$LOG"
 }
 jqr() { jq -r "$1" "$BODY" 2>/dev/null; }          # jq on the last body, empty on error
 is2xx() { case "$STATUS" in 2??) return 0 ;; *) return 1 ;; esac; }
@@ -105,6 +136,50 @@ esac
 req GET "${FS_REST_BASE_URL%/rest/v1}/rest/v3/api-docs"
 if is2xx && [ -n "$(jqr '.openapi // .swagger')" ]; then pass R2b "OpenAPI spec served at /rest/v3/api-docs (openapi $(jqr '.openapi // .swagger'))"
 else skip R2b "OpenAPI spec at /rest/v3/api-docs" "HTTP $STATUS — spec endpoint may be disabled; not a skill error"; fi
+
+# O1 — OpenAPI snapshot diff. The API is beta and moves between module versions; every other
+# probe checks one claim, this one checks whether the SURFACE changed at all since the last run
+# against this host. Normalised spec (sorted keys) is kept per host under $SNAP_DIR; a new file
+# is written only when it differs from the newest one there. Changes are WARN, not FAIL: the
+# server moved, the skill may be stale — re-read the affected sections.
+SNAP_DIR="${FS_OPENAPI_SNAPSHOTS:-./internal/openapi}"
+if is2xx && [ -n "$(jqr '.openapi // .swagger')" ]; then
+  HOST="$(printf '%s' "$FS_REST_BASE_URL" | sed -E 's#^[a-z]+://##; s#[/:].*##')"
+  SNAP_HOST="$SNAP_DIR/$HOST"; mkdir -p "$SNAP_HOST"
+  NEW="$OUT/openapi.json"; jq -S . "$BODY" > "$NEW"
+  API_VERSION="$(jq -r '.info.version // ("openapi " + .openapi)' "$NEW")"   # the spec carries no module version (0.0.23-beta)
+  N_PATHS="$(jq '.paths | length' "$NEW")"
+  PREV="$(ls -1 "$SNAP_HOST"/*.json 2>/dev/null | sort | tail -1)"
+  if [ -z "$PREV" ]; then
+    cp "$NEW" "$SNAP_HOST/$RUN.json"
+    pass O1 "OpenAPI snapshot recorded for $HOST ($API_VERSION, $N_PATHS paths) → ${SNAP_HOST#./}/$RUN.json"
+  elif cmp -s "$PREV" "$NEW"; then
+    pass O1 "OpenAPI surface unchanged since $(basename "$PREV" .json) ($API_VERSION, $N_PATHS paths)"
+  else
+    # operations = "METHOD /path" lines; changed = same path, different definition
+    ops() { jq -r '.paths | to_entries[] | .key as $p | .value | keys[] | select(test("^(get|put|post|patch|delete|head|options)$")) | ascii_upcase + " " + $p' "$1" | sort; }
+    ops "$PREV" > "$OUT/openapi-prev.ops"; ops "$NEW" > "$OUT/openapi-new.ops"
+    ADDED="$(comm -13 "$OUT/openapi-prev.ops" "$OUT/openapi-new.ops")"
+    REMOVED="$(comm -23 "$OUT/openapi-prev.ops" "$OUT/openapi-new.ops")"
+    CHANGED="$(jq -rn --slurpfile a "$PREV" --slurpfile b "$NEW" \
+      '[ ($a[0].paths | keys[]) as $k | select($b[0].paths[$k] != null and $a[0].paths[$k] != $b[0].paths[$k]) | $k ] | .[]')"
+    SCHEMAS="$(jq -rn --slurpfile a "$PREV" --slurpfile b "$NEW" \
+      '(($a[0].components.schemas // {}) | keys) as $ka | (($b[0].components.schemas // {}) | keys) as $kb
+       | [ ($kb - $ka | .[] | "+" + .), ($ka - $kb | .[] | "-" + .),
+           ( ($ka - ($ka - $kb))[] | select($a[0].components.schemas[.] != $b[0].components.schemas[.]) | "~" + . ) ] | .[]')"
+    cp "$NEW" "$SNAP_HOST/$RUN.json"
+    { echo "# OpenAPI diff $HOST: $(basename "$PREV" .json) → $RUN ($API_VERSION)"
+      echo "## added operations";   printf '%s\n' "$ADDED"
+      echo "## removed operations"; printf '%s\n' "$REMOVED"
+      echo "## changed paths";      printf '%s\n' "$CHANGED"
+      echo "## schemas (+ new, - gone, ~ changed)"; printf '%s\n' "$SCHEMAS"
+    } > "$SNAP_HOST/$RUN.diff.md"
+    warn O1 "OpenAPI surface CHANGED since $(basename "$PREV" .json) ($API_VERSION): +$(printf '%s' "$ADDED" | grep -c .) ops, -$(printf '%s' "$REMOVED" | grep -c .) ops, ~$(printf '%s' "$CHANGED" | grep -c .) paths, $(printf '%s' "$SCHEMAS" | grep -c .) schema deltas" \
+      "details in ${SNAP_HOST#./}/$RUN.diff.md — check the skill sections for the listed paths (scripts/claim-coverage.md maps paths → sections)"
+  fi
+else
+  skip O1 "OpenAPI snapshot diff" "no spec body to snapshot (see R2b)"
+fi
 
 # R3 — languages are listed, abbreviations UPPERCASE
 req GET "$P/languages/"
@@ -349,7 +424,169 @@ if [ "$DO_WRITE" = 1 ]; then
     if is2xx; then pass W7 "POST /actions {release, checkOnly:true} → $STATUS"
     else fail W7 "release dry-run via /actions" "HTTP $STATUS: $(head -c 160 "$BODY")"; fi
   fi
-  cleanup_page; trap - EXIT
+
+  # ---- Other throwaways (scripts/claim-coverage.md tier 2): page reference, medium, dataset,
+  # section template. Each is created, its documented behaviour probed, and deleted in
+  # cleanup_extras — which runs BEFORE cleanup_page because the page reference points at the page.
+  CREATED_PREF=""; CREATED_MEDIUM=""; CREATED_DS=""; CREATED_GID=""; CREATED_STPL=""
+  cleanup_extras() {
+    if [ -n "$CREATED_PREF" ]; then
+      req DELETE "$P/page-references/$CREATED_PREF"; req GET "$P/page-references/$CREATED_PREF"
+      if [ "$STATUS" = 404 ]; then pass W12 "DELETE /page-references/$CREATED_PREF, then GET → 404"
+      else fail W12 "throwaway page reference deleted" "GET after DELETE → $STATUS — remove page reference '$CREATED_PREF' by hand"; fi
+      CREATED_PREF=""
+    fi
+    if [ -n "$CREATED_MEDIUM" ]; then
+      req DELETE "$P/media/$CREATED_MEDIUM"; req GET "$P/media/$CREATED_MEDIUM"
+      if [ "$STATUS" = 404 ]; then pass W17 "DELETE /media/$CREATED_MEDIUM (allowed since 0.0.23-beta), then GET → 404"
+      else fail W17 "throwaway medium deleted" "GET after DELETE → $STATUS — remove medium '$CREATED_MEDIUM' by hand"; fi
+      CREATED_MEDIUM=""
+    fi
+    if [ -n "$CREATED_GID" ]; then
+      req DELETE "$P/data-sources/$CREATED_DS/$CREATED_GID"; DS_DEL="$STATUS"; req GET "$P/data-sources/$CREATED_DS/$CREATED_GID"
+      if [ "$STATUS" = 404 ]; then pass W21 "DELETE /data-sources/$CREATED_DS/{gid} → $DS_DEL, then GET → 404"
+      else fail W21 "throwaway dataset deleted" "DELETE → $DS_DEL, GET after → $STATUS — remove dataset $CREATED_GID in '$CREATED_DS' by hand"; fi
+      CREATED_GID=""
+    fi
+    if [ -n "$CREATED_STPL" ]; then
+      req DELETE "$P/templates/section-templates/$CREATED_STPL"; ST_DEL="$STATUS"; req GET "$P/templates/section-templates/$CREATED_STPL"
+      if [ "$STATUS" = 404 ]; then pass W25 "DELETE /templates/section-templates/$CREATED_STPL → $ST_DEL, then GET → 404"
+      else fail W25 "throwaway section template deleted" "DELETE → $ST_DEL, GET after → $STATUS — remove section template '$CREATED_STPL' by hand"; fi
+      CREATED_STPL=""
+    fi
+  }
+  cleanup_all() { cleanup_extras; cleanup_page; }
+  trap cleanup_all EXIT
+
+  # W10–W11 — page reference: {uid,pageId,location} (content-management.md → Create PageReference);
+  # /settings is readable (Set as Start Node) — read only, a throwaway must not become start node.
+  if [ -n "$CREATED_PAGE" ] && [ -n "${NEWID:-}" ]; then
+    printf '{"uid":"%s","pageId":%s,"location":"/"}' "$TPAGE" "$NEWID" > "$OUT/create-pref.json"
+    req POST "$P/page-references/" application/json "$OUT/create-pref.json"; PC="$STATUS"
+    if [ "${PC:0:1}" = 2 ]; then
+      CREATED_PREF="$TPAGE"
+      req GET "$P/page-references/$CREATED_PREF"
+      if [ "$(jqr .pageUid)" = "$CREATED_PAGE" ] && [ "$(jqr .pageId)" = "$NEWID" ]; then
+        pass W10 "POST /page-references/ {uid,pageId,location:\"/\"} → $PC; GET shows pageUid=$CREATED_PAGE, location $(jqr .location)"
+      else fail W10 "page reference points at the page" "created ($PC) but GET shows pageUid=$(jqr .pageUid) pageId=$(jqr .pageId)"; fi
+      # W11 — /settings is {filename, showInSitemap}; there is NO startNode (the skill used to say so).
+      req GET "$P/page-references/$CREATED_PREF/settings"
+      if is2xx && [ "$(jqr 'has("showInSitemap")')" = true ] && [ "$(jqr 'has("startNode")')" = false ]; then
+        pass W11 "GET /page-references/{uid}/settings → $STATUS, keys $(keys) — no startNode, as documented"
+      elif is2xx; then warn W11 "page-reference /settings DTO changed" "keys $(keys) — the skill documents {filename, showInSitemap} and no startNode"
+      else fail W11 "page-reference /settings readable" "HTTP $STATUS"; fi
+    else fail W10 "POST /page-references/ creates a page reference" "HTTP $PC: $(head -c 160 "$BODY")"; fi
+  else
+    skip W10 "page reference" "no throwaway page (see W1)"
+  fi
+
+  # W13–W16 — medium: two-call create (POST element, PUT multipart data), bytes round-trip,
+  # resolution download, type immutable (content-management.md → Media).
+  TMEDIUM="smoketest_$TS"
+  printf 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==' \
+    | base64 --decode > "$OUT/smoke.png" 2>/dev/null   # 1×1 RGBA PNG, 70 bytes
+  printf '{"uid":"%s","filename":"%s","type":"PICTURE"}' "$TMEDIUM" "$TMEDIUM" > "$OUT/create-medium.json"
+  req POST "$P/media/" application/json "$OUT/create-medium.json"; MC="$STATUS"
+  if [ "${MC:0:1}" = 2 ]; then
+    CREATED_MEDIUM="$TMEDIUM"
+    pass W13 "POST /media/ {uid,filename,type:PICTURE} mints an empty element → $MC (id $(jqr '.id // "?"'))"
+    reqform PUT "$P/media/$CREATED_MEDIUM/data" "$OUT/smoke.png"; MU="$STATUS"
+    req GET "$P/media/$CREATED_MEDIUM/data"
+    if [ "${MU:0:1}" = 2 ] && cmp -s "$BODY" "$OUT/smoke.png"; then
+      pass W14 "PUT …/data (multipart part 'file') → $MU; GET …/data returns the same $(wc -c < "$BODY" | tr -d ' ') bytes"
+    else fail W14 "PUT multipart upload then GET …/data round-trips the bytes" "PUT → $MU, GET → $STATUS, $(wc -c < "$BODY" | tr -d ' ') bytes back"; fi
+    req GET "$P/media/$CREATED_MEDIUM/data/resolution/ORIGINAL"
+    if is2xx && cmp -s "$BODY" "$OUT/smoke.png"; then pass W15 "GET …/data/resolution/ORIGINAL → $STATUS, original bytes"
+    else fail W15 "GET …/data/resolution/{res} downloads a rendition" "HTTP $STATUS, $(wc -c < "$BODY" | tr -d ' ') bytes"; fi
+    req GET "$P/media/$CREATED_MEDIUM/resolutions"
+    if is2xx && [ "$(jqr '[.[]?.uid] | index("ORIGINAL") != null')" = true ]; then
+      pass W15b "GET …/resolutions lists the renditions ($(jqr length) incl. ORIGINAL) — not in the skill yet, worth adding"
+    else skip W15b "GET …/resolutions" "HTTP $STATUS — endpoint is in the OpenAPI spec but not documented in the skill"; fi
+    printf '{"type":"FILE"}' > "$OUT/medium-type.json"
+    req PATCH "$P/media/$CREATED_MEDIUM" application/json "$OUT/medium-type.json"
+    case "$STATUS" in
+      2??) fail W16 "medium type is immutable via the element endpoint" "PATCH …/media/{uid} {type} was accepted ($STATUS) — the skill says no PATCH/PUT in Allow" ;;
+      *)   pass W16 "PATCH …/media/{uid} rejected → $STATUS (type immutable, as documented)" ;;
+    esac
+  else fail W13 "POST /media/ creates a medium" "HTTP $MC: $(head -c 160 "$BODY")"; fi
+
+  # W18–W20 — dataset: POST with no body mints a dataset (gid in response), fields edited via the
+  # /form/{editor} pattern, /entity read-only (content-management.md → Data Sources).
+  # Data source: FS_TEST_DATA_SOURCE, else the first one whose datasets carry a CMS_INPUT_TEXT.
+  DS="${FS_TEST_DATA_SOURCE:-}"; DS_EDITOR=""
+  if [ -z "$DS" ]; then
+    req GET "$P/data-sources/"
+    for cand in $(jqr '.[]?.uid' | head -12); do
+      req GET "$P/data-sources/$cand/"
+      G0="$(jqr '.[0].gid // empty')"; [ -n "$G0" ] || continue
+      req GET "$P/data-sources/$cand/$G0/form"
+      E="$(jqr '[.editors[]? | select(.type=="CMS_INPUT_TEXT")][0].name // empty')"
+      if [ -n "$E" ]; then DS="$cand"; DS_EDITOR="$E"; break; fi
+    done
+  fi
+  if [ -z "$DS" ]; then
+    skip W18 "dataset probes" "no data source with a CMS_INPUT_TEXT editor found — set FS_TEST_DATA_SOURCE"
+  else
+    req POST "$P/data-sources/$DS/"; DC="$STATUS"
+    GID="$(jqr '.gid // empty')"
+    if [ "${DC:0:1}" = 2 ] && [ -n "$GID" ]; then
+      CREATED_DS="$DS"; CREATED_GID="$GID"
+      pass W18 "POST /data-sources/$DS/ (no body) → $DC, gid $GID"
+      DBASE="$P/data-sources/$DS/$GID/form"
+      req GET "$DBASE"
+      [ -n "$DS_EDITOR" ] || DS_EDITOR="$(jqr '[.editors[]? | select(.type=="CMS_INPUT_TEXT")][0].name // empty')"
+      if [ -z "$DS_EDITOR" ]; then
+        skip W19 "dataset GET→jq→PATCH" "no CMS_INPUT_TEXT on the new dataset's form"
+      else
+        req GET "$DBASE/$DS_EDITOR"
+        DSUF=""; [ "$(jqr '.configuration.usesLanguages')" = true ] && DSUF="/$MASTER"
+        [ -n "$DSUF" ] && req GET "$DBASE/$DS_EDITOR$DSUF"
+        cp "$BODY" "$OUT/ds-editor.json"
+        DVALUE="smoke $TS dataset — Ma'am's Straße"
+        jq --arg v "$DVALUE" '.content = $v' "$OUT/ds-editor.json" > "$OUT/ds-editor.patched.json"
+        req PATCH "$DBASE/$DS_EDITOR$DSUF" application/json "$OUT/ds-editor.patched.json"; DPS="$STATUS"
+        req GET "$DBASE/$DS_EDITOR$DSUF"
+        if [ "${DPS:0:1}" = 2 ] && [ "$(jqr .content)" = "$DVALUE" ]; then
+          pass W19 "dataset GET→jq→PATCH on …/$DS/{gid}/form/$DS_EDITOR$DSUF round-trips"
+        else fail W19 "dataset fields follow the form-editor pattern" "PATCH → $DPS, read-back: $(jqr .content | head -c 80)"; fi
+      fi
+      req PATCH "$P/data-sources/$DS/$GID/entity" application/json "$OUT/ds-editor.patched.json"
+      case "$STATUS" in
+        2??) fail W20 "/entity is read-only" "PATCH …/entity accepted ($STATUS) — the skill says do not PATCH /entity because it is read-only" ;;
+        *)   pass W20 "PATCH …/{gid}/entity rejected → $STATUS (read-only, as documented)" ;;
+      esac
+    else fail W18 "POST /data-sources/{ds}/ creates a dataset and returns its gid" "HTTP $DC, body $(head -c 160 "$BODY")"; fi
+  fi
+
+  # W22–W24 — section template: create {uid,name,description}, PUT GOM as raw XML answers an
+  # EMPTY 200, gom/form parses it (content-templates.md → Create Templates, GOM).
+  TSTPL="smoketest_$TS"
+  printf '{"uid":"%s","name":"Smoke %s","description":"smoke-test throwaway"}' "$TSTPL" "$TS" > "$OUT/create-stpl.json"
+  req POST "$P/templates/section-templates/" application/json "$OUT/create-stpl.json"; SC="$STATUS"
+  if [ "${SC:0:1}" = 2 ]; then
+    CREATED_STPL="$TSTPL"
+    req GET "$P/templates/section-templates/$CREATED_STPL"
+    if [ "$(jqr .uid)" = "$CREATED_STPL" ]; then pass W22 "POST /templates/section-templates/ {uid,name,description} → $SC; GET shows name \"$(jqr .name)\""
+    else fail W22 "created section template is readable by uid" "POST $SC, GET → $STATUS ($(keys))"; fi
+    cat > "$OUT/gom.xml" <<'XML'
+<CMS_MODULE>
+  <CMS_INPUT_TEXT name="st_smoke" hFill="yes" singleLine="yes" useLanguages="yes">
+    <LANGINFOS><LANGINFO lang="*" label="Smoke"/></LANGINFOS>
+  </CMS_INPUT_TEXT>
+</CMS_MODULE>
+XML
+    req PUT "$P/templates/section-templates/$CREATED_STPL/gom" application/xml "$OUT/gom.xml"; GP="$STATUS"; GLEN="$(wc -c < "$BODY" | tr -d ' ')"
+    req GET "$P/templates/section-templates/$CREATED_STPL/gom/form"
+    if [ "${GP:0:1}" = 2 ] && [ "$(jqr '.editors[0].name')" = st_smoke ]; then
+      pass W23 "PUT …/gom (application/xml) → $GP with $GLEN-byte body; gom/form parses it (editor st_smoke, $(jqr '.editors[0].type'))"
+      [ "$GLEN" = 0 ] || warn W23 "PUT …/gom now returns a body ($GLEN bytes)" "the skill documents an EMPTY 200 — update the GOM section"
+    else fail W23 "PUT …/gom raw XML then gom/form" "PUT → $GP ($GLEN bytes), gom/form → $STATUS: $(head -c 120 "$BODY")"; fi
+    req GET "$P/templates/section-templates/$CREATED_STPL/gom"
+    if is2xx && grep -q 'st_smoke' "$BODY"; then pass W24 "GET …/gom returns the stored XML ($(head -c 40 "$BODY" | tr -d '\n')…)"
+    else fail W24 "GET …/gom reads the GOM back" "HTTP $STATUS: $(head -c 120 "$BODY")"; fi
+  else fail W22 "POST /templates/section-templates/ creates a template" "HTTP $SC: $(head -c 160 "$BODY")"; fi
+
+  cleanup_all; trap - EXIT
 fi
 
 # ---- Script probes (report §4.6 / §5.5) --------------------------------------
@@ -441,5 +678,11 @@ if [ "$DO_SCRIPTS" = 1 ]; then
 fi
 
 # ---- Summary -----------------------------------------------------------------
-say "Summary: $PASS passed, $FAIL failed, $SKIP skipped — responses in $OUT"
+say "Summary: $PASS passed, $FAIL failed, $SKIP skipped, $WARN warning(s) — responses in ${OUT#"$ROOT_OUT"/}"
+MODE=read; [ "$DO_WRITE" = 1 ] && MODE=write; [ "$DO_SCRIPTS" = 1 ] && MODE="$MODE+scripts"
+HOST="${FS_REST_BASE_URL#*://}"; HOST="${HOST%%/*}"
+RESULT=ok; [ "$FAIL" -eq 0 ] || RESULT=fail
+printf '%s smoke mode=%s host=%s project=%s pass=%s fail=%s skip=%s warn=%s result=%s took=%ss dir=%s\n' \
+  "$(date +%Y-%m-%dT%H:%M:%S%z)" "$MODE" "$HOST" "$FS_PROJECT_ID" "$PASS" "$FAIL" "$SKIP" "$WARN" "$RESULT" \
+  "$(( $(date +%s) - STARTED ))" "${OUT#"$ROOT_OUT"/}" >> "$RUNLOG" 2>/dev/null || true
 [ "$FAIL" -eq 0 ]

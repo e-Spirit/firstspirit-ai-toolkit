@@ -111,7 +111,7 @@ loop (git-side steps around the two fs-cli commands) is documented upstream:
 - Conflict resolution — https://docs.e-spirit.com/odfs/edocs/sync/how/resolving-confl/index.html
 
 For the maintained, declarative pipeline (`fs-project.yaml`, Bamboo, Template
-Transport) that automates this on FirstSpirit Cloud, use `firstspirit-cloud`;
+Transport) that automates this on FirstSpirit Cloud, use the FirstSpirit Cloud documentation;
 this skill is the direct/local fs-cli run for self-hosted or local servers.
 
 ## Not covered here: `project import`
