@@ -52,7 +52,7 @@ Put a FirstSpirit Access API jar into `fs-cli/lib/`:
   `~/.firstspirit/FSLauncher/jar/<build>_isolated/fs-isolated-client-*.jar`.
   Copied into `lib/`, fs-cli started and connected and exported successfully.
   *(Whether `fs-isolated-client` is fully equivalent to `fs-isolated-runtime`
-  for every fs-cli command is an open verification item — see `REVIEW-TODO.md`.
+  for every fs-cli command is an open verification item.
   For `export` it works.)*
 
 **Match the version.** The jar must match the server's build. Confirm the
@@ -145,5 +145,4 @@ to `connection-and-auth.md`.
 
 ---
 *Sources: the official e-Spirit/FSDevTools GitHub releases; a verified fs-cli
-4.8.9 setup against a FirstSpirit 5.2.260815 Cloud instance (2026-08-03). See
-`SOURCES.md`.*
+4.8.9 setup against a FirstSpirit 5.2.260815 Cloud instance (2026-08-03).*

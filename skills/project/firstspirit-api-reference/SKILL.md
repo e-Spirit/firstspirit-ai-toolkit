@@ -15,9 +15,9 @@ description: >-
   and the FirstSpirit module development documentation (ODFS) (how to package it); the FirstSpirit ODFS documentation has
   the full 146-package API for anything not distilled here.
 metadata:
-  source-commit: 468d904
-  published: 2026-09-15
-  toolkit-version: 0.2.0
+  source-commit: "468d904"
+  published: "2026-09-15"
+  toolkit-version: "0.2.0"
 ---
 
 > **Beta.** Early public release. Feedback welcome; behaviour and structure may change.

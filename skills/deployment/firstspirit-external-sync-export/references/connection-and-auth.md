@@ -113,4 +113,4 @@ Only then run the export (`export-command.md`).
 ---
 *Sources: fs-cli 4.8.9 `help`; a verified HTTPS/Keycloak connection to a
 FirstSpirit 5.2.260815 Cloud instance (2026-08-03). Cloud identity specifics are
-owned by the FirstSpirit Cloud documentation (identity and access). See `SOURCES.md`.*
+owned by the FirstSpirit Cloud documentation (identity and access).*

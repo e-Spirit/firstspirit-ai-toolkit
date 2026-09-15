@@ -124,4 +124,4 @@ directory. That is a different feature; this skill covers external-sync `import`
 *Sources: fs-cli `import` command (`ImportCommand.java`, FSDevTools, e-Spirit/FSDevTools
 on GitHub — options and examples quoted verbatim); FirstSpirit External
 Synchronization "Importing" how-to (docs.e-spirit.com). Import behaviour not yet
-reproduced against a live server in this skill — see `REVIEW-TODO.md`.*
+reproduced against a live server in this skill.*

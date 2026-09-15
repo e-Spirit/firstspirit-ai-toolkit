@@ -151,4 +151,4 @@ identifiers (a "whole project" is an explicit list). → `export-command.md`.
 ---
 *Every message here was reproduced on fs-cli 4.8.9 against a FirstSpirit
 5.2.260815 Cloud instance (2026-08-03); the client-build-number and Java 25
-entries against a second, 5.2.261011 Cloud instance (2026-09-14). See `SOURCES.md`.*
+entries against a second, 5.2.261011 Cloud instance (2026-09-14).*

@@ -9,9 +9,9 @@ description: >
   media upload, content search. Also use when the user mentions "FirstSpirit REST API" or asks how to read/write
   content via the API.
 metadata:
-  source-commit: 2556131
-  published: 2026-09-15
-  toolkit-version: 0.2.0
+  source-commit: "2556131"
+  published: "2026-09-15"
+  toolkit-version: "0.2.0"
 ---
 
 > **Beta.** Early public release. Feedback welcome; behaviour and structure may change.
