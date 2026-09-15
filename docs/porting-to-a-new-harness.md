@@ -52,7 +52,7 @@ Match the harness's own format. Current examples in this repo:
 
 | Harness | Manifest | Bootstrap mechanism |
 |---|---|---|
-| Claude Code | `.claude-plugin/plugin.json` (skills auto-discovered; no `skills` field) | hook — `hooks/hooks.json` |
+| Claude Code | `.claude-plugin/plugin.json` (`skills` array listing `./skills` and each category path) | hook — auto-discovered `hooks/hooks.json` |
 | GitHub Copilot | `.github/hooks/firstspirit-ai-toolkit.json` + `.claude-plugin/plugin.json` | hook — `SessionStart` via `.github/hooks/`; conditional loading |
 | Codex | `.codex-plugin/plugin.json` (`skills`, `sessionStart.skill`, `defaultPrompt`) — plus `.agents/plugins/marketplace.json`, the Codex marketplace registry read by the ChatGPT desktop app | manifest `sessionStart.skill` |
 | Cursor | `.cursor-plugin/plugin.json` (`skills`, `hooks` pointer) | hook — `hooks/hooks-cursor.json` |
@@ -111,10 +111,16 @@ Pick the mechanism the harness supports:
   from an installed extension automatically — the path is a convention, not
   something `gemini-extension.json` declares, and it is *the same path Claude
   Code auto-discovers*. One file therefore serves both, and its command must
-  resolve for both: `${CLAUDE_PLUGIN_ROOT:-${extensionPath}}`. Gemini
-  substitutes `${extensionPath}` itself (supported in `gemini-extension.json`
-  and `hooks/hooks.json` only) before any shell runs and exports no variable of
-  its own; Claude exports `CLAUDE_PLUGIN_ROOT` and never evaluates the default.
+  resolve for both. Concatenate the two tokens — `${CLAUDE_PLUGIN_ROOT}${extensionPath}`
+  — so that whichever harness is running, the other's token expands to nothing.
+  Do **not** nest them in a shell default (`${CLAUDE_PLUGIN_ROOT:-${extensionPath}}`):
+  Gemini substitutes the bare `${extensionPath}` token only, not one nested inside
+  another expansion, so the default would reach the shell unresolved.
+  `scripts/test-manifests.sh` fails the build on that form. Gemini substitutes
+  `${extensionPath}` itself (supported in `gemini-extension.json` and
+  `hooks/hooks.json` only) before any shell runs and exports no variable of its
+  own; Claude exports `CLAUDE_PLUGIN_ROOT` and leaves `${extensionPath}` to
+  expand as an unset shell variable.
   Gemini's SessionStart output contract is
   `{"hookSpecificOutput": {"additionalContext": "…"}}` — a subset of Claude's
   envelope, so the shared `claude` shape satisfies it and needs no branch.
@@ -172,8 +178,10 @@ the bootstrap skill.
 **FirstSpirit project — the toolkit engages.** For hook-based harnesses, run in a
 directory the detector recognises (an empty `.firstspirit` marker, or
 `FIRSTSPIRIT_PROJECT=1`), or the hook emits only the quiet line. Open a fresh
-session and send: `"Let's set up a new FirstSpirit project."` The `setup-project`
-skill must activate before any code or instructions are generated.
+session and send: `"What's the exact syntax for $CMS_FOR$ in a FirstSpirit
+template?"` The `firstspirit-templating-reference` skill must activate before any
+syntax is generated. Any question that maps to a shipped skill works — see the
+index in `skills/using-firstspirit-toolkit/SKILL.md` for the current set.
 
 **Non-FirstSpirit project — the toolkit stays out of the way.** Run a fresh session
 in a plain directory and confirm:
