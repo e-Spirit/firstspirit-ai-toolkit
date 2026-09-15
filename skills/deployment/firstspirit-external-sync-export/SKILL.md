@@ -105,7 +105,8 @@ FS_USER=<login> FS_PWD=<password> \
 Each run keeps fs-cli's (password-redacted) output in
 `results/firstspirit-external-sync-export/<run>/fs-cli.log` and appends one summary line to
 `logs/firstspirit-external-sync-export.log` — under `FS_OUT_ROOT`, else the skills monorepo
-root, else the working directory. The export itself goes to `FS_SYNC_DIR`.
+root, else the working directory; add `results/` and `logs/` to your project's `.gitignore` when
+you run it inside a repo. The export itself goes to `FS_SYNC_DIR`.
 
 Read `references/export-command.md` before trusting the identifier list — a
 "whole project" is a choice, and entities (database content) and schemas need
