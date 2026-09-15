@@ -22,8 +22,12 @@
 #   FS_TEST_SECTION_TEMPLATE uid of a section template for the throwaway section
 #   FS_TEST_DATA_SOURCE     uid of a data source whose datasets have a CMS_INPUT_TEXT editor
 #
-# Raw responses land in ./tmp/smoke/<run>/ (numbered) with requests.log — attach
-# the folder when you report a FAIL. Exit code 1 if anything failed.
+# Raw responses land in results/firstspirit-rest-api/<run>/ (numbered) with requests.log —
+# attach the folder when you report a FAIL — and one summary line per run is appended to
+# logs/firstspirit-rest-api.log. Both live under the output root: $FS_OUT_ROOT if set, else
+# the nearest parent directory holding tracked-skills.tsv (the skills monorepo), else the
+# working directory. This is the portfolio's shared output layout; the directories are
+# git-ignored. Exit code 1 if anything failed.
 #
 # O1 keeps a normalised copy of the server's OpenAPI spec per host under
 # ./internal/openapi/<host>/ (override: FS_OPENAPI_SNAPSHOTS) and WARNs with a
@@ -78,8 +82,18 @@ for v in FS_USERNAME FS_PASSWORD FS_REST_BASE_URL FS_PROJECT_ID; do
 done
 FS_REST_BASE_URL="${FS_REST_BASE_URL%/}"
 
-RUN="$(date +%Y%m%d-%H%M%S)"
-OUT="./tmp/smoke/$RUN"; mkdir -p "$OUT"
+# Output root of the shared results/ + logs/ layout (see header).
+out_root() {
+  if [ -n "${FS_OUT_ROOT:-}" ]; then printf '%s' "$FS_OUT_ROOT"; return; fi
+  local d="$PWD"
+  while [ "$d" != / ]; do [ -f "$d/tracked-skills.tsv" ] && { printf '%s' "$d"; return; }; d="$(dirname "$d")"; done
+  printf '%s' "$PWD"
+}
+ROOT_OUT="$(out_root)"
+RUN="$(date +%Y-%m-%d-%H%M%S)"
+OUT="$ROOT_OUT/results/firstspirit-rest-api/$RUN"; [ -e "$OUT" ] && OUT="$OUT-$$"; mkdir -p "$OUT"
+RUNLOG="$ROOT_OUT/logs/firstspirit-rest-api.log"; mkdir -p "$ROOT_OUT/logs"
+STARTED="$(date +%s)"
 LOG="$OUT/requests.log"; : > "$LOG"
 N=0
 P="$FS_REST_BASE_URL/projects/$FS_PROJECT_ID"
@@ -664,5 +678,11 @@ if [ "$DO_SCRIPTS" = 1 ]; then
 fi
 
 # ---- Summary -----------------------------------------------------------------
-say "Summary: $PASS passed, $FAIL failed, $SKIP skipped, $WARN warning(s) — responses in $OUT"
+say "Summary: $PASS passed, $FAIL failed, $SKIP skipped, $WARN warning(s) — responses in ${OUT#"$ROOT_OUT"/}"
+MODE=read; [ "$DO_WRITE" = 1 ] && MODE=write; [ "$DO_SCRIPTS" = 1 ] && MODE="$MODE+scripts"
+HOST="${FS_REST_BASE_URL#*://}"; HOST="${HOST%%/*}"
+RESULT=ok; [ "$FAIL" -eq 0 ] || RESULT=fail
+printf '%s smoke mode=%s host=%s project=%s pass=%s fail=%s skip=%s warn=%s result=%s took=%ss dir=%s\n' \
+  "$(date +%Y-%m-%dT%H:%M:%S%z)" "$MODE" "$HOST" "$FS_PROJECT_ID" "$PASS" "$FAIL" "$SKIP" "$WARN" "$RESULT" \
+  "$(( $(date +%s) - STARTED ))" "${OUT#"$ROOT_OUT"/}" >> "$RUNLOG" 2>/dev/null || true
 [ "$FAIL" -eq 0 ]

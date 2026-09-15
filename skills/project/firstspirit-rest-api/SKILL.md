@@ -60,7 +60,9 @@ beta. `scripts/smoke-test.sh` probes each claim against the project in `.env` an
 PASS/FAIL per rule (read-only by default; `--write` creates and deletes a throwaway page, page
 reference, medium, dataset and section template — use a test project; `--scripts` exercises
 `/scripts/…/execute`). Run it once on a new server or after a
-REST-module update; report any FAIL with the `./tmp/smoke/<run>/` folder attached. The run
+REST-module update; report any FAIL with the `results/firstspirit-rest-api/<run>/` folder attached
+(one line per run is appended to `logs/firstspirit-rest-api.log`; both sit under `FS_OUT_ROOT`,
+else the skills monorepo root, else the working directory). The run
 also keeps a snapshot of the server's OpenAPI spec (`./internal/openapi/<host>/`) and prints a
 WARN with a diff when the API surface changed since the last run — the cue to re-check the
 sections that use the listed paths before trusting them.
