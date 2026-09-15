@@ -21,6 +21,7 @@
     "./skills",
     "./skills/templating",
     "./skills/project",
-    "./skills/deployment"
+    "./skills/deployment",
+    "./skills/diagnostics"
   ]
 }
