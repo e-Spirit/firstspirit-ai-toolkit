@@ -2,7 +2,7 @@
 
 What is out of date and what replaces it. This is **factual** (what the system deprecated and
 when); treating a *current* template's use of these as a quality problem is the judgement side,
-which lives in `firstspirit-template-design` (principle 12). For the diagnostic consumer, a hit
+which lives in the template-design guidelines (not part of this toolkit). For the diagnostic consumer, a hit
 here is a signal to flag.
 
 ## Components
@@ -68,5 +68,5 @@ $CMS_VALUE(st_index.values.first.<field>)$     $-- right: navigate the record se
 ## See also
 
 - `datatypes.md` — the current components and what they return.
-- `firstspirit-template-design` principle 12 — why surfacing deprecated components as current is
+- the template-design guideline on deprecated components (not part of this toolkit) — why surfacing deprecated components as current is
   the trap, and how it scores against quality.

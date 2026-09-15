@@ -3,7 +3,7 @@
 Factual rules about how names, casing, and call notation behave in FirstSpirit — language and
 client behaviour, **not** house naming conventions. The *convention* for form-variable prefixes
 (`st_`, `prm_`, `lt_`, …) is normative ("name it like this") and lives in the
-**`firstspirit-template-design`** skill (principle 7), not here. This file only states what the
+project's **naming conventions** (a design guideline, not part of this toolkit), not here. This file only states what the
 system enforces, how case is treated, and when parentheses/shorthands are allowed.
 
 ## Reference names (store element UIDs)
@@ -52,7 +52,7 @@ store roots). In a sync export it is carried by, depending on element type:
 | Java notation (method/object calls, class imports) | **yes** | `getKey`, `getLabel`, `.format`, `.isEmpty`, `.convert2`, class names must be spelled exactly (camelCase throughout the reference projects) |
 
 See `datatypes.md` for the datatype methods these casing rules apply to, and
-`firstspirit-template-design` (principle 7) for the variable-prefix convention.
+the project's naming conventions (a design guideline, not part of this toolkit) for the variable-prefix convention.
 
 ## Notation: parentheses, shorthands, and the template-language vs. Java-API line
 

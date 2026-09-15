@@ -6,7 +6,7 @@
   },
   "metadata": {
     "description": "FirstSpirit CMS skills for AI coding assistants",
-    "version": "0.1.0"
+    "version": "0.2.0"
   },
   "plugins": [
     {
@@ -14,7 +14,7 @@
       "displayName": "FirstSpirit AI Toolkit",
       "description": "Skills and tools for building and managing FirstSpirit CMS projects with AI",
       "category": "Developer Tools",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "source": "./"
     }
   ]

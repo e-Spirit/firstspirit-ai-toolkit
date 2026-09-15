@@ -141,9 +141,31 @@ if (answer != null && answer.equals(yes)) {
 }
 ```
 
-Full signatures and setters, the `OpenElement…FormOperation` pair (and the `DataProvider`
-vs `IDProvider` trap), and the other client operations:
-`firstspirit-operations/references/operations-catalogue.md`.
+### Opening an element's form — check the `perform` parameter type first
+
+"Open the element's form" is **two** operations with different `perform` parameter types.
+BeanShell resolves the overload at run time, so the wrong one is not a compile error but a
+`bsh.ReflectError: Method perform(…MediaImpl) not found` when the editor clicks. Verified on
+the API jar (FS 5.2.240208):
+
+| Operation (`de.espirit.firstspirit.ui.operations`) | `perform` takes | Accepts a `Media`? | Has `setLanguage`? |
+| --- | --- | --- | --- |
+| `OpenElementDataFormOperation` | `pagestore.DataProvider` (pages, sections, datasets) | **no** | yes |
+| `OpenElementMetaFormOperation` | `store.IDProvider` (any element with meta data) | **yes** | **no** |
+
+```
+//!BeanShell
+import de.espirit.firstspirit.agency.OperationAgent;
+import de.espirit.firstspirit.ui.operations.OpenElementMetaFormOperation;
+
+ops = context.requireSpecialist(OperationAgent.TYPE);
+open = ops.getOperation(OpenElementMetaFormOperation.TYPE);   // a medium has no data form
+open.perform(medium);                                          // IDProvider — no setLanguage on this one
+```
+
+Full signatures and setters for these and the other client operations (`PreviewOperation`,
+`ShowFormDialogOperation`, the ContentCreator-only `ClientScriptOperation`,
+`SelectOptionOperation`, …): the FirstSpirit Access API Javadoc for `de.espirit.firstspirit.ui.operations` and `de.espirit.firstspirit.webedit.server`.
 
 ## Drive a workflow (workflow script)
 
@@ -253,7 +275,7 @@ dump); the right-hand column is the real approach.
 | `context.isEnv(Env.X)` | The method is **`context.is(Env.X)`** (`BaseContext.is`); `isEnv` does not exist. See [script-contexts.md](script-contexts.md). |
 | `import de.espirit.firstspirit.access.Group` | Wrong package — `Group` lives in **`de.espirit.firstspirit.access.project`**. |
 | `project.getClassLoader()` / `project.getVersion()` | Neither method exists on `Project`. |
-| `context.requireSpecialist(OpenElementDataFormDialogOperation.TYPE)` — as written on the ODFS "Working With Store Elements" page | **Wrong class and wrong acquisition.** The class is `OpenElementDataFormOperation` (no "Dialog"), and operations are not specialists — get them via `OperationAgent`: `context.requireSpecialist(OperationAgent.TYPE).getOperation(OpenElementDataFormOperation.TYPE)`. Verified on the API jar. Full catalogue: `firstspirit-operations/references/operations-catalogue.md`. |
+| `context.requireSpecialist(OpenElementDataFormDialogOperation.TYPE)` — as written on the ODFS "Working With Store Elements" page | **Wrong class and wrong acquisition.** The class is `OpenElementDataFormOperation` (no "Dialog"), and operations are not specialists — get them via `OperationAgent`: `context.requireSpecialist(OperationAgent.TYPE).getOperation(OpenElementDataFormOperation.TYPE)`. Verified on the API jar. And check the `perform` parameter type — see [Opening an element's form](#opening-an-elements-form--check-the-perform-parameter-type-first). |
 | `picture.getThumbnail()` | Does not exist — **`getPreviewImage()`** (`getPreview()` is deprecated since 5.0). And `Picture` has no `getResolution()`: `getPictureResolution(Resolution)` → `PictureResolution`. |
 
 > Note: a clean `bsh-validator --check-api` run does **not** guarantee these are

@@ -16,6 +16,10 @@ description: >-
   files — outside FirstSpirit, BeanShell is almost never used. Pair with
   the FirstSpirit ODFS documentation for deep API lookup and firstspirit-templating-reference for
   template-language syntax.
+metadata:
+  source-commit: 3bec7d0
+  published: 2026-09-15
+  toolkit-version: 0.2.0
 ---
 
 > **Beta.** Early public release. Feedback welcome; behaviour and structure may change.

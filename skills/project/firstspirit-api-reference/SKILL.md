@@ -12,8 +12,12 @@ description: >-
   write an fs query — for example "what interface is a section", "how do I get the
   PageStore", "which UidType for a media", or "fs query to find an element by
   uid". Pair with firstspirit-scripting (how to run code + the script contexts)
-  and firstspirit-module-development (how to package it); the FirstSpirit ODFS documentation has
+  and the FirstSpirit module development documentation (ODFS) (how to package it); the FirstSpirit ODFS documentation has
   the full 146-package API for anything not distilled here.
+metadata:
+  source-commit: 468d904
+  published: 2026-09-15
+  toolkit-version: 0.2.0
 ---
 
 > **Beta.** Early public release. Feedback welcome; behaviour and structure may change.
@@ -22,7 +26,7 @@ description: >-
 
 Fast, factual lookup for the **FirstSpirit Java Access API object model** — the
 "nouns" you read and manipulate from scripts (`firstspirit-scripting`) and modules
-(`firstspirit-module-development`). Where those skills cover *how you run code*,
+(the FirstSpirit module development documentation, ODFS). Where those skills cover *how you run code*,
 this skill answers *what objects exist, how they relate, and how you reach them*.
 
 This is the API layer taught in **DTA (Developer Training Advanced)**, distilled
@@ -54,7 +58,7 @@ release notes when changing versions. Source:
   the `SpecialistsBroker` via `requireSpecialist(...)`. See
   [references/agents.md](references/agents.md).
 - **Defer.** Script contexts / BeanShell → `firstspirit-scripting`. Module
-  packaging & component types → `firstspirit-module-development`. Template
+  packaging & component types → the FirstSpirit module development documentation (ODFS). Template
   language & GOM → `firstspirit-templating-reference`.
 
 ## Quick answers
