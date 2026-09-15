@@ -197,8 +197,8 @@ $CMS_END_IF$
 
 ## Sources
 
-Datatypes verified against the GOM component definitions (`Returns`) and the source datatype pages under
-`_source/…/template-syntax/data-types/`. Access idioms reflect production usage (Manon) where the
+Datatypes verified against the GOM component definitions (`Returns`) and the official datatype pages of the
+template-syntax documentation. Access idioms reflect production usage where the
 source pages were thin or stale, and were cross-checked against three official e-Spirit reference
 projects (Connect for Commerce, SAP Commerce Cloud / ContentConnect, COMS Marketplace) — all
 headless/CaaS, deploying without errors. Where an idiom is corroborated or, conversely, not

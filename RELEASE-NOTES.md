@@ -5,7 +5,7 @@
 Skills in this release (each SKILL.md carries the same source commit in its `metadata:` block):
 
 - `firstspirit-api-reference` @ 468d904 (beta)
-- `firstspirit-templating-reference` @ a3ac0cf (beta)
+- `firstspirit-templating-reference` @ 6ad95ec (beta)
 - `firstspirit-scripting` @ 7ce2e12 (beta)
 - `firstspirit-rest-api` @ 2556131 (beta)
 - `firstspirit-external-sync-export` @ 978980c (beta)

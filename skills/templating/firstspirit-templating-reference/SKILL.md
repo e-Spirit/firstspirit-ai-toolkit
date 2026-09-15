@@ -20,7 +20,7 @@ description: >-
   the template-design guidelines for design judgement and naming conventions, and
   firstspirit-scripting for BeanShell / Access-API.
 metadata:
-  source-commit: "a3ac0cf"
+  source-commit: "6ad95ec"
   published: "2026-09-15"
   toolkit-version: "0.2.0"
 ---
