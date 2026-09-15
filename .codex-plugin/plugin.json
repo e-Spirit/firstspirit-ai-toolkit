@@ -4,8 +4,8 @@
   "description": "Skills and tools for building and managing FirstSpirit CMS projects with AI",
   "version": "0.2.0",
   "author": {
-    "name": "Guy Brown",
-    "email": "guy.brown@rezolve.com"
+    "name": "Crownpeak Technology GmbH",
+    "url": "https://www.firstspirit.com"
   },
   "license": "MIT",
   "homepage": "https://github.com/e-Spirit/firstspirit-ai-toolkit",
