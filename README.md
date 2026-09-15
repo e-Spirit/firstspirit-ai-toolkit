@@ -1,6 +1,6 @@
 # FirstSpirit AI Toolkit
 
-Skills for building and managing [FirstSpirit CMS](https://www.crownpeak.com/products/crownpeak-dxp) projects with AI coding assistants.
+Skills for building and managing [FirstSpirit CMS](https://www.firstspirit.com) projects with AI coding assistants.
 
 ## Install
 
@@ -111,15 +111,22 @@ components appear under **Customize**. A symlink rather than a copy means
 
 ### Skills
 
-Skills are organised into FirstSpirit domain categories:
+Skills are organised into FirstSpirit domain categories. The toolkit currently
+ships five:
 
-| Category | Skills |
-|----------|--------|
-| `content/` | Content store management, datasets |
-| `templating/` | Page, section, and link templates |
-| `project/` | Project setup and configuration |
-| `deployment/` | Publishing and generation runs |
-| `diagnostics/` | Troubleshooting and health checks |
+| Skill | Category | What it covers |
+|-------|----------|----------------|
+| `firstspirit-templating-reference` | `templating/` | Template language (`$CMS_VALUE$`, `$CMS_IF$`, `$CMS_FOR$`, …), GOM form/input components and their datatypes, Rules, deprecated→current components |
+| `firstspirit-api-reference` | `project/` | The Java Access API object model — store trees, `StoreElement`/`IDProvider`, the `SpecialistsBroker` and its agents, and QueryAgent search syntax |
+| `firstspirit-scripting` | `project/` | BeanShell scripting — script types and their bound `context` objects, logging, and safe Access-API patterns (lock/save/unlock, form data, transitions) |
+| `firstspirit-rest-api` | `project/` | CMS operations over the REST API with `curl` — templates, pages and sections, form field writes, media upload, content search |
+| `firstspirit-external-sync-export` | `deployment/` | Running FS-CLI / FSDevTools to export and import a project as an external-sync tree on disk, for git-based workflows |
+
+A sixth skill, `using-firstspirit-toolkit`, is the index the harness loads at
+session start; it points the assistant at the others.
+
+`content/` and `diagnostics/` are reserved for future skills and are currently
+empty.
 
 ### When the toolkit loads
 
@@ -143,30 +150,33 @@ therefore have no effect on Codex.
 Used by the four hook-based harnesses above. A project counts as FirstSpirit if
 any of these is present:
 
-- a `.firstspirit` marker file (empty file is enough), or `fs-project.yaml`;
+- a `.firstspirit` marker file (empty file is enough), or `fs-project.yaml` /
+  `fsproject.yaml`;
 - an external-sync export tree (the `FS_References.txt` / `FS_Info.txt` sidecars);
 - a `module.xml` / `module-isolated.xml` that names FirstSpirit (`de.espirit`,
   `firstspirit`) — the filename alone is too generic to count — or a build file
-  (`pom.xml`, `build.gradle`) that depends on the Access API or isolated runtime
-  (`fs-isolated-runtime`, `fs-access`, `de.espirit.firstspirit`);
+  (`pom.xml`, `build.gradle`, `build.gradle.kts`) that depends on the Access API
+  or isolated runtime (`fs-isolated-runtime`, `fs-isolated-client`, `fs-access`,
+  `de.espirit.firstspirit`);
 - a server or CLI descriptor (`fs-server.conf`, `fs-cli.yaml`) or a built `.fsm`;
-- a decoupled frontend depending on FSXA (`fsxa-api`, `fsxa-pattern-library`).
+- a decoupled frontend depending on FSXA (`fsxa-api`, `fsxa-pattern-library`,
+  `fsxa-nuxt-ui`, `fsxa-nextjs`).
 
 The scan skips `node_modules`, `.git`, `target`, `dist`, `build` and `.gradle`, so
 it stays fast on large repositories and a marker inside a dependency never counts.
 
 Drop an empty `.firstspirit` in a repo the detector doesn't recognise to force it
-on. Override either way with the `FIRSTSPIRIT_PROJECT` environment variable
-(`1` = always load, `0` = never — `0` also suppresses the reminder line).
-
-## Contributing
-
-See [CLAUDE.md](CLAUDE.md) for contributor guidelines.
+on. Override either way with the `FIRSTSPIRIT_PROJECT` environment variable:
+`1` always loads the full index, `0` never does. With `0` the hook replaces the
+discovery reminder with a short line saying the toolkit is disabled for the
+session and must not be mentioned. Both settings also accept `true`/`false`,
+`yes`/`no`.
 
 ## Requirements
 
-**Users:** none. The session-start hook is pure bash (3.2+) and needs no external
-tools, so the toolkit works on a stock macOS or Linux box.
+**Users:** The session-start hook is
+bash (3.2+) and uses only `find`, `grep` and `git` — no `jq`, no runtime, nothing
+to install.
 
 **Contributors:** `jq` (`brew install jq` / `apt install jq`) for the version-bump
 and test scripts, and `shellcheck` (`brew install shellcheck`) for the lint step.
