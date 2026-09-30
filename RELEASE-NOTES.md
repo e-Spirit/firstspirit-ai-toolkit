@@ -1,5 +1,83 @@
 # Release Notes
 
+## 0.3.0 — 2026-09-30
+
+Skills in this release (each SKILL.md carries the same source commit in its `metadata:` block):
+
+- `firstspirit-api-reference` @ 239a7e2 (beta)
+- `firstspirit-templating-reference` @ 239a7e2 (beta)
+- `firstspirit-scripting` @ 239a7e2 (beta)
+- `firstspirit-rest-api` @ 239a7e2 (beta)
+- `firstspirit-external-sync-export` @ 239a7e2 (beta)
+- `firstspirit-operations` @ 239a7e2 (beta)
+- `firstspirit-contentcreator-extensions` @ 239a7e2 (beta)
+- `firstspirit-template-design` @ 239a7e2 (beta)
+
+Changes since 0.2.1 — three skills join the toolkit (all beta); the five existing skills are
+republished from the same source commit with the corrections and two issue fixes listed below.
+
+- **New: `firstspirit-operations`** (`skills/project/`) — the catalogue of client operations
+  obtained through `OperationAgent`: per operation the exact `perform(...)` parameter type
+  (`javap`-verified), the configuration setters it really has, the return value, known traps
+  and which client (SiteArchitect / ContentCreator) it runs in; the `DataProvider` vs
+  `IDProvider` trap behind `bsh.ReflectError: Method perform(…) not found`; the operation ×
+  client capability matrix.
+- **New: `firstspirit-contentcreator-extensions`** (`skills/project/`) — the ContentCreator
+  browser side (`top.WE_API` Common / Dialog / Preview / Report, FSID, `jumpTo` by numeric id,
+  partial reload, report shortcodes, `addItemsPlugin`), the server→browser bridges
+  `ClientScriptOperation` (the callback-must-fire rule) and `ClientResourceOperation`,
+  `top.MPP_API` and `top.JC_API` with the twin table for both `WEBEDIT` branches, a
+  "does not work in ContentCreator" list, documentation traps in the ODFS examples, and the
+  Java plug-in interfaces (`Webedit…Plugin`, timeline, translation, focus areas) with
+  `[jar]`-verified signatures.
+- **New: `firstspirit-template-design`** (`skills/templating/`) — fourteen design principles
+  for building and reviewing FirstSpirit templates (content vs presentation, constraining
+  content areas, headless vs classic structure, component choice, form design and restriction
+  levels, naming and prefixes, reuse, datasets and dependency order, deprecated components,
+  documenting a template set, the two language dimensions) with references for naming,
+  components and tags, deprecated components, template documentation and localisation. The
+  prefix tables govern variables, not template reference names (first external contribution).
+- `firstspirit-templating-reference`: new `gom/database-schema.md` — schema → table template →
+  data source → dataset, `fs_id` / `FS_GID`, one physical column per language, the seven column
+  types and which input component maps onto which (a selection component mapped onto a numeric
+  column stores a converted number), dataset references as foreign-key relation vs column
+  (`FS_INDEX` maps onto a FirstSpirit-editor column only), what each database-backed component
+  stores (`<KEY>` value, else GID), cross-schema references vs schema-bound queries, Remote Data,
+  why a mandatory schema column is a bad idea (use a rule), never force-delete a table template,
+  `Entity` (the database row) vs `Dataset` (what FirstSpirit holds). Facts verified against the
+  product source and the ODFS. Rule examples use the current `st_` prefix instead of the legacy
+  `cs_` (ContentStore) prefix.
+- `firstspirit-api-reference`: how to reach the table template behind a database-backed
+  combobox / radiobutton / checkbox through public API (`GomIncludeOptions` →
+  `OptionFactory.getOptionModel` → `TableTemplateProvider`) instead of the internal
+  `ContentOptionFactory`; the entity type alone cannot identify the template.
+- `firstspirit-scripting`: the dataset example uses the `tt_` prefix for table-template inputs.
+- `firstspirit-contentcreator-extensions`: a global ContentCreator web-app deployment is the
+  normal choice (project-specific web-app components are not wanted on FirstSpirit Cloud), one
+  web-app component per module is enough; the `cxt-cc-api` jar is not generally published.
+- **Fix (issue #14)**: every published skill's frontmatter description is now at most 1024
+  characters, the limit Claude.ai's plugin import enforces (`templating-reference`,
+  `api-reference`, `scripting`, `external-sync-export`, `operations`,
+  `contentcreator-extensions`, `template-design` were over it — the largest at 2602). Same
+  trigger phrases, fewer examples. `scripts/lint-skills.sh` now fails on a longer description,
+  and the publishing pipeline stops before a copy can ship over the limit.
+- **Fix (issue #15)**: the session-start hook runs on Windows. GitHub Copilot on Windows
+  executes plugin hooks through PowerShell, which reported a parse error on the quoted bash
+  command in `hooks/hooks.json` (the skills still loaded). The shared command now starts with
+  `bash` and the manifests carry a `powershell` variant that runs the new
+  `hooks/session-start.ps1` with `-NoProfile -ExecutionPolicy Bypass -File`; the PowerShell twin
+  detects the same project markers and emits the same context. `scripts/test-manifests.sh`
+  checks both variants. Not yet confirmed on a Windows machine — see the issue.
+- **Registry**: the bootstrap skill's *Available Skills* list now has a two-line entry per
+  skill — when to use it and what it covers — instead of a truncated description sentence
+  (review feedback on 0.2.1; the same entries are on that branch).
+- **All skills**: pointers to these three skills are now real links; in 0.2.x they read
+  "not part of this toolkit" or were rewritten as documentation pointers
+  (`firstspirit-scripting` → operations catalogue, `firstspirit-templating-reference` →
+  template-design principles 7 and 12). Pointers to skills still outside the toolkit remain
+  softened. Every relative link is checked to resolve inside the published skill.
+
+
 ## 0.2.1 — 2026-09-25
 
 Skills in this release (each SKILL.md carries the same source commit in its `metadata:` block):

@@ -142,7 +142,7 @@ lang = context.requireSpecialist(LanguageAgent.TYPE).getMasterLanguage();
 
 // A) iterate all datasets
 for (ds : content2.getDatasets()) {
-    last = ds.getFormData().get(lang, "cs_lastname").get();
+    last = ds.getFormData().get(lang, "tt_lastname").get();
     context.logInfo(last);
 }
 ```
@@ -163,11 +163,11 @@ EntityList entities = session.executeQuery(select);
 for (entity : entities) {
     ds = content2.getDataset(entity);                                   // Entity -> editable Dataset
     fd = ds.getFormData();
-    context.logInfo(fd.get(lang, "cs_lastname").get() + ", " + fd.get(lang, "cs_firstname").get());
+    context.logInfo(fd.get(lang, "tt_lastname").get() + ", " + fd.get(lang, "tt_firstname").get());
 }
 ```
 
-Note the two identifier worlds: `FormData.get(lang, "cs_lastname")` uses the **FS
+Note the two identifier worlds: `FormData.get(lang, "tt_lastname")` uses the **FS
 input-component name**, while the `de.espirit.or` `Select`/`Equal` uses the
 **schema column name** (`"Lastname"`). For the alternative project-wide search,
 see the `QueryAgent` in `firstspirit-api-reference`.

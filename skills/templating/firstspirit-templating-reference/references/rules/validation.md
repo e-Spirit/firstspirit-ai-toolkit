@@ -18,7 +18,7 @@ Correct, tested patterns for FirstSpirit validation rules.
   that would break something downstream (a malformed URL, an identifier another system consumes).
 - **`RELEASE`** — blocks only at release, so editors can save work in progress and cannot publish
   it broken. The better default for content that is drafted over time; see
-  the template-design guidelines (not part of this toolkit) principle 6 for the design call.
+  `firstspirit-template-design` principle 6 for the design call.
 - **`INFO`** — non-blocking; shows the message as information without preventing save or release.
 
 Scope tokens are case-insensitive (`SAVE`/`Save`/`save` all occur in real projects), but write
@@ -131,15 +131,15 @@ Logic: NOT(ALL empty) = at least one filled. All three fields get marked invalid
 <RULE>
     <WITH>
         <OR>
-            <PROPERTY source="cs_picture" name="EMPTY"/>
+            <PROPERTY source="st_picture" name="EMPTY"/>
             <NOT>
-                <PROPERTY source="cs_description" name="EMPTY"/>
+                <PROPERTY source="st_description" name="EMPTY"/>
             </NOT>
         </OR>
     </WITH>
     <DO>
         <VALIDATION scope="RELEASE">
-            <PROPERTY source="cs_description" name="VALID"/>
+            <PROPERTY source="st_description" name="VALID"/>
             <MESSAGE lang="*" text="Description required when image is set!"/>
             <MESSAGE lang="DE" text="Beschreibung erforderlich, wenn ein Bild gesetzt ist!"/>
         </VALIDATION>
@@ -163,17 +163,17 @@ because its `<IF>` precondition stops the rule from running.
 <RULE>
     <IF>                                       <!-- WRONG: one-way rule -->
         <NOT>                                  <!-- gates the whole rule, not the requirement -->
-            <PROPERTY source="cs_picture" name="EMPTY"/>
+            <PROPERTY source="st_picture" name="EMPTY"/>
         </NOT>
     </IF>
     <WITH>
         <NOT>
-            <PROPERTY source="cs_description" name="EMPTY"/>
+            <PROPERTY source="st_description" name="EMPTY"/>
         </NOT>
     </WITH>
     <DO>
         <VALIDATION scope="RELEASE">
-            <PROPERTY source="cs_description" name="VALID"/>
+            <PROPERTY source="st_description" name="VALID"/>
             <MESSAGE lang="*" text="Description required when image is set!"/>
         </VALIDATION>
     </DO>
@@ -190,9 +190,9 @@ switches off, the last verdict the rule left behind stays.
 
 **The failure.** In an open form:
 
-1. Set `cs_picture`, leave `cs_description` empty -> the rule runs and marks the description
+1. Set `st_picture`, leave `st_description` empty -> the rule runs and marks the description
    invalid. Correct so far.
-2. Remove `cs_picture` again. The `<IF>` is now false, the rule no longer runs, and the invalid
+2. Remove `st_picture` again. The `<IF>` is now false, the rule no longer runs, and the invalid
    verdict is never revisited — the field stays invalid although nothing requires it any more.
 3. Now type a description. **It stays invalid.** The rule that would clear the verdict is
    switched off.
@@ -258,14 +258,14 @@ Logic: Precondition limits rule to master language only.
     <WITH>
         <NOT>
             <GREATER_THAN>
-                <PROPERTY source="cs_description" name="LENGTH"/>
+                <PROPERTY source="st_description" name="LENGTH"/>
                 <NUMBER>1024</NUMBER>
             </GREATER_THAN>
         </NOT>
     </WITH>
     <DO>
         <VALIDATION scope="SAVE">
-            <PROPERTY source="cs_description" name="VALID"/>
+            <PROPERTY source="st_description" name="VALID"/>
             <MESSAGE lang="*" text="Only 1,024 characters allowed!"/>
             <MESSAGE lang="DE" text="Es sind nur 1.024 Zeichen zugelassen!"/>
         </VALIDATION>

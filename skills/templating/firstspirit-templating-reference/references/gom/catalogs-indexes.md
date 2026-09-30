@@ -59,7 +59,16 @@ Child tags:
 - `<SOURCE name="DatasetDataAccessPlugin">` -- Data access plugin name
 - `<TEMPLATE uid="Schema.table"/>` -- Table template reference (mandatory `uid` attribute, format: `SchemaName.tableName`)
 
-Note: Referenced datasets must have a GID column ("FS_GID").
+Notes:
+- Referenced datasets must have a GID column (`FS_GID`) `[odfs]`; the implementation falls back
+  to the primary key for rows without a GID and logs that the database "has to be updated for
+  Index-use" `[core]` — treat the GID as required.
+- The table template may belong to **any schema** of the project; the lookup is by UID over the
+  whole Template Store `[core]`. Stored per entry: `{gid, table, schema}` `[core]`; editor order
+  is kept.
+- The *NEW* action creates a dataset in the referenced table from inside the index; a rule on
+  `NEW` disables it `[odfs]`.
+- Schema, columns, what each dataset-backed component stores: `database-schema.md`.
 
 ### External / commerce DAP (no `<TEMPLATE>`)
 

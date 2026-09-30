@@ -89,6 +89,46 @@ Dataset one = ... ; // content2.getEntity(keyValue) -> Entity; wrap/lookup as ne
 - The Content-Store script context (`Content2ScriptContext`) exposes `getData()` /
   `getSelectedRow()` directly — see `firstspirit-scripting`.
 
+### From a database-backed selection component to its `TableTemplate`
+
+A `CMS_INPUT_COMBOBOX` / `RADIOBUTTON` / `CHECKBOX` with `<CMS_INCLUDE_OPTIONS type="database">`
+yields `Option` values whose `getValue()` is an `Entity`. To turn that into a `Dataset` (for an
+`FS_DATASET` or `FS_INDEX` target, or to read form data) you need the **table template the
+component is bound to** — and the `Entity` alone cannot give it: several table templates may
+sit on the same table, so `entity.getEntityType().getName()` is not unique, and neither is a
+`Content2` lookup by entity type. Do not reach for the runtime class
+`de.espirit.firstspirit.store.access.contentstore.ContentOptionFactory` (`getTable()`): it is
+`@ApiStatus.Internal` `[jar]` and `checkCompliance` rejects it. The public path goes through
+the option model (confirmed internally at FirstSpirit, 2026-09-30):
+
+```java
+import de.espirit.firstspirit.access.editor.TableTemplateProvider;
+import de.espirit.firstspirit.access.editor.value.OptionModel;
+import de.espirit.firstspirit.access.store.templatestore.TableTemplate;
+import de.espirit.firstspirit.access.store.templatestore.gom.*;
+
+@Nullable
+TableTemplate tableTemplateOf(AbstractGomSelect gomSelect, SpecialistsBroker broker, Language language) {
+    GomIncludeConfiguration include = gomSelect.getEntries().getIncludeConfiguration();   // null for fixed <ENTRIES>
+    if (include instanceof GomIncludeOptions opts && opts.getType() == IncludeType.DATABASE) {
+        OptionModel model = opts.getOptionFactory().getOptionModel(broker, language, false); // false = current state
+        if (model instanceof TableTemplateProvider provider) {
+            return provider.getTableTemplate();          // null if the template no longer exists
+        }
+    }
+    return null;
+}
+// then: Dataset ds = tableTemplate.getDataset(entity);  DatasetContainer.Factory.create(ds, language)
+```
+
+Every hop is Access API on both 5.2.240208 and 5.2.261011 `[jar]`: `AbstractGomSelect.getEntries()`
+→ `GomList.getIncludeConfiguration()`; `GomIncludeOptions.getType()` / `.getOptionFactory()`;
+`OptionFactory.getOptionModel(SpecialistsBroker, Language, boolean release)`;
+`de.espirit.firstspirit.access.editor.TableTemplateProvider.getTableTemplate()` (since 4.0,
+`@Nullable`). The database option model implements `TableTemplateProvider`; the fixed-entries
+model does not, hence the `instanceof` `[core]`. The `boolean` selects the release state the
+model reads from.
+
 ## Editor values
 
 `FormField` has **no `getEditorValue()`** (checked on the 5.2.240208 jar — its surface is

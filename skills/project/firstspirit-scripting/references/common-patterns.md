@@ -184,7 +184,7 @@ open.perform(medium);                                          // IDProvider —
 
 Full signatures and setters for these and the other client operations (`PreviewOperation`,
 `ShowFormDialogOperation`, the ContentCreator-only `ClientScriptOperation`,
-`SelectOptionOperation`, …): the FirstSpirit Access API Javadoc for `de.espirit.firstspirit.ui.operations` and `de.espirit.firstspirit.webedit.server`.
+`SelectOptionOperation`, …): `firstspirit-operations/references/operations-catalogue.md`.
 
 ## Drive a workflow (workflow script)
 

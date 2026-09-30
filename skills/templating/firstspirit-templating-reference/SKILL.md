@@ -1,29 +1,11 @@
 ---
 name: firstspirit-templating-reference
 description: >-
-  Concrete lookup reference for FirstSpirit template development: the template
-  language ($CMS_VALUE$, $CMS_IF$, $CMS_FOR$, $CMS_REF$, $CMS_RENDER$, system
-  objects, string operations, the Navigation and PageGroup header functions,
-  content projection / dataset pages), GOM form/input components (CMS_INPUT_*,
-  FS_REFERENCE, FS_CATALOG, FS_INDEX, FS_DATASET) and the datatype each yields,
-  Rules (validation, visibility, editability, value), identifier and casing
-  rules, and deprecated→current components. Use whenever you need exact
-  FirstSpirit template syntax, the right input component, what datatype a
-  component produces, how to access it in the output channel, or whether
-  something is deprecated — e.g. "syntax for CMS_FOR", "which input component
-  for a single choice", "what datatype does FS_REFERENCE produce", "how do I
-  output a date", "escape a value against XSS", "is FS_LIST still supported". Also
-  for reviewing existing rules and diagnosing rule misbehaviour — e.g. "review my
-  Ruleset.xml", "why does this field stay invalid", "one-way rule". It
-  is also the content-interpretation companion to downstream analysis
-  (that skill owns export structure; this one explains what is inside
-  GomSource.xml / Ruleset.xml / ChannelSource files). Pair with
-  the template-design guidelines for design judgement and naming conventions, and
-  firstspirit-scripting for BeanShell / Access-API.
+  Concrete lookup reference for FirstSpirit template development: template language ($CMS_VALUE$, $CMS_IF$, $CMS_FOR$, $CMS_REF$, $CMS_RENDER$, system objects, string operations, Navigation and PageGroup functions, content projection), GOM input components (CMS_INPUT_*, FS_REFERENCE, FS_CATALOG, FS_INDEX, FS_DATASET) and the datatype each yields, database schemas (table templates, column types and which component maps onto which, foreign keys, KEY column, queries, Remote Data), Rules (validation, visibility, editability, value), identifier and casing rules, deprecated components. Use whenever you need exact template syntax, the right input component, what a component produces and how to read it in the output channel, or whether something is deprecated — e.g. "syntax for CMS_FOR", "which component for a single choice", "what datatype does FS_REFERENCE produce", "is FS_LIST still supported", "review my Ruleset.xml", "why does this field stay invalid". Explains GomSource.xml / Ruleset.xml / ChannelSource files.
 metadata:
-  source-commit: "30f3b27"
-  published: "2026-09-25"
-  toolkit-version: "0.2.1"
+  source-commit: "239a7e2"
+  published: "2026-09-30"
+  toolkit-version: "0.3.0"
 ---
 
 > **Beta.** Early public release. Feedback welcome; behaviour and structure may change.
@@ -36,7 +18,7 @@ component, the datatype a component yields and how to read it, the applicable ru
 something is deprecated.
 
 This skill states **facts about the language**. Design judgement (what good looks like, naming
-conventions/prefixes) lives in the template-design guidelines (not part of this toolkit); scripting (BeanShell, Access API)
+conventions/prefixes) lives in `firstspirit-template-design`; scripting (BeanShell, Access API)
 in `firstspirit-scripting`; export structure in downstream analysis.
 
 ## How to use this skill
@@ -47,7 +29,7 @@ in `firstspirit-scripting`; export structure in downstream analysis.
   (JSON/CaaS) differs for some questions; so does SiteArchitect (the Java client, being phased
   out) vs. ContentCreator. Note which applies when it matters.
 - **Defer design decisions.** When the real question is "which design is right" or "what should
-  I name this", hand off to the project's template-design guidelines (a separate skill, not part of this toolkit).
+  I name this", hand off to `firstspirit-template-design`.
 
 ## Most-common lookups
 
@@ -96,6 +78,7 @@ Loaded on demand — read the file that matches the question.
 | `numeric-date-boolean.md` | `NUMBER` / `DATE` / `TOGGLE` |
 | `references-links.md` | `FS_REFERENCE`, `CMS_INPUT_LINK`, `FS_DATASET`, `FS_BUTTON`, `IMAGEMAP` |
 | `catalogs-indexes.md` | `FS_CATALOG` / `FS_INDEX` |
+| `database-schema.md` | schema → table templates → data source → datasets; `fs_id` / `FS_GID`, language-dependent columns, **column types and the components that map onto them**, what each dataset-backed component stores (`<KEY>`, GID, foreign key, index entries), cross-schema references vs schema-bound queries, Remote Data, deleting, `Entity` vs `Dataset` |
 | `real-world.md` | production form shapes |
 
 ### Rules (`references/rules/`)
