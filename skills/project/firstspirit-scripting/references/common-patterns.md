@@ -30,7 +30,8 @@ try {
 }
 ```
 
-Notes: store elements are **local copies** — nothing persists until `save(...)`.
+Notes: field and property changes are **local** until `save(...)`; structural PageStore operations (create, move,
+delete, restore) take effect immediately `[observed]`.
 **Don't pre-check the lock** (it's a server-side state that can change under you) —
 just attempt `setLock(true, …)` and handle `LockException`. **Pages are typically
 locked and saved recursively** (`setLock(true, true)` / `save(comment, true)`),
@@ -40,7 +41,8 @@ recursive flag.
 **Datasets: a save writes only what changed.** `Dataset.getEntity()` `[jar]` hands you the
 `Entity`; `entity.setValue(name, value)` `[jar]` followed by `ds.save()` persists the
 attributes whose value **differs** from the loaded one. Setting a value that is `equals()` to
-the current one is a no-op, and the save returns without error. Consequences seen in production
+the current one leaves the attribute unchanged: `ds.save()` then writes no revision, but
+`ds.save("comment")` still writes a new revision `[observed]`. Consequences seen in production
 `[observed]`:
 
 - Rebuilding a DOM or reference value from scratch and setting it does not "refresh" anything.
@@ -286,7 +288,7 @@ dump); the right-hand column is the real approach.
 | --- | --- |
 | `context.requireSpecialist(TransactionAgent.TYPE)`, `beginTransaction()`/`commit`/`rollback` | **No transaction API and no `TransactionAgent`.** Save per element with `save()`; coordinate with locks. |
 | `context.requireSpecialist(LockService.TYPE)` | **No `LockService`.** Locking is element-level: `elm.setLock(true, false)` / `setLock(false)`. |
-| `context.requireSpecialist(ReleaseAgent.TYPE).releaseStoreElement(...)` | **No `ReleaseAgent`.** Release runs through the workflow model, not an agent. |
+| `context.requireSpecialist(ReleaseAgent.TYPE).releaseStoreElement(...)` | **No `ReleaseAgent`.** Release is element-level: `elm.release()` (`IDProvider`), or through a workflow. |
 | `connection.getService(GenerationService.class)` | **No `GenerationService`.** Generation is a scheduled task / `GenerationAgent` in `de.espirit.firstspirit.scheduling.agency`, not a directly-callable script service. |
 | `QuestionOperation` / `InputOperation` / `SelectOperation` | Only **`RequestOperation`** exists for dialogs — see [the RequestOperation pattern](#ask-a-question-or-show-a-message-from-any-client-context-requestoperation), which works from any client context (the `showForm()` pattern is `GuiScriptContext`-only). Custom input UIs need a plugin. |
 | `store.getStoreRoot()` | The store **is** the root — iterate it directly (`store.getChildren(...)`). |

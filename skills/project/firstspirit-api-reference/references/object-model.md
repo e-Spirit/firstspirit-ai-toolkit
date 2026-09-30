@@ -45,7 +45,7 @@ Store       getStore();                  // the owning Store
 Store.Type  getStore().getType();
 
 // Type
-ElementType getElementType();            // used by fs.type queries
+String      getElementType();            // used by fs.type queries
 
 // References — see references/references.md
 ReferenceEntry[] getOutgoingReferences(); // @NotNull — what this element points at
@@ -74,7 +74,9 @@ try {
 element.revert(revision, recursive, ignoreRevertTypes);   // roll back to a Revision
 ```
 
-Store elements are **local copies** — changes aren't on the server until `save()`.
+Field and property changes are **local** until `save()`. Structural PageStore operations
+(`createPage`, `createPageFolder`, `createSection`, `moveChild`, `delete()`, restore) take effect on the server
+immediately `[observed]`.
 The trailing boolean on `setLock`/`save` controls **recursion**: **pages are
 typically locked and saved recursively** (`true`), most other elements
 non-recursively (`false`). Don't pre-check the lock — attempt it and catch

@@ -37,7 +37,7 @@ Queries combine field comparisons with `and` / `or`. Common fields:
 | `fs.uid = solar_concept_car` | element by UID |
 | `"solar_concept_car MEDIASTORE_LEAF"` | a media / reference by name (quoted) |
 | `"solar_concept_car MEDIASTORE_LEAF" or fs.uid = solar_concept_car` | either match (combine with `or`) |
-| `fs.type = Dataset and fs.type = Page` | elements of a given `ElementType` (see `StoreElement.getElementType()`) |
+| `fs.type = Dataset and fs.type = Page` | elements of a given element type (the `String` returned by `StoreElement.getElementType()`) |
 | `fs.meta = 1` | elements that have meta data defined |
 | `fs.width >= 468 and fs.height >= 60` | pictures of at least a size |
 | `fs.width >= 1000 or fs.height >= 1000` | pictures outside a range |

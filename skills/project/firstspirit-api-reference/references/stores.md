@@ -19,6 +19,7 @@ FormData     page.getFormData();                 // page metadata / fields
 FormData     page.getFormData(Language);
 PageTemplate page.getTemplate();
 Listable     page.getChildren(Body.class, false);
+Body         page.getBodyByName(name);
 
 // Body (a content area on the page; named slot from the page template)
 String       body.getName();
@@ -29,9 +30,9 @@ FormData     section.getFormData();              // the section's field values
 FormData     section.getFormData(Language);
 T            section.getTemplate();              // its SectionTemplate
 
-// Create
-Section          page.createSection(name, template);        // needs lock
-SectionReference page.createSectionReference(name, source);  // reuse another section
+// Create (declared on Body / GCABody, not on Page)
+Section          body.createSection(name, template);        // no page lock needed; persists at once [observed]
+SectionReference body.createSectionReference(name, source);  // reuse another section
 ```
 
 - `SectionReference` — a reference to a section elsewhere (reuse).
@@ -44,8 +45,6 @@ generated as URLs.
 
 ```
 Page       pageRef.getPage();                    // the referenced Page (nullable)
-IDProvider pageRef.getTarget(boolean release);   // generic target
-String     pageRef.getUrl();                     // generated URL
 boolean    pageRef.isStartNode();                // is this the folder's start page
 FormData   pageRef.getMetaFormData();            // navigation/meta fields
 ```
@@ -71,7 +70,8 @@ byte[]     picture.getPreviewImage();            // preview bytes; getPreview() 
 FormData   media.getMetaFormData();              // media metadata
 ```
 
-Media are language-dependent (a language is required to fetch the binary). Build
+Media created language-dependent have one binary per language; a language-independent media
+(`languageDependent = false`) returns the same binary for every language and for `null` `[observed]`. Build
 media URLs via `UrlAgent` / `PreviewUrlAgent` rather than string-building.
 
 ## Data sources — `CONTENTSTORE` (`.contentstore`)
@@ -86,7 +86,7 @@ EntityType     content2.getEntityType();
 List<Dataset>  content2.getDatasets();                        // master language, current
 List<Dataset>  content2.getDatasets(Language, boolean release);
 Entity         content2.getEntity(Object keyValue);
-Dataset        content2.createDataset(...);                   // needs lock
+Dataset        content2.createDataset(...);                   // works without a lock [observed]; locking the Content2 is conventional
 ```
 
 `Dataset.getEntity()` → the underlying `Entity`; read/write fields via `FormData`
