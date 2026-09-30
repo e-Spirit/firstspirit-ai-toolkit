@@ -34,6 +34,25 @@ frontmatter_field() {
   printf '%s' "$raw"
 }
 
+# Length of the whole description, including the continuation lines of a folded
+# (`>-`) or literal (`|`) block scalar, whitespace collapsed, one quote pair stripped.
+frontmatter_description_length() {
+  awk '
+    NR == 1 && $0 == "---" { infm = 1; next }
+    infm && $0 == "---"    { exit }
+    !infm { next }
+    indesc && /^[[:space:]]*$/ { val = val " "; next }   # blank line becomes a space in a folded scalar
+    indesc && /^[[:space:]]/ { line = $0; sub(/^[[:space:]]+/, "", line); val = val " " line; next }
+    indesc { indesc = 0 }
+    /^description:/ { rest = $0; sub(/^description:[[:space:]]*/, "", rest)
+      if (rest ~ /^[|>][+-]?[[:space:]]*$/ || rest == "") { indesc = 1; isblock = 1; val = "" } else { val = rest; isblock = 0 } }
+    END { if (isblock) { gsub(/[[:space:]]+/, " ", val); sub(/^ /, "", val); sub(/ $/, "", val) }
+          else { sub(/^[[:space:]]+/, "", val); sub(/[[:space:]]+$/, "", val) }
+          if (length(val) >= 2 && ((substr(val,1,1) == "\"" && substr(val,length(val),1) == "\"") || (substr(val,1,1) == "\047" && substr(val,length(val),1) == "\047"))) { val = substr(val, 2, length(val)-2) }
+          print length(val) }
+  ' "$1"
+}
+
 while IFS= read -r skill_file; do
   checked=$((checked + 1))
   rel_path="${skill_file#"$REPO_ROOT/"}"
@@ -56,6 +75,13 @@ while IFS= read -r skill_file; do
   if [ -z "$description" ]; then
     echo "ERROR [$rel_path]: missing 'description' field in frontmatter"
     errors=$((errors + 1))
+  else
+    # Claude.ai's plugin import rejects a description longer than 1024 characters
+    # ("field 'description' in SKILL.md must be at most 1024 characters", issue #14).
+    dlen="$(frontmatter_description_length "$skill_file")"
+    if [ "$dlen" -gt 1024 ]; then
+      err "$rel_path" "description is $dlen characters; the plugin import allows at most 1024"
+    fi
   fi
 
 done < <(find "$SKILLS_DIR" -name "SKILL.md" | sort)

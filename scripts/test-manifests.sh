@@ -114,6 +114,22 @@ check_hook_command "cursor hook" \
 check_hook_command "copilot hook" \
   "$(jq -r '.hooks.SessionStart[0].bash' "$REPO_ROOT/.github/hooks/firstspirit-ai-toolkit.json")"
 
+echo "== every PowerShell hook variant points at the PowerShell twin, and it exists =="
+# Copilot runs hooks through PowerShell on Windows, and a Windows client's default
+# execution policy blocks .ps1 files, so the variant must spawn powershell with
+# -ExecutionPolicy Bypass -File rather than call the script directly.
+for spec in "hooks/hooks.json#.hooks.SessionStart[0].hooks[0].powershell" \
+            ".github/hooks/firstspirit-ai-toolkit.json#.hooks.SessionStart[0].powershell"; do
+  file="${spec%%#*}"; query="${spec#*#}"
+  ps="$(jq -r "$query // empty" "$REPO_ROOT/$file")"
+  case "$ps" in
+    *'-ExecutionPolicy Bypass -File'*'/hooks/session-start.ps1'*) pass "$file has a PowerShell variant" ;;
+    *) fail "$file has a PowerShell variant" "got: ${ps:-<none>}" ;;
+  esac
+  check_hook_command "$file powershell key" "$ps"
+done
+if [ -f "$REPO_ROOT/hooks/session-start.ps1" ]; then pass "hooks/session-start.ps1 exists"; else fail "hooks/session-start.ps1 exists" "missing"; fi
+
 echo "== the hook entry points are executable =="
 for h in hooks/run-hook.cmd hooks/session-start; do
   if [ -x "$REPO_ROOT/$h" ]; then
@@ -268,7 +284,16 @@ echo "== the auto-discovered hook resolves under both harnesses that read it =="
 # satisfy both. Left unresolved it degrades to an absolute /hooks/run-hook.cmd
 # and the harness reports a failed hook on every session.
 HOOK_CMD="$(jq -r '.hooks.SessionStart[0].hooks[0].command' "$REPO_ROOT/hooks/hooks.json")"
-HOOK_TOKEN="${HOOK_CMD%% session-start}"
+# The command is prefixed with `bash` so that, when a harness hands it to a shell that
+# is not bash (Copilot runs plugin hooks through PowerShell on Windows), it is still a
+# well-formed command rather than a bare quoted string followed by an argument, which
+# PowerShell rejects as a parse error (issue #15). Strip the prefix before resolving.
+case "$HOOK_CMD" in
+  bash\ *) pass "shared hook command starts with bash" ;;
+  *)       fail "shared hook command starts with bash" "PowerShell cannot run a quoted path followed by an argument: $HOOK_CMD" ;;
+esac
+HOOK_TOKEN="${HOOK_CMD#bash }"
+HOOK_TOKEN="${HOOK_TOKEN%% session-start}"
 
 # Claude: variable exported, ${extensionPath} left untouched.
 as_claude="$(CLAUDE_PLUGIN_ROOT="$REPO_ROOT" bash -c "eval printf '%s' $HOOK_TOKEN" 2>/dev/null)"

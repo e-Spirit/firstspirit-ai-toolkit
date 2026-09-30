@@ -1,25 +1,11 @@
 ---
 name: firstspirit-scripting
 description: >-
-  Concrete lookup reference for FirstSpirit scripting with BeanShell: the script
-  types and their bound `context` objects (menu, context-menu, workflow,
-  Content2/dataset, FS_BUTTON, template/generation, schedule, PermissionService),
-  BeanShell language essentials, logging and debugging, and the safe Access-API
-  patterns (lock/save/unlock, iteration, store navigation, form data,
-  transitions). Use this skill whenever you write, review, or debug a FirstSpirit
-  script — for example "which context object do I get in a workflow script",
-  "how do I lock and save an element in BeanShell", "how do I log from a script",
-  "how do I read a form field", "how do I call a script from a template with
-  $CMS_RENDER$", or "how do I open a dialog / an element's data form from a client
-  script" (operations via OperationAgent). Also use it whenever the user asks to write a BeanShell (or
-  "Bean Shell") script, even without naming FirstSpirit, and for `.bsh` script
-  files — outside FirstSpirit, BeanShell is almost never used. Pair with
-  the FirstSpirit ODFS documentation for deep API lookup and firstspirit-templating-reference for
-  template-language syntax.
+  Concrete lookup reference for FirstSpirit scripting with BeanShell: the script types and their bound `context` objects (menu, context-menu, workflow, Content2/dataset, FS_BUTTON, template/generation, schedule, PermissionService), BeanShell language essentials, logging and debugging, and the safe Access-API patterns (lock/save/unlock, iteration, store navigation, form data, transitions). Use whenever you write, review or debug a FirstSpirit script — e.g. "which context object do I get in a workflow script", "how do I lock and save an element in BeanShell", "how do I log from a script", "how do I read a form field", "call a script from a template with $CMS_RENDER$", "open a dialog or an element's form from a client script" (operations via OperationAgent). Also use it whenever the user asks for a BeanShell ("Bean Shell") script or a `.bsh` file, even without naming FirstSpirit — outside FirstSpirit, BeanShell is almost never used.
 metadata:
-  source-commit: "30f3b27"
-  published: "2026-09-25"
-  toolkit-version: "0.2.1"
+  source-commit: "239a7e2"
+  published: "2026-09-30"
+  toolkit-version: "0.3.0"
 ---
 
 > **Beta.** Early public release. Feedback welcome; behaviour and structure may change.

@@ -12,12 +12,11 @@ description: >-
   write an fs query — for example "what interface is a section", "how do I get the
   PageStore", "which UidType for a media", or "fs query to find an element by
   uid". Pair with firstspirit-scripting (how to run code + the script contexts)
-  and the FirstSpirit module development documentation (ODFS) (how to package it); the FirstSpirit ODFS documentation has
-  the full 146-package API for anything not distilled here.
+  and the FirstSpirit module development documentation (ODFS) (how to package it).
 metadata:
-  source-commit: "30f3b27"
-  published: "2026-09-25"
-  toolkit-version: "0.2.1"
+  source-commit: "239a7e2"
+  published: "2026-09-30"
+  toolkit-version: "0.3.0"
 ---
 
 > **Beta.** Early public release. Feedback welcome; behaviour and structure may change.

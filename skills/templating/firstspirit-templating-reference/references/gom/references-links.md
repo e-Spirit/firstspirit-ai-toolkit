@@ -118,10 +118,34 @@ References datasets for linking to detail pages.
 ```
 
 Key points:
-- `allowChoose="yes"` shows a dataset picker dialog
+- `allowChoose="yes"` shows a dataset picker dialog; `allowNew` (default yes) lets the editor create a dataset in the data source from the form `[odfs]`
 - `mode="sheet"` displays a sheet-style selection
-- `<CONTENT name="..."/>` restricts which data sources are available
-- In templates, access via `formData.lt_dataset.dataset` to get the entity
+- `<CONTENT name="..."/>` names a **data source** (Content Store uid, not a table template); without `<SOURCES>` every data source of the project is selectable `[odfs]`
+- Stored value: one dataset reference (GID, key, table-template uid); in the output channel the datatype is `DatasetContainer` — `.dataset` (may be `null`), `.gid`, `.key`, `.templateUid` `[odfs]`; in scripts `formData.lt_dataset.dataset` gives the dataset
+
+### FS_DATASET as a table column (foreign key, n:1)
+
+In a **table template** `FS_DATASET` must be linked with a **foreign key**: the table carrying
+the component is the N side of a 1:N relation to the referenced table, and exactly **one**
+`<CONTENT>` may be given. `[odfs]`
+
+```xml
+<!-- table template Products.products: each product belongs to one category -->
+<FS_DATASET name="tt_category" allowChoose="yes" allowNew="no" useLanguages="no">
+  <LANGINFOS>
+    <LANGINFO lang="*" label="Category"/>
+  </LANGINFOS>
+  <SOURCES>
+    <CONTENT name="product_categories"/>
+  </SOURCES>
+</FS_DATASET>
+```
+
+On the *Mapping* tab the component maps onto the relation, not onto a typed column; the linked
+row's columns are then usable in the form's expressions, and the relation is what a query joins
+on. Schema facts, what each component stores, cross-schema rules: `database-schema.md`. Whether
+the parent should hold an `FS_INDEX` or the child an `FS_DATASET`: `firstspirit-template-design`
+principle 11.
 
 ## FS_BUTTON -- Script Trigger
 

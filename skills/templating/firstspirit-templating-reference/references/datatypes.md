@@ -78,12 +78,19 @@ is just the entry's value string — the database resolution below is a separate
 
 **Database-connected** (`CMS_INCLUDE_OPTIONS type="database"`) — reach the row through `.value`:
 
-- The selected option's value object is `st_x.value` (for a checkbox, iterate the set: `$CMS_FOR(opt, st_x)$$CMS_VALUE(opt.value)$$CMS_END_FOR$`).
-- If `<key>key_column</key>` is set, that column is reachable directly: `$CMS_VALUE(st_x.key_column)$`.
-- The default key is `fs_id`, reached via the value object: `$CMS_VALUE(st_x.value.id)$`.
+- The selected option's value object `st_x.value` is the resolved **row** (`Entity`); `st_x.key`
+  is the identifying value that was stored `[odfs]` (for a checkbox, iterate the set:
+  `$CMS_FOR(opt, st_x)$$CMS_VALUE(opt.value)$$CMS_END_FOR$`).
+- **What is stored** depends on `<KEY>`: with `<KEY>key_column</KEY>` the value of that column
+  (which must be unique — the read throws when two rows match); without it the row's `FS_GID`,
+  or its primary key `fs_id` when the row has no GID. `[odfs]` `[core]` Details and the
+  schema-side facts: `gom/database-schema.md`.
+- Columns of the row: `$CMS_VALUE(st_x.value.<column>)$` — the `Entity` is a map of column
+  values `[jar]`; `st_x.value.id` for the `fs_id` is production knowledge, `[verify]` against a
+  DB-connected form.
 
-*(The DB-connected idioms are production knowledge; the reference projects contain no
-DB-connected selection input, so only the plain-list form above is corroborated there.)*
+*(The reference projects contain no DB-connected selection input, so only the plain-list form
+above is corroborated there; the stored-value facts come from the ODFS and the product source.)*
 
 ### FS_CATALOG / CMS_INPUT_LIST — per-item rendering
 

@@ -176,7 +176,8 @@ session and must not be mentioned. Both settings also accept `true`/`false`,
 
 **Users:** The session-start hook is
 bash (3.2+) and uses only `find`, `grep` and `git` — no `jq`, no runtime, nothing
-to install.
+to install. On Windows, GitHub Copilot runs its PowerShell twin
+(`hooks/session-start.ps1`, Windows PowerShell 5.1 or later) instead.
 
 **Contributors:** `jq` (`brew install jq` / `apt install jq`) for the version-bump
 and test scripts, and `shellcheck` (`brew install shellcheck`) for the lint step.

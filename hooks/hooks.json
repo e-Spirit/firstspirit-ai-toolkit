@@ -6,7 +6,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}${extensionPath}/hooks/run-hook.cmd\" session-start"
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}${extensionPath}/hooks/run-hook.cmd\" session-start",
+            "powershell": "powershell -NoProfile -ExecutionPolicy Bypass -File \"${CLAUDE_PLUGIN_ROOT}${extensionPath}/hooks/session-start.ps1\""
           }
         ]
       }

@@ -34,7 +34,7 @@ Key attributes: `editable` (YES/NO, allow custom values), `sortOrder` (KEEP_ORDE
     <LABELS>
       <LABEL lang="*">#item.name</LABEL>
     </LABELS>
-    <TABLE>categories</TABLE>
+    <TABLE>Products.categories</TABLE>
   </CMS_INCLUDE_OPTIONS>
   <LANGINFOS>
     <LANGINFO lang="*" label="Category"/>
@@ -140,6 +140,7 @@ Note: Display limited to 100 entries (browser limitation). `sortOrder` only affe
       <LABEL lang="*">#item.name</LABEL>
     </LABELS>
     <TABLE>smartliving.tag</TABLE>
+    <KEY>code</KEY>          <!-- optional: store this column's value instead of the row's GID -->
   </CMS_INCLUDE_OPTIONS>
   <LANGINFOS>
     <LANGINFO lang="*" label="News Tag"/>
@@ -148,8 +149,12 @@ Note: Display limited to 100 entries (browser limitation). `sortOrder` only affe
 ```
 
 Key points:
-- `<TABLE>schema.tablename</TABLE>` uses format `schemaName.tableTemplateName`
+- `<TABLE>schema.tablename</TABLE>` is the **table template UID** (conventionally `schemaName.tableTemplateName`); it may name a table template of any schema in the project `[odfs]` `[core]`
 - `<LABEL lang="*">#item.columnName</LABEL>` accesses any column of the table template
+- `<KEY>column</KEY>` is optional: **with** it the component stores that column's value (the column must be unique); **without** it the row's `FS_GID`, or its primary key `fs_id` when the row has no GID `[odfs]` `[core]`
+- `<QUERY name="…"><PARAM name="…">value</PARAM></QUERY>` restricts the selectable rows; `<VIEWORDER>` sorts them `[odfs]`
+- The list shows at most **100** rows; for larger tables the ODFS recommends `FS_INDEX` with the `DatasetDataAccessPlugin` `[odfs]`
+- Schema, columns, what each dataset-backed component stores: `database-schema.md`
 - type `"language"` populates from project languages, `"database"` from a content source table
 - type `"templateset"` populates from configured template sets
 - type `"public"` supports custom GOM option providers (plugin classes)
