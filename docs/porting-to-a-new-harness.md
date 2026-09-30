@@ -125,6 +125,18 @@ Pick the mechanism the harness supports:
   `{"hookSpecificOutput": {"additionalContext": "…"}}` — a subset of Claude's
   envelope, so the shared `claude` shape satisfies it and needs no branch.
 
+  **Windows.** GitHub Copilot runs plugin hooks through PowerShell on Windows and
+  reads the same `hooks/hooks.json`. A bare quoted path followed by an argument is a
+  PowerShell parse error (issue #15), so the shared `command` starts with `bash`
+  (a well-formed command in both shells), and the entry carries a `powershell`
+  variant that spawns `powershell -NoProfile -ExecutionPolicy Bypass -File
+  …/hooks/session-start.ps1` — the `-ExecutionPolicy Bypass` matters, because a
+  Windows client's default policy refuses to run `.ps1` files. `session-start.ps1` is
+  the PowerShell twin of `session-start`: same detection, same override variable,
+  Copilot's `{additionalContext}` shape. Change the detection in both files.
+  `.github/hooks/firstspirit-ai-toolkit.json` carries the same `powershell` variant
+  in Copilot's native format (`bash` / `powershell` keys).
+
   Do not "fix" a collision here by giving one harness its own copy of the file.
   The harness you move off `hooks/hooks.json` may keep auto-discovering it
   anyway and register a second hook that cannot resolve, which is the same
