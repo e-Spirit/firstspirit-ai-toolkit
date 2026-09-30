@@ -19,6 +19,7 @@ FormData     page.getFormData();                 // page metadata / fields
 FormData     page.getFormData(Language);
 PageTemplate page.getTemplate();
 Listable     page.getChildren(Body.class, false);
+Body         page.getBodyByName(name);
 
 // Body (a content area on the page; named slot from the page template)
 String       body.getName();
@@ -29,9 +30,9 @@ FormData     section.getFormData();              // the section's field values
 FormData     section.getFormData(Language);
 T            section.getTemplate();              // its SectionTemplate
 
-// Create
-Section          page.createSection(name, template);        // needs lock
-SectionReference page.createSectionReference(name, source);  // reuse another section
+// Create (declared on Body / GCABody, not on Page)
+Section          body.createSection(name, template);        // needs lock
+SectionReference body.createSectionReference(name, source);  // reuse another section
 ```
 
 - `SectionReference` — a reference to a section elsewhere (reuse).
@@ -44,8 +45,6 @@ generated as URLs.
 
 ```
 Page       pageRef.getPage();                    // the referenced Page (nullable)
-IDProvider pageRef.getTarget(boolean release);   // generic target
-String     pageRef.getUrl();                     // generated URL
 boolean    pageRef.isStartNode();                // is this the folder's start page
 FormData   pageRef.getMetaFormData();            // navigation/meta fields
 ```
