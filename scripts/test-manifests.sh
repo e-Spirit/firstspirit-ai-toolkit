@@ -118,9 +118,9 @@ echo "== every PowerShell hook variant points at the PowerShell twin, and it exi
 # Copilot runs hooks through PowerShell on Windows, and a Windows client's default
 # execution policy blocks .ps1 files, so the variant must spawn powershell with
 # -ExecutionPolicy Bypass -File rather than call the script directly.
-for spec in "hooks/hooks.json:.hooks.SessionStart[0].hooks[0].powershell" \
-            ".github/hooks/firstspirit-ai-toolkit.json:.hooks.SessionStart[0].powershell"; do
-  file="${spec%%:*}"; query="${spec#*:}"
+for spec in "hooks/hooks.json#.hooks.SessionStart[0].hooks[0].powershell" \
+            ".github/hooks/firstspirit-ai-toolkit.json#.hooks.SessionStart[0].powershell"; do
+  file="${spec%%#*}"; query="${spec#*#}"
   ps="$(jq -r "$query // empty" "$REPO_ROOT/$file")"
   case "$ps" in
     *'-ExecutionPolicy Bypass -File'*'/hooks/session-start.ps1'*) pass "$file has a PowerShell variant" ;;

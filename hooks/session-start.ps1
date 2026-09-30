@@ -30,18 +30,19 @@ $Prune = @('node_modules', '.git', 'target', 'dist', 'build', '.gradle')
 function Get-ProjectFiles {
   param([string]$Root, [int]$MaxDepth, [int]$MaxFiles = 5000)
   $out = New-Object System.Collections.Generic.List[object]
-  $stack = New-Object System.Collections.Generic.Stack[object]
-  $stack.Push(@{ Dir = $Root; Depth = 0 })
-  while ($stack.Count -gt 0 -and $out.Count -lt $MaxFiles) {
-    $cur = $stack.Pop()
+  $queue = New-Object System.Collections.Generic.Queue[object]
+  $queue.Enqueue(@{ Dir = $Root; Depth = 0 })
+  while ($queue.Count -gt 0 -and $out.Count -lt $MaxFiles) {
+    $cur = $queue.Dequeue()
     $items = Get-ChildItem -LiteralPath $cur.Dir -Force -ErrorAction SilentlyContinue
     foreach ($it in $items) {
       if ($it.PSIsContainer) {
         if ($cur.Depth + 1 -lt $MaxDepth -and $Prune -notcontains $it.Name) {
-          $stack.Push(@{ Dir = $it.FullName; Depth = $cur.Depth + 1 })
+          $queue.Enqueue(@{ Dir = $it.FullName; Depth = $cur.Depth + 1 })
         }
       } else {
         $out.Add([pscustomobject]@{ Path = $it.FullName; Name = $it.Name; Depth = $cur.Depth + 1 })
+        if ($out.Count -ge $MaxFiles) { return $out }
       }
     }
   }
@@ -128,7 +129,11 @@ function Test-FirstSpiritProject {
 if (Test-FirstSpiritProject) {
   if (Test-Path -LiteralPath $SkillFile) {
     $body = Get-Content -LiteralPath $SkillFile -Raw
-    $content = "$body`nToolkit root: $PluginRoot — resolve any ``skills/…`` path in this document relative to that directory."
+    if ($null -ne $body) {
+      $content = "$body`nToolkit root: $PluginRoot — resolve any ``skills/…`` path in this document relative to that directory."
+    } else {
+      $content = "FirstSpirit AI Toolkit: bootstrap skill not found at $SkillFile."
+    }
   } else {
     $content = "FirstSpirit AI Toolkit: bootstrap skill not found at $SkillFile."
   }
