@@ -45,7 +45,7 @@ Store       getStore();                  // the owning Store
 Store.Type  getStore().getType();
 
 // Type
-ElementType getElementType();            // used by fs.type queries
+String      getElementType();            // used by fs.type queries
 
 // References — see references/references.md
 ReferenceEntry[] getOutgoingReferences(); // @NotNull — what this element points at
