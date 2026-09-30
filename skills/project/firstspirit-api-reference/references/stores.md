@@ -31,7 +31,7 @@ FormData     section.getFormData(Language);
 T            section.getTemplate();              // its SectionTemplate
 
 // Create (declared on Body / GCABody, not on Page)
-Section          body.createSection(name, template);        // needs lock
+Section          body.createSection(name, template);        // no page lock needed; persists at once [observed]
 SectionReference body.createSectionReference(name, source);  // reuse another section
 ```
 
@@ -70,7 +70,8 @@ byte[]     picture.getPreviewImage();            // preview bytes; getPreview() 
 FormData   media.getMetaFormData();              // media metadata
 ```
 
-Media are language-dependent (a language is required to fetch the binary). Build
+Media created language-dependent have one binary per language; a language-independent media
+(`languageDependent = false`) returns the same binary for every language and for `null` `[observed]`. Build
 media URLs via `UrlAgent` / `PreviewUrlAgent` rather than string-building.
 
 ## Data sources — `CONTENTSTORE` (`.contentstore`)
@@ -85,7 +86,7 @@ EntityType     content2.getEntityType();
 List<Dataset>  content2.getDatasets();                        // master language, current
 List<Dataset>  content2.getDatasets(Language, boolean release);
 Entity         content2.getEntity(Object keyValue);
-Dataset        content2.createDataset(...);                   // needs lock
+Dataset        content2.createDataset(...);                   // works without a lock [observed]; locking the Content2 is conventional
 ```
 
 `Dataset.getEntity()` → the underlying `Entity`; read/write fields via `FormData`
