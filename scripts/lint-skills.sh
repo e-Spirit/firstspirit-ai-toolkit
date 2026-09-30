@@ -41,6 +41,7 @@ frontmatter_description_length() {
     NR == 1 && $0 == "---" { infm = 1; next }
     infm && $0 == "---"    { exit }
     !infm { next }
+    indesc && /^[[:space:]]*$/ { next }   # a blank line continues a block scalar
     indesc && /^[[:space:]]/ { line = $0; sub(/^[[:space:]]+/, "", line); val = val " " line; next }
     indesc { indesc = 0 }
     /^description:/ { rest = $0; sub(/^description:[[:space:]]*/, "", rest)

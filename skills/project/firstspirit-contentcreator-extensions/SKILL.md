@@ -56,7 +56,7 @@ on the ContentCreator top window. [odfs]
    it, that thread lives until the user logs out or closes the tab. Every code path, including
    "user cancelled", must call `callback(...)`. [javadoc] [odfs]
 3. **`WE_API` identifies elements by numeric ID, never by UID.** `jumpTo({...})` and
-   `setPreviewElement({...})` take `{"id": <long>, "store": "SITESTORE"}` or
+   `setPreviewElement({...})` take `{"id": <id>, "store": "SITESTORE"}` or
    `{"contentId": <id>, "pageref" | "content2" | "template": <id>}` — exactly two keys, and the
    Javadoc says outright: "The UID is not supported at this point." [javadoc]
 

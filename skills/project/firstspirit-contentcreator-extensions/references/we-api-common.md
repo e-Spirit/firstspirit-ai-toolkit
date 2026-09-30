@@ -162,7 +162,7 @@ The property-name constants are `PROPERTY_FSID`, `PROPERTY_LANGUAGE`, `PROPERTY_
 
 | Member | Returns |
 | --- | --- |
-| `getId()` | `int` — store-element ID |
+| `getId()` | `int` — store-element ID. The GWT client API narrows the server-side `IDProvider.getId()` (`long`) to `int`; pass the number as it is into `jumpTo({"id": …})` |
 | `getStoreType()` | `String` — e.g. `"SITESTORE"` |
 | `getElementType()` | `String` or `null` |
 | `getContentId()` | `int`, `-1` if not a dataset |

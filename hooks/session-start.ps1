@@ -24,7 +24,9 @@ $OptedOutLine = "FirstSpirit AI Toolkit is installed but disabled for this sessi
 $Prune = @('node_modules', '.git', 'target', 'dist', 'build', '.gradle')
 
 # Files under $Root up to $MaxDepth levels, skipping the pruned directories.
-# Returns objects with Path, Name and Depth (0 = directly under root).
+# Returns objects with Path, Name and Depth, counted like `find -maxdepth`: a file
+# directly under $Root has Depth 1, so the `-le N` checks below mean the same as
+# the bash twin's `fs_find N`.
 function Get-ProjectFiles {
   param([string]$Root, [int]$MaxDepth)
   $out = New-Object System.Collections.Generic.List[object]
@@ -35,11 +37,11 @@ function Get-ProjectFiles {
     $items = Get-ChildItem -LiteralPath $cur.Dir -Force -ErrorAction SilentlyContinue
     foreach ($it in $items) {
       if ($it.PSIsContainer) {
-        if ($cur.Depth + 1 -le $MaxDepth -and $Prune -notcontains $it.Name) {
+        if ($cur.Depth + 1 -lt $MaxDepth -and $Prune -notcontains $it.Name) {
           $stack.Push(@{ Dir = $it.FullName; Depth = $cur.Depth + 1 })
         }
       } else {
-        $out.Add([pscustomobject]@{ Path = $it.FullName; Name = $it.Name; Depth = $cur.Depth })
+        $out.Add([pscustomobject]@{ Path = $it.FullName; Name = $it.Name; Depth = $cur.Depth + 1 })
       }
     }
   }
@@ -137,8 +139,18 @@ if (Test-FirstSpiritProject) {
 }
 
 # --- Emit -----------------------------------------------------------------------
-# Copilot consumes `additionalContext` from a sessionStart hook. ConvertTo-Json
-# escapes the string, so the skill text needs no hand-rolled escaping here.
-$payload = @{ additionalContext = $content } | ConvertTo-Json -Compress -Depth 2
+# Same envelope selection as the bash twin, same order: Copilot and Cursor both set
+# CLAUDE_PLUGIN_ROOT, so each harness's own variable is tested first and the generic
+# Claude variable last. ConvertTo-Json escapes the string, so the skill text needs no
+# hand-rolled escaping here.
+if ($env:COPILOT_PLUGIN_ROOT -or $env:COPILOT_AGENT_SESSION_ID) {
+  $payload = @{ additionalContext = $content } | ConvertTo-Json -Compress -Depth 2
+} elseif ($env:CURSOR_PLUGIN_ROOT) {
+  $payload = @{ additional_context = $content } | ConvertTo-Json -Compress -Depth 2
+} elseif ($env:CLAUDE_PLUGIN_ROOT) {
+  $payload = @{ hookSpecificOutput = @{ hookEventName = 'SessionStart'; additionalContext = $content } } | ConvertTo-Json -Compress -Depth 3
+} else {
+  $payload = @{ additionalContext = $content } | ConvertTo-Json -Compress -Depth 2
+}
 [Console]::Out.Write($payload + "`n")
 exit 0
