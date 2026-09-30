@@ -41,13 +41,14 @@ frontmatter_description_length() {
     NR == 1 && $0 == "---" { infm = 1; next }
     infm && $0 == "---"    { exit }
     !infm { next }
-    indesc && /^[[:space:]]*$/ { next }   # a blank line continues a block scalar
+    indesc && /^[[:space:]]*$/ { val = val " "; next }   # blank line becomes a space in a folded scalar
     indesc && /^[[:space:]]/ { line = $0; sub(/^[[:space:]]+/, "", line); val = val " " line; next }
     indesc { indesc = 0 }
     /^description:/ { rest = $0; sub(/^description:[[:space:]]*/, "", rest)
       if (rest ~ /^[|>][+-]?[[:space:]]*$/ || rest == "") { indesc = 1; val = "" } else { val = rest } }
     END { gsub(/[[:space:]]+/, " ", val); sub(/^ /, "", val); sub(/ $/, "", val)
-      gsub(/^["\047]|["\047]$/, "", val); print length(val) }
+      if (length(val) >= 2 && ((substr(val,1,1) == "\"" && substr(val,length(val),1) == "\"") || (substr(val,1,1) == "\047" && substr(val,length(val),1) == "\047"))) { val = substr(val, 2, length(val)-2) }
+      print length(val) }
   ' "$1"
 }
 

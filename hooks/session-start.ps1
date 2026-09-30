@@ -28,11 +28,11 @@ $Prune = @('node_modules', '.git', 'target', 'dist', 'build', '.gradle')
 # directly under $Root has Depth 1, so the `-le N` checks below mean the same as
 # the bash twin's `fs_find N`.
 function Get-ProjectFiles {
-  param([string]$Root, [int]$MaxDepth)
+  param([string]$Root, [int]$MaxDepth, [int]$MaxFiles = 5000)
   $out = New-Object System.Collections.Generic.List[object]
   $stack = New-Object System.Collections.Generic.Stack[object]
   $stack.Push(@{ Dir = $Root; Depth = 0 })
-  while ($stack.Count -gt 0) {
+  while ($stack.Count -gt 0 -and $out.Count -lt $MaxFiles) {
     $cur = $stack.Pop()
     $items = Get-ChildItem -LiteralPath $cur.Dir -Force -ErrorAction SilentlyContinue
     foreach ($it in $items) {
@@ -62,7 +62,7 @@ function Test-FirstSpiritProject {
   }
 
   # 2) Search root: the git top-level if there is one, else the project dir.
-  $start = if ($env:CLAUDE_PROJECT_DIR) { $env:CLAUDE_PROJECT_DIR } else { (Get-Location).Path }
+  $start = if ($env:CLAUDE_PROJECT_DIR) { ($env:CLAUDE_PROJECT_DIR -replace '/', '\') } else { (Get-Location).Path }
   $root  = $start
   $top   = & git -C $start rev-parse --show-toplevel 2>$null
   if ($LASTEXITCODE -eq 0 -and $top) { $root = ($top -replace '/', '\') }

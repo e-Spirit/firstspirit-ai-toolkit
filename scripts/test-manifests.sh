@@ -126,6 +126,7 @@ for spec in "hooks/hooks.json:.hooks.SessionStart[0].hooks[0].powershell" \
     *'-ExecutionPolicy Bypass -File'*'/hooks/session-start.ps1'*) pass "$file has a PowerShell variant" ;;
     *) fail "$file has a PowerShell variant" "got: ${ps:-<none>}" ;;
   esac
+  check_hook_command "$file powershell key" "$ps"
 done
 if [ -f "$REPO_ROOT/hooks/session-start.ps1" ]; then pass "hooks/session-start.ps1 exists"; else fail "hooks/session-start.ps1 exists" "missing"; fi
 
