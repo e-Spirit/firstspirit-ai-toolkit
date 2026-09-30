@@ -24,12 +24,15 @@ FormData fd = section.getFormData(language);         // language-specific
 FormField field = fd.get(language, "st_headline");   // by component name
 Object    value = field.get();                       // the value
 field.set(newValue);                                 // write (element must be locked)
+section.setFormData(fd);                             // write the form back before save()
 // iterate all fields: for (FormField f : fd) { f.getName(); f.getEditorValue(); }
 ```
 
 - Component **names** are the input-component identifiers from the form (GOM) — see
   `firstspirit-templating-reference`.
-- After `set(...)`, `save()` the owning element (inside a lock).
+- After `set(...)`, write the form back with `element.setFormData(fd)`, then `save()` the owning element (inside a
+  lock). `getFormData()` returns a copy: without `setFormData` the change is not persisted `[observed]` (Page,
+  Section, Dataset). Meta data works the same way: `getMetaFormData()`, change it, `setMetaFormData(fd)`, `save()`.
 - The concrete value type depends on the input component (String, list,
   reference, etc.) — the datatype table is in `firstspirit-templating-reference`.
 

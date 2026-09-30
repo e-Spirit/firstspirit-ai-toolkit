@@ -30,7 +30,8 @@ try {
 }
 ```
 
-Notes: store elements are **local copies** — nothing persists until `save(...)`.
+Notes: field and property changes are **local** until `save(...)`; structural PageStore operations (create, move,
+delete, restore) take effect immediately `[observed]`.
 **Don't pre-check the lock** (it's a server-side state that can change under you) —
 just attempt `setLock(true, …)` and handle `LockException`. **Pages are typically
 locked and saved recursively** (`setLock(true, true)` / `save(comment, true)`),
@@ -40,7 +41,8 @@ recursive flag.
 **Datasets: a save writes only what changed.** `Dataset.getEntity()` `[jar]` hands you the
 `Entity`; `entity.setValue(name, value)` `[jar]` followed by `ds.save()` persists the
 attributes whose value **differs** from the loaded one. Setting a value that is `equals()` to
-the current one is a no-op, and the save returns without error. Consequences seen in production
+the current one leaves the attribute unchanged: `ds.save()` then writes no revision, but
+`ds.save("comment")` still writes a new revision `[observed]`. Consequences seen in production
 `[observed]`:
 
 - Rebuilding a DOM or reference value from scratch and setting it does not "refresh" anything.
