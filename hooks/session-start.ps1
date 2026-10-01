@@ -11,6 +11,10 @@
 # so the default Restricted execution policy of a Windows client does not block it.
 #
 # Keep the detection in step with hooks/session-start; that file holds the rationale.
+#
+# Keep this file pure ASCII. Windows PowerShell 5.1 reads a BOM-less script in the
+# ANSI code page, where the UTF-8 bytes of an em dash end in 0x94, a curly double
+# quote that PowerShell accepts as a string delimiter (issue #15, second report).
 # Override with FIRSTSPIRIT_PROJECT=1 (always load) or 0 (never load).
 
 $ErrorActionPreference = 'SilentlyContinue'
@@ -51,7 +55,7 @@ function Get-ProjectFiles {
 
 function Test-FileMatches {
   param([string]$Path, [string]$Pattern)
-  $text = Get-Content -LiteralPath $Path -Raw -ErrorAction SilentlyContinue
+  $text = Get-Content -LiteralPath $Path -Raw -Encoding UTF8 -ErrorAction SilentlyContinue
   return ($null -ne $text -and $text -match $Pattern)
 }
 
@@ -128,9 +132,11 @@ function Test-FirstSpiritProject {
 
 if (Test-FirstSpiritProject) {
   if (Test-Path -LiteralPath $SkillFile) {
-    $body = Get-Content -LiteralPath $SkillFile -Raw
+    $body = Get-Content -LiteralPath $SkillFile -Raw -Encoding UTF8
     if ($null -ne $body) {
-      $content = "$body`nToolkit root: $PluginRoot — resolve any ``skills/…`` path in this document relative to that directory."
+      # Same text as the bash twin; the em dash and ellipsis are built from code points
+      # to keep this file ASCII.
+      $content = "$body`nToolkit root: $PluginRoot $([char]0x2014) resolve any ``skills/$([char]0x2026)`` path in this document relative to that directory."
     } else {
       $content = "FirstSpirit AI Toolkit: bootstrap skill not found at $SkillFile."
     }
@@ -157,5 +163,8 @@ if ($env:COPILOT_PLUGIN_ROOT -or $env:COPILOT_AGENT_SESSION_ID) {
 } else {
   $payload = @{ additionalContext = $content } | ConvertTo-Json -Compress -Depth 2
 }
+# Escape every non-ASCII character as \uXXXX so the output does not depend on the
+# console code page, which on Windows is rarely UTF-8.
+$payload = [regex]::Replace($payload, '[^\x00-\x7F]', { param($m) '\u{0:x4}' -f [int][char]$m.Value })
 [Console]::Out.Write($payload + "`n")
 exit 0
