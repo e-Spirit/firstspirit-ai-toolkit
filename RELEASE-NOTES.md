@@ -1,5 +1,22 @@
 # Release Notes
 
+## 0.3.1 — 2026-10-01
+
+Skills are unchanged from 0.3.0 (each SKILL.md still carries source commit 239a7e2 and
+`toolkit-version: "0.3.0"` in its `metadata:` block).
+
+Changes since 0.3.0 — a hook fix only:
+
+- **Fix (issue #15, second report)**: the PowerShell session-start hook
+  (`hooks/session-start.ps1`) failed to parse in Windows PowerShell 5.1. That shell reads a
+  `.ps1` without a byte-order mark in the ANSI code page, where the UTF-8 em dash on the
+  "Toolkit root" line decodes to a sequence ending in a curly double quote, which PowerShell
+  accepts as a string delimiter. The script is now pure ASCII (the em dash and ellipsis are
+  built from code points, so the emitted text still matches the bash hook), reads files with
+  `-Encoding UTF8`, and escapes non-ASCII in its JSON output as `\uXXXX` so the console code
+  page cannot garble it. `scripts/test-manifests.sh` now fails on any non-ASCII byte in
+  `hooks/*.ps1`. Not yet confirmed on a Windows machine — see the issue.
+
 ## 0.3.0 — 2026-09-30
 
 Skills in this release (each SKILL.md carries the same source commit in its `metadata:` block):
