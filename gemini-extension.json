@@ -1,6 +1,6 @@
 {
   "name": "firstspirit-ai-toolkit",
   "description": "Skills and tools for building and managing FirstSpirit CMS projects with AI",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "contextFileName": "GEMINI.md"
 }

@@ -130,6 +130,15 @@ for spec in "hooks/hooks.json#.hooks.SessionStart[0].hooks[0].powershell" \
 done
 if [ -f "$REPO_ROOT/hooks/session-start.ps1" ]; then pass "hooks/session-start.ps1 exists"; else fail "hooks/session-start.ps1 exists" "missing"; fi
 
+echo "== PowerShell scripts are pure ASCII =="
+# Windows PowerShell 5.1 reads a BOM-less .ps1 in the ANSI code page. A UTF-8 em dash
+# then ends in 0x94, a curly quote that closes the string early (issue #15).
+for ps1 in "$REPO_ROOT"/hooks/*.ps1; do
+  rel="${ps1#"$REPO_ROOT"/}"
+  bad="$(LC_ALL=C grep -n $'[^ -~\t\r]' "$ps1" | cut -d: -f1 | tr '\n' ' ')"
+  if [ -z "$bad" ]; then pass "$rel is ASCII"; else fail "$rel is ASCII" "non-ASCII bytes on line(s): $bad"; fi
+done
+
 echo "== the hook entry points are executable =="
 for h in hooks/run-hook.cmd hooks/session-start; do
   if [ -x "$REPO_ROOT/$h" ]; then

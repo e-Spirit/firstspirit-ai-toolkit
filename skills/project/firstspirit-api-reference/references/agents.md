@@ -78,7 +78,7 @@ The agents you reach for most (all via `requireSpecialist(X.TYPE)`):
 | `ServerConfigurationAgent` | Server properties: `getServerProperty(ServerProperty<T>)` returns **`Optional<T>`**; `setServerProperty`, `removeServerProperty`, `getAllowedRedirectHosts()` |
 | `FileSystemsAgent` | File systems for I/O from scripts and modules: `getOSFileSystem(path)`, `getMemoryFileSystem()`, `getRelativeFileSystem(handle)`. Package `de.espirit.firstspirit.io` |
 | `ProcessAgent` | Start an OS process on the server: `getBuilder()` returns a `ProcessAgent.ProcessBuilder` |
-| `FeatureToggleAgent` | Server feature toggles: `isAvailable(name)`, `isEnabled(name)`, `isEnabled(name, default)`; `enable` / `disable` |
+| `FeatureToggleAgent` | Server feature toggles: `isAvailable(name)`, `isEnabled(name)`, `isEnabled(name, default)`; `enable` / `disable`. On 5.2.261011, not on 5.2.240208 `[jar]` |
 | `UrlRegistryAgent` | URLs registered by the URL factory: `getPath(IDProviderKey)`, `getEntries(url)` (every element registered under a URL), `clearCaches()` |
 | `EventBusAgent` | Generic publish/subscribe between components: `post`, `register`, `unregister` with a `BusIdentifier<T>` (`T` must be `Serializable`) |
 
