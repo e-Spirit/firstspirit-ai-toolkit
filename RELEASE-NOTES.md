@@ -2,10 +2,36 @@
 
 ## 0.3.1 — 2026-10-01
 
-Skills are unchanged from 0.3.0 (each SKILL.md still carries source commit 239a7e2 and
-`toolkit-version: "0.3.0"` in its `metadata:` block).
+Skills in this release (each SKILL.md carries the same source commit in its `metadata:` block):
 
-Changes since 0.3.0 — a hook fix only:
+- `firstspirit-api-reference` @ 889cb43 (beta)
+- `firstspirit-templating-reference` @ 889cb43 (beta)
+- `firstspirit-scripting` @ 889cb43 (beta)
+- `firstspirit-rest-api` @ 889cb43 (beta)
+- `firstspirit-external-sync-export` @ 889cb43 (beta)
+- `firstspirit-operations` @ 889cb43 (beta)
+- `firstspirit-contentcreator-extensions` @ 889cb43 (beta)
+- `firstspirit-template-design` @ 889cb43 (beta)
+
+Changes since 0.3.0 — a hook fix, and the first community corrections to the skills:
+
+- **`firstspirit-api-reference`: seven agents added to the catalogue** (pull request #19 by
+  @lopesra): `ModuleAgent`, `ServerConfigurationAgent`, `FileSystemsAgent`, `ProcessAgent`,
+  `FeatureToggleAgent`, `UrlRegistryAgent`, `EventBusAgent`, each with its methods. Re-checked
+  with `javap` against the 5.2.261011 and 5.2.240208 runtime jars; `FeatureToggleAgent` exists
+  only on the newer one and the row says so.
+- **`firstspirit-api-reference` / `firstspirit-scripting`: Access API signatures and
+  persistence behaviour** (pull requests #17 and #18 by @lopesra, merged into 0.3.0 without a
+  release-notes entry — recorded here). Five signatures corrected (`createSection` /
+  `createSectionReference` live on `Body`, `Page.getBodyByName`, no `PageRef.getTarget(boolean)`
+  / `getUrl()`, `getElementType()` returns `String`, `ClientScriptOperation` is in
+  `webedit.server`, release is element-level via `IDProvider.release()`), all confirmed with
+  `javap` on both jars. Five persistence statements from a live FirstSpirit 5.2.251308
+  (`setFormData` before `save()`, structural operations persist at once, no explicit lock needed
+  for `createSection` / `createDataset`, `save("comment")` on an unchanged dataset writes a
+  revision, language-independent media return the same binary for any language) are tagged
+  `[observed]`. The `createSection` line now also notes the declared `throws LockException`.
+- The other six skills are republished unchanged apart from the provenance stamp.
 
 - **Fix (issue #15, second report)**: the PowerShell session-start hook
   (`hooks/session-start.ps1`) failed to parse in Windows PowerShell 5.1. That shell reads a

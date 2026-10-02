@@ -14,9 +14,9 @@ description: >-
   uid". Pair with firstspirit-scripting (how to run code + the script contexts)
   and the FirstSpirit module development documentation (ODFS) (how to package it).
 metadata:
-  source-commit: "239a7e2"
-  published: "2026-09-30"
-  toolkit-version: "0.3.0"
+  source-commit: "889cb43"
+  published: "2026-10-02"
+  toolkit-version: "0.3.1"
 ---
 
 > **Beta.** Early public release. Feedback welcome; behaviour and structure may change.

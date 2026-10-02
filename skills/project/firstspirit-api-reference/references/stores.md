@@ -31,7 +31,7 @@ FormData     section.getFormData(Language);
 T            section.getTemplate();              // its SectionTemplate
 
 // Create (declared on Body / GCABody, not on Page)
-Section          body.createSection(name, template);        // no page lock needed; persists at once [observed]
+Section          body.createSection(name, template);        // persists at once, no explicit lock needed [observed]; declared `throws LockException` [jar]
 SectionReference body.createSectionReference(name, source);  // reuse another section
 ```
 
