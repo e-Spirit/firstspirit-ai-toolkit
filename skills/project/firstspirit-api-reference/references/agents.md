@@ -74,6 +74,13 @@ The agents you reach for most (all via `requireSpecialist(X.TYPE)`):
 | `MaintenanceModeAgent`, `RunLevelAgent` | Server state (admin) |
 | `BrokerAgent` | Obtain a *project-scoped* broker from a non-project context (e.g. server schedule) |
 | `IDProviderEventAgent` | React to element saves: `addListener(Predicate<EventInfo>, Consumer<RevisionEvent>)` / `removeListener(consumer)` `[jar]`. The agent holds the consumer *weakly* — keep your own reference `[javadoc]`; obtain it from a **project** broker `[observed]` (the FirstSpirit module development documentation (ODFS), component-types "Reacting to element changes") |
+| `ModuleAgent` | Installed module components by interface: `getComponents(Class<?>)`, `getTypeForName(name, Class<T>)`, `getClassLoader()`. Package `de.espirit.firstspirit.access`, not `agency` |
+| `ServerConfigurationAgent` | Server properties: `getServerProperty(ServerProperty<T>)` returns **`Optional<T>`**; `setServerProperty`, `removeServerProperty`, `getAllowedRedirectHosts()` |
+| `FileSystemsAgent` | File systems for I/O from scripts and modules: `getOSFileSystem(path)`, `getMemoryFileSystem()`, `getRelativeFileSystem(handle)`. Package `de.espirit.firstspirit.io` |
+| `ProcessAgent` | Start an OS process on the server: `getBuilder()` returns a `ProcessAgent.ProcessBuilder` |
+| `FeatureToggleAgent` | Server feature toggles: `isAvailable(name)`, `isEnabled(name)`, `isEnabled(name, default)`; `enable` / `disable` |
+| `UrlRegistryAgent` | URLs registered by the URL factory: `getPath(IDProviderKey)`, `getEntries(url)` (every element registered under a URL), `clearCaches()` |
+| `EventBusAgent` | Generic publish/subscribe between components: `post`, `register`, `unregister` with a `BusIdentifier<T>` (`T` must be `Serializable`) |
 
 > Not the full set — the `de.espirit.firstspirit.agency` package has more (see
 > the FirstSpirit ODFS documentation). These cover the vast majority of script/module needs.
