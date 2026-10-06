@@ -55,7 +55,7 @@ top.WE_API.Report.show(
 - A key given with value **`null`** → that filter is reset to the plug-in default.
 - Unknown keys are ignored. Values of the wrong type are coerced if possible, without
   guarantee; an uninterpretable value logs a JavaScript warning and leaves the filter as is.
-- Defining `Parameter`s on the plug-in side: the FirstSpirit module development documentation (ODFS: DataAccessPlugin and reports).
+- Defining `Parameter`s on the plug-in side: `firstspirit-module-development/references/data-access-and-reports.md`.
 
 ## `restart` [odfs]
 

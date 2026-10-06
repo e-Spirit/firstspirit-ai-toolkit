@@ -233,6 +233,12 @@ Content is an HTML/text string:
   "content": "<p>This is <b>formatted</b> text.</p>"
 }
 ```
+- A PATCH whose content contains **inline links** answered `500` `[observed]`; the cause
+  is not isolated (link markup, or the link's reference attributes). Read the field back
+  from an element that already holds such a link and send that shape, or leave the link to
+  an editor.
+- The server **rewrites `data-list-attributes=""`** on lists `[observed]`. Send a bare
+  `<ul>` / `<ol>`; do not echo the attribute back, and do not diff on it.
 
 #### CMS_INPUT_COMBOBOX (single-select)
 ```json
@@ -526,6 +532,11 @@ curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
 curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
   "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/data-sources/products/{gid}/entity"
 ```
+
+> **Table templates are not readable over REST** `[observed]`: `GET …/templates/table-templates/`
+> answers `404`. To learn a dataset's **database column names**, read its `/entity`. The data
+> source *listing* also omitted some data sources `[observed]`, so an absent entry is not proof
+> the data source does not exist; address it by uid.
 
 ### Write Dataset Fields (form-editor pattern)
 Dataset editing works exactly like page/section editors: **GET the editor → mutate

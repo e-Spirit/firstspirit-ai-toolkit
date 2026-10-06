@@ -3,9 +3,9 @@ name: firstspirit-contentcreator-extensions
 description: >-
   Lookup reference for extending the FirstSpirit ContentCreator. Browser side: the WE_API JavaScript API (top.WE_API.Common / Dialog / Preview / Report, FSID, jumpTo, execute, showMessage, createDialog, preview reload / rescan / repaint, report shortcodes), the server→browser bridges ClientScriptOperation (sync vs async, callback-must-fire) and ClientResourceOperation, a "does not work in ContentCreator" list, MPP_API / JC_API (SiteArchitect). Java side: the ContentCreator plug-in interfaces a module implements (toolbar, inline edit, status notes, element status, timeline, translation) and the @WebAppComponent they need. Use whenever JavaScript in a ContentCreator preview or action must talk to the client, a BeanShell script or Executable must run JavaScript in the editor's browser, or a module adds ContentCreator UI — e.g. "reload only this section after my script ran", "open a report with a preset filter", "why does my ClientScriptOperation never return", "add a button to the ContentCreator toolbar".
 metadata:
-  source-commit: "889cb43"
-  published: "2026-10-02"
-  toolkit-version: "0.3.1"
+  source-commit: "8b27f9a"
+  published: "2026-10-06"
+  toolkit-version: "0.4.0"
 ---
 
 > **Beta.** Early public release. Feedback welcome; behaviour and structure may change.
@@ -113,10 +113,10 @@ action, a workflow script) and needs the browser's answer before it can continue
   `firstspirit-templating-reference/references/gom/references-links.md`.
 - **Shipping JavaScript, an `Executable` or a plug-in class in a module** — `web-app`
   components, `fsWebCompile`, `cxt-cc-api` as `compileOnly`:
-  the FirstSpirit module development documentation (ODFS: web-app components and `<public>` components) and
-  the FirstSpirit module Gradle plugin documentation (`fsWebCompile` / `fsModuleCompile`). The plug-in *interfaces* are here
+  `firstspirit-module-development/references/component-types.md` and
+  `firstspirit-module-development/references/multi-project-layout.md`. The plug-in *interfaces* are here
   (`references/java-plugins.md`); the packaging is not. Report plug-ins and their
-  `Parameter` types: the FirstSpirit module development documentation (ODFS: DataAccessPlugin and reports).
+  `Parameter` types: `firstspirit-module-development/references/data-access-and-reports.md`.
 - **Defining** the MPP parameterisation template, timeline and viewports (SiteArchitect
   documentation), and SiteArchitect browser-app configuration — not covered. The `MPP_API`
   and `JC_API` *calls* are: `references/mpp-api.md`, `references/jc-api.md`.

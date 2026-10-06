@@ -120,7 +120,7 @@ top.WE_API.Common.execute("class:com.example.MyExecutable", {}, function (result
   `context.getProperties()` nor as script variables. Single observation; details and the
   workaround in `references/does-not-work-in-contentcreator.md`. Treat the result direction
   (callback) as reliable and the parameter direction as unproven. [observed] [verify]
-- Shipping the `Executable` class: the FirstSpirit module development documentation (ODFS: web-app components and `<public>` components).
+- Shipping the `Executable` class: `firstspirit-module-development/references/component-types.md`.
 - SiteArchitect twin: `top.JC_API.execute(...)` — same identifier formats, plus a synchronous
   one-argument form: `references/jc-api.md`.
 

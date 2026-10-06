@@ -13,6 +13,11 @@ The only reliable method:
 
 This works because the API accepts its own GET output as valid PATCH input.
 
+> **Link-template cards.** A card of a *link catalogue* (cards based on a link template) answered
+> `404 "Section template … not found"` `[observed]`: the catalog endpoints look the card up as
+> a section template. Treat link-template cards as not editable over REST in the tested
+> version; edit them in the client.
+
 ## Language Handling
 
 - Project languages use **UPPERCASE** abbreviations: `EN`, `FR`, `DE` (not `en`, `fr`, `de`)

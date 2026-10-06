@@ -37,7 +37,7 @@ run = ops.getOperation(ClientScriptOperation.TYPE);
 result = run.perform("function f(callback) { MyModule.openDialog(callback); }", true);
 ```
 Composite of the Javadoc members; not an official example. Where the files are served from
-(the module's `web-app` component, its resource path) is the FirstSpirit module development documentation (ODFS: web-app components and `<public>` components). [verify]
+(the module's `web-app` component, its resource path) is `firstspirit-module-development/references/component-types.md`. [verify]
 
 ## Open
 

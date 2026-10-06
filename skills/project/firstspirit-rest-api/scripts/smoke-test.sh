@@ -147,7 +147,7 @@ if is2xx && [ -n "$(jqr '.openapi // .swagger')" ]; then
   HOST="$(printf '%s' "$FS_REST_BASE_URL" | sed -E 's#^[a-z]+://##; s#[/:].*##')"
   SNAP_HOST="$SNAP_DIR/$HOST"; mkdir -p "$SNAP_HOST"
   NEW="$OUT/openapi.json"; jq -S . "$BODY" > "$NEW"
-  API_VERSION="$(jq -r '.info.version // ("openapi " + .openapi)' "$NEW")"   # the spec carries no module version (0.0.23-beta)
+  API_VERSION="$(jq -r '.info.version // ("openapi " + .openapi)' "$NEW")"   # the spec carries no module version (0.0.23-beta … 0.0.25-beta); GET /modules/ has it
   N_PATHS="$(jq '.paths | length' "$NEW")"
   PREV="$(ls -1 "$SNAP_HOST"/*.json 2>/dev/null | sort | tail -1)"
   if [ -z "$PREV" ]; then
@@ -311,6 +311,15 @@ else
   req GET "$P/data-sources/$DS/datasets/"; OLDP="$STATUS"
   if [ "$NEWP" = 200 ] && [ "$OLDP" = 404 ]; then pass R11 "datasets at /data-sources/$DS/ (200); legacy /datasets/ → 404"
   else fail R11 "datasets addressed directly under the data-source" "/data-sources/$DS/ → $NEWP, …/datasets/ → $OLDP"; fi
+fi
+
+# R12 — page-template content areas are a resource from 0.0.25-beta (…/page-templates/{uid}/bodies/)
+if [ -z "$PAGE_TEMPLATE" ]; then skip R12 "page-template /bodies/ resource" "no page template found — set FS_TEST_PAGE_TEMPLATE"
+else
+  req GET "$P/templates/page-templates/$PAGE_TEMPLATE/bodies/"
+  if is2xx && [ "$(jqr type)" = array ]; then pass R12 "GET /templates/page-templates/$PAGE_TEMPLATE/bodies/ lists $(jqr length) content area(s) (≥ 0.0.25-beta)"
+  elif [ "$STATUS" = 404 ] || [ "$STATUS" = 405 ]; then warn R12 "page-template /bodies/ resource" "HTTP $STATUS — REST module older than 0.0.25-beta; content areas are create-only here"
+  else fail R12 "GET /templates/page-templates/{uid}/bodies/" "HTTP $STATUS, shape $(keys)"; fi
 fi
 
 # ---- Write probes (throwaway page) -------------------------------------------

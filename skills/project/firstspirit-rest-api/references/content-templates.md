@@ -38,10 +38,33 @@ The `bodies` array defines the content areas the page template provides. Each en
 >   the key always, `[]` for a body that allows nothing. The section templates it names must
 >   already exist (import them first); an allow-list that was imported earlier in the same run
 >   was read back intact.
-> - **Bodies are create-only.** No resource adds a content area to an existing page template.
->   A template created without the right bodies is repaired only by `DELETE` and re-create,
->   and every `PUT …/pages/{uid}/bodies/{body}/sections/{name}` against a body name that does
->   not exist answers 404. Decide the body names before the first POST.
+> - **Bodies are create-only up to `0.0.24-beta`.** No resource adds a content area to an
+>   existing page template. A template created without the right bodies is repaired only by
+>   `DELETE` and re-create, and every section write against a body name that does not exist
+>   answers 404. Decide the body names before the first POST. **From `0.0.25-beta`** the page
+>   template has a `bodies` resource — see the next block.
+
+### Content areas of an existing page template (`0.0.25-beta`)
+
+Present in the OpenAPI document of `0.0.25-beta` (read live 2026-10-06); the behaviour below is
+what that document states and has not been exercised yet `[verify]`:
+
+```
+GET    /projects/{id}/templates/page-templates/{uid}/bodies/            # [TemplateBodyDTO] with the *effective* allowed templates
+POST   /projects/{id}/templates/page-templates/{uid}/bodies/            # {"name","allowedTemplates"?} → 201; 409 name exists; 400 unknown template uid
+PUT    /projects/{id}/templates/page-templates/{uid}/bodies/{bodyName}  # rename and/or replace the whitelist → 200; 409 target name in use
+DELETE /projects/{id}/templates/page-templates/{uid}/bodies/{bodyName}  # 204; allowed while pages use the template
+```
+
+- Adding and renaming are safe for templates already used by pages; existing content in a renamed
+  area is preserved. Deleting an area makes the content pages stored in it unreachable.
+- **Whitelists are evaluated per page template, not per content area.** While no area of the
+  template has a whitelist, every section and table template is allowed in every area (and the GET
+  lists all of them for every area). As soon as one area has a whitelist, every other area without
+  one allows nothing. So an empty `allowedTemplates` means "everything" in an unrestricted
+  template and "nothing" next to a restricted area.
+- On `PUT`, omitting `allowedTemplates` keeps the current whitelist; `[]` drops this area's entries.
+  On `POST`, omitting or `[]` creates the area without a whitelist of its own.
 
 ### Format Template
 ```bash

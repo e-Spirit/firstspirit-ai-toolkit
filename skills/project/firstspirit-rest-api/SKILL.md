@@ -9,9 +9,9 @@ description: >
   media upload, content search. Also use when the user mentions "FirstSpirit REST API" or asks how to read/write
   content via the API.
 metadata:
-  source-commit: "889cb43"
-  published: "2026-10-02"
-  toolkit-version: "0.3.1"
+  source-commit: "8b27f9a"
+  published: "2026-10-06"
+  toolkit-version: "0.4.0"
 ---
 
 > **Beta.** Early public release. Feedback welcome; behaviour and structure may change.
@@ -188,9 +188,13 @@ GET    /projects/{id}/templates/{type}-templates/{uid}/channel-sources/
 GET|PUT /projects/{id}/templates/{type}-templates/{uid}/channel-sources/{templateSetUid}  # text/plain
 GET    /projects/{id}/templates/schemas/              # list DB schemas (read-only)
 GET    /projects/{id}/templates/schemas/{schemaUid}
+GET|POST /projects/{id}/templates/page-templates/{uid}/bodies/            # ≥ 0.0.25-beta: content areas of an existing page template
+PUT|DELETE /projects/{id}/templates/page-templates/{uid}/bodies/{bodyName} # ≥ 0.0.25-beta: rename / re-whitelist / remove
 ```
 
 Note: Format templates have no GOM or Rules endpoints. Link/Page/Section templates have all of GOM, Rules and channel-sources.
+Before `0.0.25-beta` a page template's content areas are fixed at creation (`bodies` in the POST);
+see [content-templates.md](references/content-templates.md) for the whitelist semantics.
 
 ### Pages
 
@@ -199,8 +203,11 @@ Note: Format templates have no GOM or Rules endpoints. Link/Page/Section templat
 > **name** and a section is created with `PUT …/sections/{name}`. From `0.0.24-beta` the path
 > variable is the section's numeric `id` (from `GET …/bodies/{body}` or the create response),
 > because names are not unique within a body, and creation is `POST …/sections/` with
-> `{"name","templateUid","index"?}` (`index` 0-based, omitted or out of range appends). Check
-> the server's version (`/rest/v3/api-docs` `info.version`) before choosing the form; both are
+> `{"name","templateUid","index"?}` (`index` 0-based, omitted or out of range appends). The
+> OpenAPI document carries no module version; check the installed REST module's version
+> (`GET /modules/`, or the ServerManager) before choosing the form, or probe: a `0.0.24-beta`
+> or newer document has no `PUT …/sections/{name}` operation (confirmed on the `0.0.25-beta`
+> document, 2026-10-06; the id-based writes themselves are not yet probed live). Both forms are
 > shown below.
 
 ```
@@ -326,8 +333,9 @@ GET    /projects/{id}/global-content/project-properties
 PATCH  /projects/{id}/global-content/project-properties/form/{editor}
 ```
 
-Added in `0.0.24-beta` (read from the module source, not yet probed live `[core]`) — GCA pages get
-the same body/section/form model as pages, sections by numeric id:
+Added in `0.0.24-beta` (read from the module source `[core]`; the operations are present in the
+`0.0.25-beta` OpenAPI document, their behaviour is not yet probed live) — GCA pages get the same
+body/section/form model as pages, sections by numeric id:
 
 ```
 POST   /projects/{id}/global-content/                                  # create GCA page

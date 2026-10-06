@@ -116,6 +116,13 @@ $CMS_ELSE$
 $CMS_END_IF$
 ```
 
+### `if()` as a function evaluates both branches
+
+The inline `if(cond, a, b)` (as in `$CMS_SET(x, if(!element.isNull, element, ""))$`)
+evaluates **both** `a` and `b` `[observed]`. Do not put a null access in a branch and expect
+the condition to protect it; guard it before the call (a `$CMS_IF$` around the whole
+statement, or a prior `isNull` check). `$CMS_IF$` … `$CMS_END_IF$` skips its body.
+
 ### If-elsif-else
 
 ```
@@ -155,6 +162,20 @@ $CMS_END_IF$
 ```
 
 ---
+
+### `$CMS_SWITCH$`: where the default goes
+
+The default content goes **between `$CMS_SWITCH(expr)$` and the first `$CMS_CASE$`**, not
+after the last case `[observed]` (worked example: `real-world.md` → *CTA Button / Link
+Dispatch*).
+
+```
+$CMS_SWITCH(st_layout)$
+  default markup
+$CMS_CASE("wide")$
+  …
+$CMS_END_SWITCH$
+```
 
 ## Logical and Comparison Operators
 

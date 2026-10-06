@@ -1,5 +1,68 @@
 # Release Notes
 
+## 0.4.0 — 2026-10-06
+
+Skills in this release (each SKILL.md carries the same source commit in its `metadata:` block):
+
+- `firstspirit-api-reference` @ 8b27f9a (beta)
+- `firstspirit-templating-reference` @ 8b27f9a (beta)
+- `firstspirit-scripting` @ 8b27f9a (beta)
+- `firstspirit-rest-api` @ 8b27f9a (beta)
+- `firstspirit-external-sync-export` @ 8b27f9a (beta)
+- `firstspirit-operations` @ 8b27f9a (beta)
+- `firstspirit-contentcreator-extensions` @ 8b27f9a (beta)
+- `firstspirit-template-design` @ 8b27f9a (beta)
+- `firstspirit-cloud` @ 8b27f9a (beta)
+- `firstspirit-headless` @ 8b27f9a (beta)
+- `firstspirit-module-development` @ 8b27f9a (beta)
+
+Changes since 0.3.1 — three skills join the toolkit (all beta); the eight existing skills are
+republished from the same source commit with the corrections listed below.
+
+- **New: `firstspirit-cloud`** (`skills/deployment/`) — FirstSpirit Cloud, the managed SaaS on
+  AWS: the constraints to plan around (no server file-system or server-admin access, no custom
+  global web apps, locked server configuration, what is self-service and what is a Support
+  request, SSO and MFA limits, what is backed up and what is not), the DEV/QA/PROD stages and
+  promotion, Git-based development and Template Transport, the module build pipeline and its
+  Gradle / FSM-plugin / JDK compatibility chain, identity and access (Keycloak realms, external
+  identity providers), S3 + CloudFront caching and invalidation, deploy and generation options,
+  redirects, patch days and maintenance windows, backup and recovery, logging and monitoring,
+  the go-live checklist. Beta: several operational values (patch cadence, invalidation limit,
+  shared-bucket delivery) are documented from one environment and marked for confirmation.
+- **New: `firstspirit-headless`** (`skills/deployment/`) — the headless delivery stack: CaaS
+  Platform (REST and GraphQL, filtering, sort and projection, reference resolution, named
+  aggregations and aggregation stages in GraphQL apps, WebSocket change streams, API keys and
+  secure tokens, limits and error codes), CaaS Connect (the `toJson` document shape, preview vs
+  release collections, media and rendition URLs), the Navigation Service (endpoints, the `caas`
+  format with `idMap` / `seoRouteMap`, route resolution, `customData`) and OCM / TPP / SNAP (the
+  `TPP_SNAP` API, `data-preview-id` decoration, the non-headless JavaScript APIs to avoid). Built
+  from the product documentation and the platform sources, cross-checked against live sessions
+  where noted; items the author could not run are marked **(UNVERIFIED)** in the text.
+- **New: `firstspirit-module-development`** (`skills/project/`) — building FirstSpirit modules
+  (FSM): `module.xml` and the `@…Component` annotations, resource scopes and Isolated Mode, the
+  Gradle multi-project layout (`fsServerCompile` / `fsModuleCompile` / `fsWebCompile`, the 7.x
+  plugin split, `checkCompliance`), the Cloud build pipeline, every component type with a
+  skeleton (`Executable`, `Service` / `ServiceProxy`, `ValueService`, `ProjectApp` and
+  `Configurable`, client plugins, schedule tasks, web-app components, `DataAccessPlugin`,
+  `Report`, `UrlFactory`, `UploadHook`, `IDProviderEventAgent` listeners, `GadgetSpecification`),
+  the broker idioms, the non-public packages to avoid with their public replacements, and
+  `ConnectionManager` from a standalone application. Every class and method name was checked
+  with `javap` against the 5.2.261011 and 5.2.240208 runtime jars; the official ContentCreator
+  example modules compile against the API the skill describes. Beta: a full review by a module
+  SME is still open.
+- **`firstspirit-rest-api`**: link-template cards, the inline-link 500, list-attribute rewrite,
+  table templates — from a live session, tagged `[observed]`. REST module `0.0.25-beta`: the
+  content areas of an existing page template are now a resource (`GET|POST
+  …/page-templates/{uid}/bodies/`, `PUT|DELETE …/bodies/{bodyName}`, with the whitelist
+  semantics the API document states); "bodies are create-only" is gated to older modules; the
+  version-drift notes no longer point at a non-existent `info.version`; the smoke test gains a
+  read-only probe for the new resource. Surface verified against the live OpenAPI document; the
+  write behaviour is marked `[verify]` until the next credentialed smoke run.
+- **`firstspirit-templating-reference`**: `CMS_SWITCH` default, inline `if()` evaluates both
+  branches, editor order — from a live session, tagged `[observed]`.
+- The other five existing skills are republished unchanged apart from the provenance stamp.
+
+
 ## 0.3.1 — 2026-10-01
 
 Skills in this release (each SKILL.md carries the same source commit in its `metadata:` block):

@@ -235,4 +235,4 @@ Two Access API interfaces, both usable in the template language with their docum
   `catalogs-indexes.md`; datatypes in the output channel: `../datatypes.md`.
 - Which relation to model with which component, key uniqueness, ordering, language per column:
   `firstspirit-template-design` principle 11.
-- Datasets in CaaS (`DatasetReference`, `routes`): the FirstSpirit headless delivery documentation (CaaS, TPP).
+- Datasets in CaaS (`DatasetReference`, `routes`): `firstspirit-headless`.

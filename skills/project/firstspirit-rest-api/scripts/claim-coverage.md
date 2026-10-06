@@ -26,6 +26,7 @@ Legend: R = read-only (default run) · W = `--write` (W1–W9 page, W10–W12 pa
 | R9 | `GET /search/by-uid?uid=` resolves a page | search-and-discovery.md → Search by UID |
 | R10 | MediaStore enumeration answers 200 (was 405 before 0.0.23-beta) | content-management.md → Media |
 | R11 | datasets live directly under `/data-sources/{uid}/` — no `/datasets/` segment | content-management.md → Data Sources |
+| R12 | `GET /templates/page-templates/{uid}/bodies/` lists content areas (≥ 0.0.25-beta; WARN on an older module) | content-templates.md → Content areas of an existing page template; SKILL.md → Templates |
 | W1 | `POST /pages/ {uid, templateUid}` creates a page and returns a numeric `id` | content-management.md → Create Page |
 | W2 | `PATCH …/rename` takes `{name, language}` and changes the display name; `{uid}` is rejected; the uid cannot change | content-management.md → Pages (rename) |
 | W3 | `PUT …/bodies/{body}/sections/{name} {templateUid}` adds a section | content-management.md → Add Section to Body |
