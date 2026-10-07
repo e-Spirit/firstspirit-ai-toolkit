@@ -9,8 +9,8 @@ description: >
   media upload, content search. Also use when the user mentions "FirstSpirit REST API" or asks how to read/write
   content via the API.
 metadata:
-  source-commit: "8b27f9a"
-  published: "2026-10-06"
+  source-commit: "91d76a9"
+  published: "2026-10-07"
   toolkit-version: "0.4.0"
 ---
 
@@ -20,12 +20,12 @@ metadata:
 
 ## Critical Rules (read first — these cause most failures)
 
-1. **PATCH on `/form/{editor}` requires the complete FormEditorDTO** — always including `configuration`, `description`, `language` and (for FS_REFERENCE) the full `content` object. Never hand-craft the payload. Use **GET → jq → PATCH**: the GET response is valid PATCH input.
+1. **PATCH on `/form/{editor}` needs `name` (equal to the editor in the URL), `type` and `content`.** `configuration`, `description` and `language` are ignored on write; FS_REFERENCE content needs only `{"uid":"…","uidType":"…"}` (clear with `{"empty":true}`) `[core]` (module source `0.0.23-beta` to `0.0.25-beta`; a minimal scalar PATCH verified live on `0.0.25-beta`). Still use **GET → jq → PATCH** for anything structured (FS_CATALOG cards, references, links): the GET response is valid PATCH input and already has the right `content` shape.
 2. **Never inline JSON with `-d '…'`**. Apostrophes/quotes in German content break shell parsing. Always write JSON to `./tmp/payload.json` and send with `--data-binary @./tmp/payload.json`.
 3. **Language suffix `/{LANG}` is required when `usesLanguages: true`** in the editor's configuration. Codes are **UPPERCASE** (`DE`, `EN`, `FR`). Check via `GET /projects/{id}/languages/`.
-4. **Content-Types are strict** (see table below). Wrong type is rejected — **`415` on some endpoints, `500` on others** (a `text/plain` PATCH to a JSON `/form/{editor}` returned `500`, not `415`), and in a few cases a silent failure. Do not rely on `415` specifically; just send the documented type.
+4. **Send the documented Content-Type** (see table below). The module never answers `415`: a wrong type on a JSON endpoint ends in `500` (a `text/plain` PATCH to `/form/{editor}` → `500`, verified live on `0.0.23-beta` and `0.0.25-beta`); endpoints with a raw text body and no declared input type (GOM, rules, channel sources) accept any type silently `[core]`.
 5. **Parallelize reads and independent writes.** GET of several fields, or PATCH of independent editors on the same section, can run concurrently. Only serialize when one call depends on the previous response.
-6. **Configuration is required on every nested editor in FS_CATALOG.** Empty `configuration: {}` causes 500. Preserve the configuration from GET.
+6. **Every card in an FS_CATALOG needs `id` and `templateUid`; every nested editor needs `name`, `type` and a matching `content`.** `configuration` is not read on write `[core]`. A `null` value on an option editor (RADIOBUTTON / COMBOBOX) inside a card is a `500`; keep the value from GET.
 
 ## Setup
 
@@ -74,7 +74,7 @@ sections that use the listed paths before trusting them.
 
 ## Critical Content-Type Rules
 
-Wrong Content-Type = silent failure, `415`, **or `500`** (the code varies by endpoint — e.g. a `text/plain` PATCH to a JSON `/form/{editor}` returns `500`). Follow these exactly:
+Wrong Content-Type = silent acceptance (raw-text endpoints without a declared input type: GOM, rules, channel sources) **or `500`** (every JSON endpoint — e.g. a `text/plain` PATCH to `/form/{editor}`; the module never answers `415`) `[core]`. Follow these exactly:
 
 | Endpoint | Method | Content-Type (Request) | Body Format |
 |----------|--------|----------------------|-------------|
@@ -265,6 +265,10 @@ GET    /projects/{id}/media/{uid}/revisions/    GET .../revisions/{revisionId}
 ```
 
 ### Data Sources & Datasets
+> **Dataset writes are not working yet in the beta module** (confirmed internally at FirstSpirit,
+> 2026-10-07). On `0.0.25-beta` creating a dataset answers `500 ValidationError` on every data source
+> tried; treat the create / edit / delete operations below as the documented surface, not as verified
+> behaviour, and read datasets only until a release note says otherwise.
 > **Changed in this API version.** Datasets are now addressed **directly under the
 > data-source** — the old `/datasets/` path segment is gone (returns 404). Dataset
 > field editing has moved from `PATCH …/{gid}/entity` to the **form editor pattern**
@@ -377,7 +381,11 @@ curl -s ... "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/pages/" | jq '.[].uid'
 
 ## Actions Pattern
 
-Copy or release any element:
+Copy or release a **page, page reference or medium** (the OpenAPI document has `…/actions` for
+exactly these three). **Nothing in the TemplateStore can be released** (templates, scripts, schemas): there is no `actions` resource for templates
+(`POST …/templates/page-templates/{uid}/actions` → `404` `[observed]`), and in SiteArchitect and
+ContentCreator they cannot be released either `[observed]`. Template store content moves between projects by Template
+Transport, Content Transport or Git, not by release.
 ```bash
 curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
   -X POST -H "Content-Type: application/json" \
@@ -401,9 +409,8 @@ Actions: `copy`, `release`. Options for release:
 | 409 | Conflict: duplicate name or reference name, element locked by another session, element moved `[core]` |
 | 410 | Element was deleted `[core]` |
 | 413 | Upload too large `[core]` |
-| 415 | Wrong Content-Type (some endpoints return `500` instead — see Critical Content-Type Rules) |
 | 429 | Rate limit or login throttle (`fs.rest.rateLimit.*` on the server; too many failed logins) `[core]` |
-| 500 | Server error — also seen for: wrong Content-Type on `/form/{editor}`; `{uid}` sent to a `/rename` (wants `{name,language}`); missing/`null` `configuration` on an FS_CATALOG editor; `null` RADIOBUTTON in a constructed card |
+| 500 | Server error — also for: wrong Content-Type on any JSON endpoint (never `415`) `[core]`; `{uid}` sent to a `/rename` (wants `{name,language}`); a `name` in the body that differs from the editor in the URL (page forms); `null` RADIOBUTTON / COMBOBOX in a constructed card `[core]` |
 
 Codes marked `[core]` come from the module's exception handler (source at `0.0.25-beta-SNAPSHOT`);
 the smoke test has not provoked them all.

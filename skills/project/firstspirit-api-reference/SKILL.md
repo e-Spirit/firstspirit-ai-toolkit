@@ -14,8 +14,8 @@ description: >-
   uid". Pair with firstspirit-scripting (how to run code + the script contexts)
   and firstspirit-module-development (how to package it).
 metadata:
-  source-commit: "8b27f9a"
-  published: "2026-10-06"
+  source-commit: "91d76a9"
+  published: "2026-10-07"
   toolkit-version: "0.4.0"
 ---
 
@@ -53,6 +53,12 @@ release notes when changing versions. Source:
   query — then stop. Point into `references/` for the full catalogue.
 - **State vs release matters.** Most store access takes a `boolean release`
   (`false` = current/edit state, `true` = released state). Name which you mean.
+- **Not every `IDProvider` can be released.** `release()`, `isReleased()` and `getReleaseStatus()` sit on
+  `IDProvider` `[jar]`, so every store element type shows them, templates included
+  (`TemplateStoreElement extends IDProvider` `[jar]`). **Nothing in the TemplateStore can be released**
+  (templates of every kind, scripts, schemas `[observed]`; the REST API has no release action for templates). Do not call
+  `release()` on a TemplateStore element or promise a "released template"; guard any generic release code with
+  `isReleaseSupported()` `[javadoc]`. Template store content moves between projects by transport or Git.
 - **Reach objects through agents, never `new`.** Obtain stores and services from
   the `SpecialistsBroker` via `requireSpecialist(...)`. See
   [references/agents.md](references/agents.md).

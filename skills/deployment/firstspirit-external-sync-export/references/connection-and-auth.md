@@ -93,13 +93,21 @@ Notes:
 
 ## Test before you export
 
-`fs-cli … test` connects (and, with `-p`, opens the project) without exporting —
-use it to separate the three gates cleanly:
+`fs-cli … test` (= `test connection`) checks transport and login only — it **does not open the
+project**. It still prints `Project: <name>` from its configuration, even for a project that does
+not exist, and `Project: null` without `-p` (observed once on fs-cli 4.8.9, 2026-10-07). A wrong
+project name therefore surfaces only at `export` — or with `test project`, which does open it.
+Use the two to separate the gates cleanly:
 
 ```bash
 set -a; . ~/.fs-cli-creds.env; set +a
-fs-cli -h <host> -port 443 -c HTTPS -u "$FS_USER" -pwd "$FS_PWD" -p "<Project Name>" test
+fsuser="$FS_USER" fspwd="$FS_PWD" fs-cli -h <host> -port 443 -c HTTPS test
+fsuser="$FS_USER" fspwd="$FS_PWD" fs-cli -h <host> -port 443 -c HTTPS -p "<Project Name>" test project
 ```
+
+fs-cli reads `fsuser` / `fspwd` from the environment when `-u` / `-pwd` are omitted (fs-cli 4.8.9
+source), which keeps the password out of the process list; `-pwd` on the command line is visible to
+every local user via `ps` (observed, 2026-10-07).
 
 Success looks like:
 

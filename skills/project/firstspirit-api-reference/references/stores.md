@@ -114,8 +114,13 @@ The definitions everything else references.
 | `Workflow` | workflow definition |
 
 ```
-// Templates expose their form definition, rules, and output channels (TemplateSet).
-template.getFormData();                           // template's own metadata
+// Templates are not DataProviders: no getFormData() on Template, MasterTemplate, PageTemplate,
+// SectionTemplate or FormatTemplate [jar]. They expose the form definition, its defaults,
+// the output channels (per TemplateSet) and their own metadata:
+String   gom  = template.getGomSource();                 // form definition (GOM XML)   — GomSourceProvider
+FormData defs = template.getFormDefaults();              // default values of that form  — GomSourceProvider
+String   src  = template.getChannelSource(templateSet);  // output channel source        — ChannelSourceProvider
+FormData meta = template.getMetaFormData();              // the template's metadata form — IDProvider
 // GOM/form and channel sources are edited via the templatestore.gom.* types
 ```
 

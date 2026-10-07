@@ -288,7 +288,7 @@ dump); the right-hand column is the real approach.
 | --- | --- |
 | `context.requireSpecialist(TransactionAgent.TYPE)`, `beginTransaction()`/`commit`/`rollback` | **No transaction API and no `TransactionAgent`.** Save per element with `save()`; coordinate with locks. |
 | `context.requireSpecialist(LockService.TYPE)` | **No `LockService`.** Locking is element-level: `elm.setLock(true, false)` / `setLock(false)`. |
-| `context.requireSpecialist(ReleaseAgent.TYPE).releaseStoreElement(...)` | **No `ReleaseAgent`.** Release is element-level: `elm.release()` (`IDProvider`), or through a workflow. |
+| `context.requireSpecialist(ReleaseAgent.TYPE).releaseStoreElement(...)` | **No `ReleaseAgent`.** Release is element-level: `elm.release()` (`IDProvider`), or through a workflow. **Not for anything in the TemplateStore** (templates, scripts, schemas): they inherit the methods but cannot be released `[observed]`; guard with `elm.isReleaseSupported()`. |
 | `connection.getService(GenerationService.class)` | **No `GenerationService`.** Generation is a scheduled task / `GenerationAgent` in `de.espirit.firstspirit.scheduling.agency`, not a directly-callable script service. |
 | `QuestionOperation` / `InputOperation` / `SelectOperation` | Only **`RequestOperation`** exists for dialogs — see [the RequestOperation pattern](#ask-a-question-or-show-a-message-from-any-client-context-requestoperation), which works from any client context (the `showForm()` pattern is `GuiScriptContext`-only). Custom input UIs need a plugin. |
 | `store.getStoreRoot()` | The store **is** the root — iterate it directly (`store.getChildren(...)`). |

@@ -53,18 +53,22 @@ what that document states and has not been exercised yet `[verify]`:
 GET    /projects/{id}/templates/page-templates/{uid}/bodies/            # [TemplateBodyDTO] with the *effective* allowed templates
 POST   /projects/{id}/templates/page-templates/{uid}/bodies/            # {"name","allowedTemplates"?} → 201; 409 name exists; 400 unknown template uid
 PUT    /projects/{id}/templates/page-templates/{uid}/bodies/{bodyName}  # rename and/or replace the whitelist → 200; 409 target name in use
-DELETE /projects/{id}/templates/page-templates/{uid}/bodies/{bodyName}  # 204; allowed while pages use the template
+DELETE /projects/{id}/templates/page-templates/{uid}/bodies/{bodyName}  # 204; the API document says it is allowed while pages use the template [verify]
 ```
 
-- Adding and renaming are safe for templates already used by pages; existing content in a renamed
-  area is preserved. Deleting an area makes the content pages stored in it unreachable.
-- **Whitelists are evaluated per page template, not per content area.** While no area of the
-  template has a whitelist, every section and table template is allowed in every area (and the GET
-  lists all of them for every area). As soon as one area has a whitelist, every other area without
-  one allows nothing. So an empty `allowedTemplates` means "everything" in an unrestricted
-  template and "nothing" next to a restricted area.
-- On `PUT`, omitting `allowedTemplates` keeps the current whitelist; `[]` drops this area's entries.
-  On `POST`, omitting or `[]` creates the area without a whitelist of its own.
+Each statement below is what the operation descriptions of the API document say; none has been
+exercised on a server yet:
+- Adding and renaming are described as safe for templates already used by pages, with existing
+  content in a renamed area preserved `[verify]`. Deleting an area is described as allowed while
+  pages use the template; the content pages stored in it then become unreachable `[verify]` — do
+  not try this on a shared project until a run has shown what happens to those pages.
+- **Whitelists are evaluated per page template, not per content area** `[verify]`. While no area of
+  the template has a whitelist, every section and table template is allowed in every area (and the
+  GET lists all of them for every area). As soon as one area has a whitelist, every other area
+  without one allows nothing. So an empty `allowedTemplates` means "everything" in an unrestricted
+  template and "nothing" next to a restricted area. (The GET itself is probed: R12.)
+- On `PUT`, omitting `allowedTemplates` keeps the current whitelist; `[]` drops this area's entries
+  `[verify]`. On `POST`, omitting or `[]` creates the area without a whitelist of its own `[verify]`.
 
 ### Format Template
 ```bash
@@ -134,7 +138,12 @@ curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
 > trips this in practice: `<LINKEDITORS>` takes `<LINKEDITOR name="…"/>` children, while
 > `<FORMATS>` takes `<TEMPLATE name="…"/>` — a `<TEMPLATE>` inside `<LINKEDITORS>` is the 400.
 > Re-`PUT` the corrected GOM; nothing else needs undoing. *(Observed twice on two projects,
-> 2026-08-27 — PS website-migration tool.)*
+> 2026-08-27 — PS website-migration tool.)* Three more shapes the parser rejects the same way,
+> read in the GOM parser and the editor classes [core]: a bare `<LANGINFO>` directly inside an
+> `<ENTRY>` of COMBOBOX / CHECKBOX / RADIOBUTTON / LIST (`<ENTRY>` takes only a `<LANGINFOS>` block);
+> `hFill` on `FS_CATALOG` (fixed value, "Unsupported attribute"); `<TEMPLATES>` on `CMS_INPUT_LINK`
+> (link editors are allow-listed with `<LINKEDITORS>`). An `FS_CATALOG` `<TEMPLATES>` without
+> `type="section"` or `type="link"` fails verification instead ("Must define the type of templates.").
 
 ### Read Parsed Form Summary (read-only)
 Returns JSON list of editors with name, type, description — no content values:
@@ -147,11 +156,13 @@ Response:
 {
   "editors": [
     {"name": "st_headline", "type": "CMS_INPUT_TEXT", "description": "The main headline"},
-    {"name": "st_text", "type": "CMS_INPUT_DOM", "description": "Text"},
-    {"name": "st_image", "type": "FS_REFERENCE", "description": "Image"}
+    {"name": "st_text", "type": "CMS_INPUT_DOM", "description": null},
+    {"name": "st_image", "type": "FS_REFERENCE", "description": null}
   ]
 }
 ```
+`description` is the `description` attribute of the editor's `<LANGINFO>` (`<LANGINFO lang="*" label="Headline" description="The main headline"/>`),
+not the label; an editor without that attribute answers `null`. [core]
 
 ### Common GOM Elements
 
@@ -190,8 +201,8 @@ Response:
 <CMS_INPUT_COMBOBOX name="st_color" hFill="yes" useLanguages="no">
     <LANGINFOS><LANGINFO lang="*" label="Color"/></LANGINFOS>
     <ENTRIES>
-        <ENTRY value="red"><LANGINFO lang="*" label="Red"/></ENTRY>
-        <ENTRY value="blue"><LANGINFO lang="*" label="Blue"/></ENTRY>
+        <ENTRY value="red"><LANGINFOS><LANGINFO lang="*" label="Red"/></LANGINFOS></ENTRY>
+        <ENTRY value="blue"><LANGINFOS><LANGINFO lang="*" label="Blue"/></LANGINFOS></ENTRY>
     </ENTRIES>
 </CMS_INPUT_COMBOBOX>
 
@@ -199,8 +210,8 @@ Response:
 <CMS_INPUT_CHECKBOX name="st_tags" hFill="yes" useLanguages="no">
     <LANGINFOS><LANGINFO lang="*" label="Tags"/></LANGINFOS>
     <ENTRIES>
-        <ENTRY value="featured"><LANGINFO lang="*" label="Featured"/></ENTRY>
-        <ENTRY value="new"><LANGINFO lang="*" label="New"/></ENTRY>
+        <ENTRY value="featured"><LANGINFOS><LANGINFO lang="*" label="Featured"/></LANGINFOS></ENTRY>
+        <ENTRY value="new"><LANGINFOS><LANGINFO lang="*" label="New"/></LANGINFOS></ENTRY>
     </ENTRIES>
 </CMS_INPUT_CHECKBOX>
 
@@ -208,8 +219,8 @@ Response:
 <CMS_INPUT_RADIOBUTTON name="st_layout" hFill="yes" useLanguages="no">
     <LANGINFOS><LANGINFO lang="*" label="Layout"/></LANGINFOS>
     <ENTRIES>
-        <ENTRY value="left"><LANGINFO lang="*" label="Left"/></ENTRY>
-        <ENTRY value="right"><LANGINFO lang="*" label="Right"/></ENTRY>
+        <ENTRY value="left"><LANGINFOS><LANGINFO lang="*" label="Left"/></LANGINFOS></ENTRY>
+        <ENTRY value="right"><LANGINFOS><LANGINFO lang="*" label="Right"/></LANGINFOS></ENTRY>
     </ENTRIES>
 </CMS_INPUT_RADIOBUTTON>
 
@@ -217,8 +228,8 @@ Response:
 <CMS_INPUT_LIST name="st_categories" hFill="yes" useLanguages="no">
     <LANGINFOS><LANGINFO lang="*" label="Categories"/></LANGINFOS>
     <ENTRIES>
-        <ENTRY value="news"><LANGINFO lang="*" label="News"/></ENTRY>
-        <ENTRY value="blog"><LANGINFO lang="*" label="Blog"/></ENTRY>
+        <ENTRY value="news"><LANGINFOS><LANGINFO lang="*" label="News"/></LANGINFOS></ENTRY>
+        <ENTRY value="blog"><LANGINFOS><LANGINFO lang="*" label="Blog"/></LANGINFOS></ENTRY>
     </ENTRIES>
 </CMS_INPUT_LIST>
 
@@ -230,10 +241,11 @@ Response:
     </FILTER>
 </FS_REFERENCE>
 
-<!-- Catalog (repeating cards) -->
-<FS_CATALOG name="st_slides" hFill="yes" useLanguages="no">
+<!-- Catalog (repeating cards). No hFill: FS_CATALOG always fills (fixed value, the attribute is
+     rejected as unsupported). TEMPLATES needs type="section" or type="link" or the GOM fails verification. [core] -->
+<FS_CATALOG name="st_slides" useLanguages="no">
     <LANGINFOS><LANGINFO lang="*" label="Slides"/></LANGINFOS>
-    <TEMPLATES>
+    <TEMPLATES type="section">
         <TEMPLATE uid="slide_card"/>
     </TEMPLATES>
 </FS_CATALOG>
@@ -255,12 +267,13 @@ Response:
     </LINKEDITORS>
 </CMS_INPUT_DOM>
 
-<!-- Link -->
+<!-- Link. Link templates are allow-listed with LINKEDITORS, exactly as in CMS_INPUT_DOM;
+     CMS_INPUT_LINK has no TEMPLATES child (unsupported tag → 400). [core] -->
 <CMS_INPUT_LINK name="st_link" hFill="yes" useLanguages="yes">
     <LANGINFOS><LANGINFO lang="*" label="Link"/></LANGINFOS>
-    <TEMPLATES>
-        <TEMPLATE uid="internal_link"/>
-    </TEMPLATES>
+    <LINKEDITORS>
+        <LINKEDITOR name="internal_link"/>
+    </LINKEDITORS>
 </CMS_INPUT_LINK>
 
 <!-- Group (visual grouping, no data) -->
@@ -422,8 +435,8 @@ curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
     <CMS_INPUT_COMBOBOX name="st_style" hFill="yes" useLanguages="no">
         <LANGINFOS><LANGINFO lang="*" label="Style"/></LANGINFOS>
         <ENTRIES>
-            <ENTRY value="primary"><LANGINFO lang="*" label="Primary"/></ENTRY>
-            <ENTRY value="secondary"><LANGINFO lang="*" label="Secondary"/></ENTRY>
+            <ENTRY value="primary"><LANGINFOS><LANGINFO lang="*" label="Primary"/></LANGINFOS></ENTRY>
+            <ENTRY value="secondary"><LANGINFOS><LANGINFO lang="*" label="Secondary"/></LANGINFOS></ENTRY>
         </ENTRIES>
     </CMS_INPUT_COMBOBOX>
 </CMS_MODULE>' \

@@ -141,8 +141,11 @@ Build maps with `{:}` + `.put(key, value)` and lists with `[]` + `.add`/`.addAll
 `variables-conditionals.md`). Wrap the whole channel in `$CMS_TRIM$` so only `.toJSON` reaches the
 output.
 
-**Inline-literal style** (cleaner) — write the object as one literal, using the two-arg `if(cond,
-value)` (yields `null` when false) for optional fields; `.toJSON` emits real JSON `null`:
+**Inline-literal style** (cleaner) — write the object as one literal, using the three-arg
+`if(cond, null, value)` for optional fields; `if()` evaluates only the chosen branch, so the
+`.empty` check does protect the `ref(…)` call (`variables-conditionals.md` → `if()` as a function),
+and `.toJSON` emits real JSON `null`. (The two-arg form `if(cond, value)` yields `""` when false,
+which `.toJSON` would emit as an empty string, not `null`.)
 
 ```
 $CMS_SET(void, items.add({
@@ -165,7 +168,9 @@ only `.convert2`:
 ⚠️ "$CMS_VALUE(#nav.label.convert2)$"           $-- breaks on a literal " or \ in the value --$
 ```
 
-`.convert2` is **HTML** escaping, not JSON escaping — only `.toJSON` is safe for a JSON sink. See
+`.convert2` applies the **conversion rule of the template set** being generated (HTML escaping only
+when an HTML rule such as "Convert HTML" is assigned; no rule = text unchanged) `[core]`. It is never
+JSON escaping — only `.toJSON` is safe for a JSON sink. See
 `string-operations.md` → Output escaping. The deep CaaS/TPP mechanics of custom-JSON headless
 delivery (preview vs release, previewId/TPP ids) belong to `firstspirit-headless`; this section is
 just the template-language technique for assembling the output.

@@ -48,18 +48,20 @@ store roots). In a sync export it is carried by, depending on element type:
 |---|---|---|
 | GOM form-XML attribute values | no | SiteArchitect writes `yes` / `no` / `picture` lowercase by default, but enum values are case-**insensitive** — real projects mix them (`store="mediastore"` and `store="PAGESTORE"` coexist; `FILTER type=` is often written lowercase `picture`/`pageref` despite docs showing uppercase). Don't rely on the case of an attribute value. |
 | Ruleset.xml (rules) tokens | no | `scope=` and `<PROPERTY name=>` values are case-insensitive — deploying projects mix `SAVE`/`Save`/`save`, `VALID`/`valid`, `INFO`/`info`. Read them case-insensitively. |
-| `$CMS_…$` output tags & keywords | no | keyword casing inside CMS tags is irrelevant |
-| Java notation (method/object calls, class imports) | **yes** | `getKey`, `getLabel`, `.format`, `.isEmpty`, `.convert2`, class names must be spelled exactly (camelCase throughout the reference projects) |
+| `$CMS_…$` instructions, keywords, functions, variables | **yes** | Instruction names are upper-case and matched exactly (`$CMS_VALUE(`; `$cms_value(` is not recognised and is emitted as text). The same applies to `default:`, `true`/`false`/`null`, function names (`if`, `isSet`, `ref`, `json`, `dataAssociation`, `Navigation`, `Table`, …), variable names and system objects (`#global`, not `#Global`) `[core]`. `isset(…)` in lower case is a `ParsingError: unrecognized method name 'isset'` that blanks the whole template `[observed]` (5.2.261116, 2026-10-07). |
+| Java notation (method/object calls, class imports) | **yes** | `getKey`, `getLabel`, `.format`, `.isEmpty`, `.convert2`, class names must be spelled exactly (camelCase throughout the reference projects). The one tolerance is the **getter alias**: `getName()` is also reachable as `.name` and `.Name` (first letter free) `[core]` `[observed]`; `.getname()` does not resolve — it logs "Undefined method …" and prints empty, the page still renders `[observed]`. |
 
 See `datatypes.md` for the datatype methods these casing rules apply to, and
 `firstspirit-template-design` (principle 7) for the variable-prefix convention.
 
 ## Notation: parentheses, shorthands, and the template-language vs. Java-API line
 
-A frequent source of confusion: inside the template language you can *often* drop the `()` and use
-a short property form — but that relaxation applies **only to the template language's own objects,
-methods and functions**. Java Access API that is **not** part of the template language must be
-written in full Java notation (complete call with `()`, exact case). The rules:
+Inside the template language, `()`-omission for no-argument methods and Bean syntax (`.x` →
+`getX()` / `isX()`) apply to **every** Java object, Access-API objects included (`#global.page.id` =
+`getPage().getId()`; `#global.project.name` = `getProject().getName()` `[observed]`), because the
+evaluator resolves members by reflection over the object's public types `[core]`. What must stay
+exact is the casing, apart from the first letter of a getter alias. Full Java notation is required
+only outside the template language — in BeanShell scripts and Java modules. The rules:
 
 - **No-argument methods — `()` is optional.** `st_x.isEmpty` = `st_x.isEmpty()`; `x.toString` =
   `x.toString()`. Methods that take arguments always need the parentheses (`.format("dd.MM.yyyy")`,
@@ -69,13 +71,13 @@ written in full Java notation (complete call with `()`, exact case). The rules:
   boolean `is`-getter keeps its name, just drops the parens: `.isNull()` → `.isNull` (not `.null`).
 - **Simplified accessor syntax.** A few accessors have documented shortcuts — e.g. FormData:
   `.formData.ID` ≡ `.formData.get("ID")` ≡ `.formData["ID"]` ≡ `.get(#global.language, "ID").get`.
-- **Template-language functions** — the built-in set (`if`, `isset`, `ref`, `json`, `class`,
-  `editorId`, `fsbutton`, `font`, `dataassociation`, plus header functions `define` / `table` /
-  `contentSelect` / `Navigation` / `MenuGroup` / `PageGroup`). These are part of the language and
-  called with their own syntax. Distinct from the `$CMS_…$` instructions, and distinct from Java.
-- **Java Access API (not part of the template language) — full notation required.** Complete method
-  calls with `()`, exact camelCase (see the casing table above: Java notation is case-sensitive).
-  The `()`-optional and Bean-syntax relaxations do **not** apply here.
+- **Template-language functions** — inline: `if`, `isSet`, `ref`, `json`, `class`, `lambda`, `eval`,
+  `editorId`, `previewId`, `fsbutton`, `font`, `dataAssociation`; header functions: `define`,
+  `Table`, `contentSelect`, `Navigation`, `MenuGroup`, `PageGroup`, `Font` `[core]`. All names are
+  **case-sensitive** (`isset`, `dataassociation`, `table` are "unrecognized method name" parse
+  errors). Distinct from the `$CMS_…$` instructions, and distinct from Java.
+- **BeanShell / Java (outside the template language) — full notation required.** Complete method
+  calls with `()`, exact camelCase; the `()`-optional and Bean-syntax relaxations are template-only.
 
 ### Running list — equivalent forms
 

@@ -116,12 +116,15 @@ $CMS_ELSE$
 $CMS_END_IF$
 ```
 
-### `if()` as a function evaluates both branches
+### `if()` as a function evaluates only the chosen branch
 
 The inline `if(cond, a, b)` (as in `$CMS_SET(x, if(!element.isNull, element, ""))$`)
-evaluates **both** `a` and `b` `[observed]`. Do not put a null access in a branch and expect
-the condition to protect it; guard it before the call (a `$CMS_IF$` around the whole
-statement, or a prior `isNull` check). `$CMS_IF$` … `$CMS_END_IF$` skips its body.
+evaluates the condition and then **only the branch it selects**; the other expression is never
+run `[core]` `[observed]` (a list `.add` placed in the unused branch left the list empty, FirstSpirit
+5.2.261116, 2026-10-07 — this corrects an earlier observation that both branches ran). The
+condition therefore does protect a null access in the branch. What does fail is a condition that is
+`null` or not a boolean: `if()` throws instead of choosing. With two arguments and a false condition
+the result is the empty string `""`, not `null` (`isNull` false, `isEmpty` true) `[observed]`.
 
 ### If-elsif-else
 
@@ -208,7 +211,7 @@ value — indispensable when building maps/lists (see `composition.md`):
 
 ```
 $CMS_VALUE(if(st_a == "x", "yes", "no"))$   $-- ternary: if(cond, then, else) --$
-$CMS_VALUE(if(st_a.empty, null))$           $-- two-arg: yields null when false --$
+$CMS_VALUE(if(st_a.empty, null))$           $-- two-arg: yields "" (empty string, not null) when false [observed] --$
 ```
 
 `isSet(var)` tests whether a variable is defined (safe guard for an optional context/set variable):

@@ -145,13 +145,13 @@ curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
 
 ### PATCH Pattern (write editor value)
 
-All PATCH bodies are `FormEditorDTO` JSON. **Always send the full DTO** (GET → mutate → PATCH), including `configuration` (non-null), `description`, and for language-dependent editors `language`.
+All PATCH bodies are `FormEditorDTO` JSON. Required are `name` (equal to the editor in the URL — a different name is `500` on page forms and `400` on section forms from `0.0.25-beta`), `type` and `content`; `configuration`, `description` and `language` are ignored on write `[core]` (module source `0.0.23-beta` to `0.0.25-beta`).
 
-How strictly this is enforced **depends on the editor type** (verified 0.0.23-beta):
-- **FS_CATALOG nested editors** and **FS_REFERENCE** genuinely require the full DTO — omitting `configuration` triggers 500 "parameter configuration specified as non-null is null" (see [content-catalog.md](content-catalog.md)).
-- A **plain scalar editor** (`CMS_INPUT_TEXT`/`TEXTAREA`) will *accept* a minimal `{name,type,content}` PATCH (returns 200) on this version — the "always fails" rule is softer than it reads.
+This holds for every editor type:
+- **FS_REFERENCE** needs only `{"name","type","content":{"uid":"…","uidType":"…"}}`; **FS_CATALOG** needs `id` + `templateUid` per card and `name` + `type` + `content` per nested editor (see [content-catalog.md](content-catalog.md)). `configuration` is never required.
+- A **plain scalar editor** (`CMS_INPUT_TEXT`/`TEXTAREA`) accepts a minimal `{name,type,content}` PATCH (`200`, verified live on `0.0.23-beta` and `0.0.25-beta`).
 
-Because you cannot tell per editor which case applies, the GET → mutate → PATCH round-trip is the one reliable pattern for all of them; don't hand-build minimal payloads.
+GET → mutate → PATCH stays the reliable pattern because the GET response already has the `content` shape right; a minimal payload is correct, not safer.
 
 **Reliable pattern — GET → mutate → PATCH:**
 ```bash
@@ -525,6 +525,11 @@ curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
   -X POST \
   "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/data-sources/products/"
 ```
+**Not working yet in the beta module** (confirmed internally at FirstSpirit, 2026-10-07). The empty
+dataset is saved on creation, so a table template whose rules require a field on save rejects it:
+the `POST` answers `500` with a `ValidationError … MultiFormValidationReport` body that names the
+field and the message, and nothing is created. `[observed]` on `0.0.25-beta` on every data source of
+the test project. Read datasets; do not build a write flow on this until a module release fixes it.
 
 ### Read Entity (read-only)
 ```bash
@@ -589,4 +594,6 @@ curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
   "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/pages/homepage/actions"
 ```
 
-Actions work on: pages, page-references, media, templates.
+Actions work on: pages, page-references, media. **Not on anything in the TemplateStore**: templates, scripts and schemas cannot be released
+(`POST …/templates/page-templates/{uid}/actions` → `404` `[observed]`; the OpenAPI document lists
+`actions` for these three only). See the note in SKILL.md → Actions Pattern.

@@ -9,9 +9,10 @@ go from *a component in a form* (or in a sync export) to *how its value is acces
 - Access is through `$CMS_VALUE(identifier)$`, or `$CMS_VALUE(identifier.method)$` to call a
   method on the returned object. The table shows the **canonical** access; components with more
   than one idiom or a null/DB nuance have a fuller entry under **Access notes**.
-- **Method names are Java and case-sensitive** (`getLabel`, `format`, `isEmpty`) — spell them
-  exactly. Keyword casing *inside* `$CMS_…$` tags does not matter; GOM form-XML attribute values
-  are lowercase by SiteArchitect default. See `identifiers-and-casing.md`.
+- **Names are case-sensitive**: method names (`getLabel`, `format`, `isEmpty`; the only tolerance is
+  the getter alias `.label` / `.Label`), `$CMS_…$` instruction names, function names (`isSet`, not
+  `isset`) and variables `[core]` `[observed]`. GOM form-XML *enum* attribute values are
+  case-insensitive and lowercase by SiteArchitect default. See `identifiers-and-casing.md`.
 - Deprecated components are marked → see `deprecated.md`.
 - **Classic vs headless.** The canonical access is the classic HTML output channel. In a **headless
   (CaaS) project** the rendered channel is `ChannelSource_CaaS_CaaS.json` (same template language,

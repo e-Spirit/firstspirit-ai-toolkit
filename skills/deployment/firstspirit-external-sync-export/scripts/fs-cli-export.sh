@@ -28,7 +28,9 @@
 #   FS_SYNC_DIR  sync directory. Passed as -sd when set.
 #   FS_RESULT    result JSON path. Passed as -rf when set.
 #
-# The password is passed to fs-cli but redacted from this script's own stdout/stderr.
+# The password is handed to fs-cli through the environment variable fspwd (fs-cli reads it when
+# -pwd is absent), never on the command line where `ps` would show it, and is redacted from this
+# script's own stdout/stderr.
 #
 # Every run keeps its (redacted) fs-cli output in results/firstspirit-external-sync-export/<run>/fs-cli.log
 # and appends one summary line to logs/firstspirit-external-sync-export.log — the portfolio's
@@ -87,7 +89,7 @@ done
 [ -n "${FS_HOST:-}" ]    && set -- "$@" -h "$FS_HOST"
 set -- "$@" -port "${FS_PORT:-443}" -c "${FS_CONN:-HTTPS}"
 [ -n "$USER_VAL" ]       && set -- "$@" -u "$USER_VAL"
-[ -n "$PWD_VAL" ]        && set -- "$@" -pwd "$PWD_VAL"
+[ -n "$PWD_VAL" ]        && { fspwd="$PWD_VAL"; export fspwd; }   # env, not argv: keeps it out of `ps`
 [ -n "${FS_PROJECT:-}" ] && set -- "$@" -p "$FS_PROJECT"
 [ -n "${FS_SYNC_DIR:-}" ]&& set -- "$@" -sd "$FS_SYNC_DIR"
 [ -n "${FS_RESULT:-}" ]  && set -- "$@" -rf "$FS_RESULT"

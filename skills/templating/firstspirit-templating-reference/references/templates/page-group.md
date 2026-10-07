@@ -26,8 +26,8 @@ Facts marked `[odfs]` are from the FirstSpirit Online Documentation (link at the
     <CMS_CDATA_PARAM name="previousNotAvailable"><![CDATA[<span class="navArrow">&lt;</span>]]></CMS_CDATA_PARAM>
     <CMS_CDATA_PARAM name="nextAvailable"><![CDATA[<a class="navArrow" href="$CMS_REF(#nav.ref)$">&gt;</a>]]></CMS_CDATA_PARAM>
     <CMS_CDATA_PARAM name="nextNotAvailable"><![CDATA[<span class="navArrow">&gt;</span>]]></CMS_CDATA_PARAM>
-    <CMS_CDATA_PARAM name="directoryRendering"><![CDATA[<a href="$CMS_REF(#nav.ref)$">$CMS_VALUE(#nav.pos + 1)$</a>]]></CMS_CDATA_PARAM>
-    <CMS_CDATA_PARAM name="directoryRenderingSelected"><![CDATA[<strong>$CMS_VALUE(#nav.pos + 1)$</strong>]]></CMS_CDATA_PARAM>
+    <CMS_CDATA_PARAM name="directoryRendering"><![CDATA[<a href="$CMS_REF(#nav.ref)$">$CMS_VALUE(#nav.pos)$</a>]]></CMS_CDATA_PARAM>
+    <CMS_CDATA_PARAM name="directoryRenderingSelected"><![CDATA[<strong>$CMS_VALUE(#nav.pos)$</strong>]]></CMS_CDATA_PARAM>
     <CMS_CDATA_PARAM name="delimiter"><![CDATA[ | ]]></CMS_CDATA_PARAM>
   </CMS_FUNCTION>
 </CMS_HEADER>
@@ -52,7 +52,7 @@ Fragments are `CMS_CDATA_PARAM`s, not level-indexed arrays — a page group has 
 
 | Member | Yields |
 |---|---|
-| `fr_pageGroup.pos` | position of the current page in the group |
+| `fr_pageGroup.pos` | position of the current page in the group, **counting from 1** `[core]` |
 | `fr_pageGroup.groupSize` | total number of pages in the group |
 | `fr_pageGroup.previous` | the `previous*` fragment that applies |
 | `fr_pageGroup.next` | the `next*` fragment that applies |
@@ -66,16 +66,17 @@ Output, in whatever order the layout needs:
 $CMS_IF(fr_pageGroup.groupSize > 1)$
 <div class="navArrowContainer">
   $CMS_VALUE(fr_pageGroup.previous)$
-  Page $CMS_VALUE(fr_pageGroup.pos + 1)$ of $CMS_VALUE(fr_pageGroup.groupSize)$
+  Page $CMS_VALUE(fr_pageGroup.pos)$ of $CMS_VALUE(fr_pageGroup.groupSize)$
   $CMS_VALUE(fr_pageGroup.next)$
 </div>
 $CMS_END_IF$
 ```
 
 The documentation's own compact form is `|< < 2 / 4 > >|` built from `first`, `previous`,
-`directory` (or `pos`/`groupSize`), `next`, `last`. `[odfs]` Whether `pos` counts from `0` or
-`1` is not stated on the function page; `#global.pageParams.index` in a content projection
-counts from `0` `[odfs]`, so treat `pos` the same way until checked on a live page. `[verify]`
+`directory` (or `pos`/`groupSize`), `next`, `last`. `[odfs]` `pos` **counts from 1** (the
+implementation returns the node's index plus one and documents it as "starting with 1") `[core]`, so
+`pos` is printed as is — unlike `#global.pageParams.index` in a content projection, which counts
+from `0` `[odfs]`. Not yet seen on a live page group.
 
 ## `#nav` inside the fragments `[odfs]`
 
@@ -83,7 +84,7 @@ counts from `0` `[odfs]`, so treat `pos` the same way until checked on a live pa
 |---|---|
 | `#nav.ref` | the page the fragment is about — `$CMS_REF(#nav.ref)$` for the link |
 | `#nav.label` | its name (Site Store or Page Store) |
-| `#nav.pos` | its position in the group |
+| `#nav.pos` | its position in the group, counting from 1 `[core]` |
 | `#nav.media` | the picture entered for it in the Site Store (sitemap picture) |
 
 ## Differences from `Navigation`

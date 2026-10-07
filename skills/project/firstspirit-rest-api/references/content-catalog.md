@@ -4,7 +4,7 @@ FS_CATALOG is the most complex editor type. It stores an ordered list of "cards"
 
 ## The One Rule: GET → jq → PATCH
 
-**NEVER manually construct an FS_CATALOG PATCH payload.** The API requires the **complete FormEditorDTO** structure for every nested editor — including `configuration` (with all sub-fields), `description`, `language`, and for FS_REFERENCE the full `content` object with `language`, `storeType`, `medium`, etc. Omitting any of these causes 500 "Unknown error" or JSON parse errors.
+**Build FS_CATALOG PATCH payloads from the GET response, never by hand.** Every card needs `id` and `templateUid`; every nested editor needs `name`, `type` and a `content` of the right shape. `configuration`, `description` and `language` are ignored on write; FS_REFERENCE content needs only `{"uid":"…","uidType":"…"}` (or `{"empty":true}`) `[core]` (module source `0.0.23-beta` to `0.0.25-beta`). A malformed `content` answers `400 Invalid content for editor …`; a `null` value on an option editor (RADIOBUTTON / COMBOBOX) answers `500`. The content shapes are the hard part, and the GET response already has them right.
 
 The only reliable method:
 1. **GET** the full editor response
@@ -124,17 +124,16 @@ echo "$UPDATED" | curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
 
 ## Why Manual Construction Fails
 
-The API's `FormEditorDTO` requires **non-null** fields that the GET response includes but are tedious to reconstruct:
+Only a few fields are required, and the GET response already has them `[core]` (module source `0.0.23-beta` to `0.0.25-beta`):
 
 | Field | Required | What happens if missing |
 |-------|----------|------------------------|
-| `name` (top-level) | Yes | 500: "Missing required creator property 'name'" |
-| `configuration` (on every nested editor) | Yes, **non-null** | 500: "parameter configuration specified as non-null is null" |
-| `configuration.templates` (on catalog itself) | Yes | 400 error |
-| `empty` (in FS_REFERENCE content) | Yes | 500: "Missing required creator property 'empty'" |
-| `language`, `storeType`, `medium` (in FS_REFERENCE) | Needed for non-empty refs | 400: "Reference DTO is not empty but does not define a reference" or 500 "Unknown error" |
+| `name`, `type` (top level and on every nested editor) | Yes | top level: `400 Malformed request body` from `0.0.24-beta` (`500` before); inside a card: `400 Invalid content for editor …` |
+| `id`, `templateUid` (on every card) | Yes | `400`; an unknown `templateUid` on a new card → `404 Section template … not found` |
+| `uid` + `uidType` (non-empty FS_REFERENCE content) | Yes | `400 … requires a valid 'uidType'` |
+| `configuration`, `description`, `language`, `empty`, `storeType`, `medium` | No | ignored on write (`empty` defaults to `false`; `storeType`, `medium`, `language` are output-only) |
 
-Using the GET → jq → PATCH pattern avoids all of these issues because the GET response already contains every required field with correct values.
+What goes wrong by hand is the `content` shape (card list, option objects, reference objects), not missing metadata. Earlier versions of this page quoted a `500 "parameter configuration specified as non-null is null"`; that message came from a build before the module's first tagged release and no tagged source produces it.
 
 ## Common Mistakes
 
@@ -146,4 +145,4 @@ Using the GET → jq → PATCH pattern avoids all of these issues because the GE
 | Missing card `id` | 400 error | Existing cards: keep ID from GET. New cards: `uuidgen` |
 | PATCH with empty `content: []` | Deletes all cards | Always GET first to preserve existing cards |
 | Sending only changed cards | Unchanged cards are deleted | Always send ALL cards in `content` array |
-| Using `configuration: {}` on inner editors | 500 error | Use GET → jq → PATCH (full configuration is preserved) |
+| `null` as `content` of a RADIOBUTTON / COMBOBOX inside a card | 500 error | Send an option `{"key":…,"value":…}` or keep the value from GET `[core]` |

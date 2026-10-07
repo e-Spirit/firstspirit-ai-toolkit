@@ -72,8 +72,8 @@ de.espirit.firstspirit.common.ConnectError … Caused by: de.espirit.firstspirit
 ```
 **Cause:** the Access API jar in `lib/` is **older than the server build** — the websocket
 channel connects, then the server's version check refuses the client before authentication.
-The message tells you both builds. **Fix:** put the jar of the server's build (or newer) into
-`lib/` — on macOS the FSLauncher keeps one per build it has ever connected to,
+The message tells you both builds. **Fix:** put the jar of the server's **exact** build into
+`lib/` — the server refuses any client build that differs, newer ones included `[core]` —  — on macOS the FSLauncher keeps one per build it has ever connected to,
 `~/.firstspirit/FSLauncher/jar/<build>_isolated/fs-isolated-client-*.jar`; the `test` command
 then reports `Connected to FirstSpirit server … of version <build>`. Keep exactly one API jar
 in `lib/`. → `fs-cli-setup.md` §2. *(Reproduced 2026-09-14: server 5.2.261011 rejected the
@@ -143,7 +143,7 @@ includes that row fails while others sharing the same table succeed.
 Do **not** silently drop the blocked sources — report exactly which data
 sources and which row id were affected, and which of the above applies.
 
-### Project opens over `test` but export finds nothing / wrong state
+### Project opens over `test project` but export finds nothing / wrong state
 **Cause:** exporting the wrong revision state, or too narrow an identifier set.
 **Fix:** decide `--useReleaseState` vs. current deliberately; widen the
 identifiers (a "whole project" is an explicit list). → `export-command.md`.

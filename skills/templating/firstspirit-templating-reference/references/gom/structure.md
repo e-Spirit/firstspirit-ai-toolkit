@@ -30,10 +30,10 @@ All components are wrapped in `<CMS_MODULE>`:
 
 ## Editor order
 
-The order of the editors in a form comes from the **`FS_META_DATA`** definition `[observed]`;
-`[verify]` which part of it (the meta-data form versus the template's own form) when you
-need to change the order. Do not expect the order of the components in a GOM file alone to
-decide it.
+Editors appear in the order of the components in the GOM `[odfs]`. One live session (2026-10-05)
+saw a form whose displayed order did not follow its GOM and traced the order to the project's
+`FS_META_DATA` definition `[observed]` — not reproduced, cause not proven `[verify]`. If an order
+change in the GOM has no effect, look there before anything else.
 
 ## LANGINFOS pattern (used in all components)
 

@@ -4,17 +4,17 @@
 
 Skills in this release (each SKILL.md carries the same source commit in its `metadata:` block):
 
-- `firstspirit-api-reference` @ 8b27f9a (beta)
-- `firstspirit-templating-reference` @ 8b27f9a (beta)
-- `firstspirit-scripting` @ 8b27f9a (beta)
-- `firstspirit-rest-api` @ 8b27f9a (beta)
-- `firstspirit-external-sync-export` @ 8b27f9a (beta)
-- `firstspirit-operations` @ 8b27f9a (beta)
-- `firstspirit-contentcreator-extensions` @ 8b27f9a (beta)
-- `firstspirit-template-design` @ 8b27f9a (beta)
-- `firstspirit-cloud` @ 8b27f9a (beta)
-- `firstspirit-headless` @ 8b27f9a (beta)
-- `firstspirit-module-development` @ 8b27f9a (beta)
+- `firstspirit-api-reference` @ 91d76a9 (beta)
+- `firstspirit-templating-reference` @ 91d76a9 (beta)
+- `firstspirit-scripting` @ 91d76a9 (beta)
+- `firstspirit-rest-api` @ 91d76a9 (beta)
+- `firstspirit-external-sync-export` @ 91d76a9 (beta)
+- `firstspirit-operations` @ 91d76a9 (beta)
+- `firstspirit-contentcreator-extensions` @ 91d76a9 (beta)
+- `firstspirit-template-design` @ 91d76a9 (beta)
+- `firstspirit-cloud` @ 91d76a9 (beta)
+- `firstspirit-headless` @ 91d76a9 (beta)
+- `firstspirit-module-development` @ 91d76a9 (beta)
 
 Changes since 0.3.1 — three skills join the toolkit (all beta); the eight existing skills are
 republished from the same source commit with the corrections listed below.
@@ -58,9 +58,29 @@ republished from the same source commit with the corrections listed below.
   version-drift notes no longer point at a non-existent `info.version`; the smoke test gains a
   read-only probe for the new resource. Surface verified against the live OpenAPI document; the
   write behaviour is marked `[verify]` until the next credentialed smoke run.
-- **`firstspirit-templating-reference`**: `CMS_SWITCH` default, inline `if()` evaluates both
-  branches, editor order — from a live session, tagged `[observed]`.
-- The other five existing skills are republished unchanged apart from the provenance stamp.
+- **`firstspirit-templating-reference`**: `.convert`/`.convert2` apply the template set's
+  conversion rule (no rule = text unchanged); inline `if()` evaluates only the chosen branch
+  (corrects an earlier observation); the Navigation result's `isEmpty` is never true, so guards
+  test the rendered string; page-group `pos` counts from 1; casing of instructions, functions and
+  variables is strict, the getter alias is the only tolerance; `CMS_SWITCH` default placement;
+  editor order follows the GOM. Settled by Core reading and a probe page previewed on a 2026.11
+  server.
+- **`firstspirit-rest-api`** (in addition to the surface change above): the smoke test addresses
+  sections by numeric id from `0.0.24-beta` (R6/W3/W4) and was run against a `0.0.25-beta` module;
+  the module never answers `415`; only `name`, `type` and `content` are read on a form PATCH; the
+  GOM examples parse (`LANGINFOS` inside `ENTRY`, catalog `TEMPLATES type`, `LINKEDITORS` on
+  links); dataset writes are marked as not working yet in the beta module; R12 checks that the
+  template exists before reading a 404 as a version signal.
+- **`firstspirit-api-reference`**: templates expose `getGomSource` / `getFormDefaults` /
+  `getChannelSource` / `getMetaFormData`, not `getFormData`; nothing in the TemplateStore can be
+  released; pointers to the new skills.
+- **`firstspirit-scripting`**: nothing in the TemplateStore can be released; pointers aligned.
+- **`firstspirit-external-sync-export`**: `test` proves the connection only (`test project` opens
+  the project); the wrapper hands the password to fs-cli through the environment; the client jar
+  must be the server's exact build; pointers to the new skills.
+- **`firstspirit-contentcreator-extensions`**: pointers to the new skills.
+- `firstspirit-operations` and `firstspirit-template-design` are republished unchanged apart from
+  the provenance stamp.
 
 
 ## 0.3.1 — 2026-10-01
