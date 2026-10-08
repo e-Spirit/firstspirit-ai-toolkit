@@ -16,11 +16,11 @@ Connect exactly as for export (same global options), point `-sd` at the sync
 directory, and run `import`:
 
 ```
-fs-cli -h host -port 8000 -c HTTP -p "MyProject" -u user -pwd secret \
+fsuser=user fspwd="$FS_PWD" fs-cli -h host -port 8000 -c HTTP -p "MyProject" \
        -sd /path/to/syncdir import -lm *:CREATE_NEW
 ```
 
-- Global options (`-h`, `-port`, `-c HTTP|HTTPS|SOCKET`, `-p`, `-u`, `-pwd`) and
+- Global options (`-h`, `-port`, `-c HTTP|HTTPS|SOCKET`, `-p`, `-u`; the password goes in the `fspwd` env var, not `-pwd`) and
   `-sd`/`--syncDir` behave exactly as in `connect.md` / `export-command.md`.
 - `test` first: `fs-cli … test` verifies the connection before you mutate a
   project.
@@ -90,7 +90,7 @@ on that GID to match rows to the target schema.
 Because import creates the project when missing, seeding a fresh server is:
 
 ```
-fs-cli -h host -port 8000 -c HTTPS -p "NewProject" -u user -pwd secret \
+fsuser=user fspwd="$FS_PWD" fs-cli -h host -port 8000 -c HTTPS -p "NewProject" \
        -sd /path/to/syncdir import -lm *:CREATE_NEW -i "initial import"
 ```
 
@@ -111,7 +111,7 @@ loop (git-side steps around the two fs-cli commands) is documented upstream:
 - Conflict resolution — https://docs.e-spirit.com/odfs/edocs/sync/how/resolving-confl/index.html
 
 For the maintained, declarative pipeline (`fs-project.yaml`, Bamboo, Template
-Transport) that automates this on FirstSpirit Cloud, use the FirstSpirit Cloud documentation;
+Transport) that automates this on FirstSpirit Cloud, use `firstspirit-cloud`;
 this skill is the direct/local fs-cli run for self-hosted or local servers.
 
 ## Not covered here: `project import`

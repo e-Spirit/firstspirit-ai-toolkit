@@ -15,7 +15,7 @@ fs-cli's global connection options (before the command word):
 | `-c`, `--conn-mode` | `HTTP` \| `HTTPS` \| `SOCKET` | default `HTTP` |
 | `-sz`, `--servletzone` | servlet zone | default `/` |
 | `-u`, `--user` | FirstSpirit login | |
-| `-pwd`, `--password` | password | **never inline in a shared shell** |
+| `-pwd`, `--password` | password | **avoid** — visible in `ps`; use the `fspwd` env var (see below) |
 | `-p`, `--project` | project **name** | not the numeric id |
 
 ### Choosing the connection mode
@@ -46,7 +46,7 @@ the auth gate.
 
 ## Authentication
 
-Pass a FirstSpirit login valid for that instance via `-u` / `-pwd`. On a
+Pass a FirstSpirit login valid for that instance via `-u` and the `fspwd` environment variable (not `-pwd`, which `ps` shows). On a
 **Cloud** instance the login is the account in the instance's Keycloak realm
 (username is typically the email); fs-cli's HTTPS connection performs the login,
 so a normal user/password works — you do **not** hand fs-cli an OAuth token.
@@ -80,26 +80,34 @@ chmod 600 ~/.fs-cli-creds.env
 ```bash
 # at run time: source it, use the vars, redact on the way out
 set -a; . ~/.fs-cli-creds.env; set +a
-fs-cli … -u "$FS_USER" -pwd "$FS_PWD" … 2>&1 | sed -E "s/${FS_PWD//\//\\/}/***/g"
+fsuser="$FS_USER" fspwd="$FS_PWD" fs-cli … 2>&1 | sed -E "s/$(printf '%s' "$FS_PWD" | sed 's/[][\.*^$\/+?(){}|]/\\&/g')/***/g"
 ```
 
 Notes:
 - The `<<'EOF'` (quoted heredoc) stops the shell expanding `$` in the password.
 - Any pre-existing project `.env` with a different variable naming
   (`FS_USERNAME` / `FS_PASSWORD`, `FS_REST_BASE_URL`, `FS_PROJECT_ID`) is fine —
-  map its names onto `-u` / `-pwd`. Confirm its **non-secret** fields (base URL,
+  map its names onto `fsuser` / `fspwd`. Confirm its **non-secret** fields (base URL,
   project id) point at the intended server before trusting its secrets.
 - `-pwd` has a documented default of `Admin`; never rely on it.
 
 ## Test before you export
 
-`fs-cli … test` connects (and, with `-p`, opens the project) without exporting —
-use it to separate the three gates cleanly:
+`fs-cli … test` (= `test connection`) checks transport and login only — it **does not open the
+project**. It still prints `Project: <name>` from its configuration, even for a project that does
+not exist, and `Project: null` without `-p` (observed once on fs-cli 4.8.9, 2026-10-07). A wrong
+project name therefore surfaces only at `export` — or with `test project`, which does open it.
+Use the two to separate the gates cleanly:
 
 ```bash
 set -a; . ~/.fs-cli-creds.env; set +a
-fs-cli -h <host> -port 443 -c HTTPS -u "$FS_USER" -pwd "$FS_PWD" -p "<Project Name>" test
+fsuser="$FS_USER" fspwd="$FS_PWD" fs-cli -h <host> -port 443 -c HTTPS test
+fsuser="$FS_USER" fspwd="$FS_PWD" fs-cli -h <host> -port 443 -c HTTPS -p "<Project Name>" test project
 ```
+
+fs-cli reads `fsuser` / `fspwd` from the environment when `-u` / `-pwd` are omitted (fs-cli 4.8.9
+source), which keeps the password out of the process list; `-pwd` on the command line is visible to
+every local user via `ps` (observed, 2026-10-07).
 
 Success looks like:
 
@@ -113,4 +121,4 @@ Only then run the export (`export-command.md`).
 ---
 *Sources: fs-cli 4.8.9 `help`; a verified HTTPS/Keycloak connection to a
 FirstSpirit 5.2.260815 Cloud instance (2026-08-03). Cloud identity specifics are
-owned by the FirstSpirit Cloud documentation (identity and access).*
+owned by `firstspirit-cloud/references/identity-and-access.md`.*

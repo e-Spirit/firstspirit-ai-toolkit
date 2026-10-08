@@ -20,19 +20,21 @@ Legend: R = read-only (default run) · W = `--write` (W1–W9 page, W10–W12 pa
 | R4 | `GET /templates/section-templates/` is a bare array (`.[]`, not `.content[]`) | SKILL.md → Pagination; content-templates.md → Determine Template-Set UID |
 | R5 | listing endpoints (`/pages/`) are bare arrays and ignore `?page/size` (0.0.23-beta) | SKILL.md → Pagination |
 | R5b | `/search` is the one paginated endpoint (`{content,pageNumber,pageSize,hasNext}`) | SKILL.md → Pagination; search-and-discovery.md → Full-Text Search |
-| R6 | page → `bodies` → `sections` → `form` returns `{editors:[…]}` | content-management.md → Pages, Sections; SKILL.md → Browse Structure |
+| R6 | page → `bodies` → `sections` → `form` returns `{editors:[…]}`; the section path segment is the numeric `id` from `0.0.24-beta`, the `name` before (the probe tries the id first and falls back to the name) | content-management.md → Pages, Sections; SKILL.md → Browse Structure, version drift |
 | R7 | a single editor `GET …/form/{editor}/{LANG}` is a flat FormEditorDTO carrying the PATCH prerequisites | SKILL.md → The One Rule; content-catalog.md → The One Rule |
 | R8 | language suffix must be UPPERCASE; lowercase → 404 | SKILL.md → Language Handling |
 | R9 | `GET /search/by-uid?uid=` resolves a page | search-and-discovery.md → Search by UID |
 | R10 | MediaStore enumeration answers 200 (was 405 before 0.0.23-beta) | content-management.md → Media |
 | R11 | datasets live directly under `/data-sources/{uid}/` — no `/datasets/` segment | content-management.md → Data Sources |
+| R12 | `GET /templates/page-templates/{uid}/bodies/` lists content areas (≥ 0.0.25-beta; WARN on an older module) | content-templates.md → Content areas of an existing page template; SKILL.md → Templates |
 | W1 | `POST /pages/ {uid, templateUid}` creates a page and returns a numeric `id` | content-management.md → Create Page |
 | W2 | `PATCH …/rename` takes `{name, language}` and changes the display name; `{uid}` is rejected; the uid cannot change | content-management.md → Pages (rename) |
-| W3 | `PUT …/bodies/{body}/sections/{name} {templateUid}` adds a section | content-management.md → Add Section to Body |
-| W4 | GET → jq → PATCH round trip on a text editor keeps apostrophes, quotes, umlauts, newline (file-based payload) | SKILL.md → The One Rule, Rule 2 |
-| W5 | minimal `{name,type,content}` PATCH: rejected or accepted on a scalar editor — recorded, never a fail (full DTO stays the rule) | SKILL.md → Rule 1, Why Manual Construction Fails |
-| W6 | wrong Content-Type on PATCH is rejected — 415 or 500 (the `/form/{editor}` code) | SKILL.md → Critical Content-Type Rules, Error Codes |
+| W3 | `POST …/bodies/{body}/sections/ {name,templateUid}` adds a section and answers its numeric `id` (`0.0.24-beta`+); `PUT …/sections/{name} {templateUid}` on `0.0.23-beta` (fallback, logged in the PASS line) | content-management.md → Add Section to Body; SKILL.md → version drift |
+| W4 | GET → jq → PATCH round trip on a text editor keeps apostrophes, quotes, umlauts, newline (file-based payload); the fallback section is addressed by the id or name W3 recorded | SKILL.md → The One Rule, Rule 2 |
+| W5 | a minimal `{name,type,content}` PATCH is accepted on a scalar editor (`configuration`/`description`/`language` are not required) | SKILL.md → Rule 1; content-management.md → PATCH Pattern |
+| W6 | wrong Content-Type on PATCH is rejected with 500 (the module never answers 415) | SKILL.md → Critical Content-Type Rules, Error Codes |
 | W7 | `POST …/actions {release, checkOnly:true}` dry-run works | content-management.md → Release Workflow; SKILL.md → Actions Pattern |
+| (manual) | `POST …/templates/page-templates/{uid}/actions` → 404: nothing in the TemplateStore can be released (templates answer 404; scripts and schemas by statement, not probed) | content-management.md → end of Release Workflow; SKILL.md → Actions Pattern. Observed 2026-10-07 by hand, no probe yet |
 | W9 | `DELETE /pages/{uid}` then GET → 404 | content-management.md → Delete Page |
 | W10 | `POST /page-references/ {uid, pageId, location}` creates a page reference pointing at the page (server answers 200) | content-management.md → Create PageReference |
 | W11 | `GET /page-references/{uid}/settings` is readable (DTO: `filename`, `showInSitemap`) | content-management.md → Set as Start Node |
@@ -43,7 +45,7 @@ Legend: R = read-only (default run) · W = `--write` (W1–W9 page, W10–W12 pa
 | W15b | `GET …/media/{uid}/resolutions` lists renditions with width/height/size | content-management.md → Media (resolutions) |
 | W16 | medium type is immutable: `PATCH …/media/{uid}` → 405 | content-management.md → Media (drift note) |
 | W17 | `DELETE …/media/{uid}` allowed (0.0.23-beta), then GET → 404 | content-management.md → Media (drift note) |
-| W18 | `POST /data-sources/{ds}/` with no body creates a dataset; response carries `gid` (201) | content-management.md → List / Create Datasets |
+| W18 | `POST /data-sources/{ds}/` with no body creates a dataset; response carries `gid` (201); a data source whose save rule requires a field answers 500 `ValidationError` and the probe moves to the next one | content-management.md → List / Create Datasets |
 | W19 | dataset fields follow GET → jq → PATCH on `…/{gid}/form/{editor}[/{LANG}]` | content-management.md → Write Dataset Fields |
 | W20 | `…/{gid}/entity` is read-only: PATCH → 405 | content-management.md → Read Entity |
 | W21 | `DELETE /data-sources/{ds}/{gid}` → 204, then GET → 404 | content-management.md → Data Sources |
@@ -67,11 +69,13 @@ probe; the "throwaway" column says what a probe would have to create and delete.
 | Skill section | What is claimed | Throwaway needed | Priority |
 | --- | --- | --- | --- |
 | content-templates.md → Create Templates (page, format, link), Rules XML; content-management.md → Create Data Source, Document Groups, Folders | remaining create endpoints | one of each | medium — same pattern as W22/W25, needs schema/table-template uids for the data source |
-| content-catalog.md → Read / Write FS_CATALOG | catalog editor DTO with `_item` children; full-DTO PATCH mandatory | a page with a catalog section | medium — Rule 1 is only checked on a scalar editor (W5) |
+| content-templates.md → Content areas of an existing page template | `POST`/`PUT`/`DELETE …/page-templates/{uid}/bodies/…` write semantics: 409 on a duplicate name, rename keeps content, per-template whitelist evaluation, DELETE while pages use the template — all `[verify]` (API document only; R12 covers the GET) | a throwaway page template with two areas, one page | high — the only 0.0.25 surface shipped without a write probe; never DELETE on a shared project |
+| content-management.md → DOM editor notes | a PATCH whose DOM content contains inline links answers 500 `[observed]`, cause not isolated | a page with a DOM editor and a link template | medium — needs the link markup shape from a GET first |
+| content-catalog.md → Read / Write FS_CATALOG | card list `[{id, templateUid, item:{editors}}]`; a PATCH needs `id`/`templateUid` per card and `name`/`type`/`content` per nested editor — probe that a PATCH without `configuration` is accepted | a page with a catalog section | medium — only the scalar case is probed (W5) |
 | SKILL.md → Playbook: Duplicate a Page; content-management.md → Copy a Page | `POST …/actions {copy …}` | one copied page | medium |
 | content-templates.md → Channel-Sources | `GET …/channel-sources/html` | none (read-only) | low — cheap, add with the next read-only batch |
 | search-and-discovery.md → Search by ID, Find References, Invalid / External References | `/search/by-id`, `/search/invalid-references`, `/search/external-references` | none (read-only) | low — cheap |
-| SKILL.md → Error Codes | which status each failure produces (404 / 415 / 500) | none | low — partially covered by R8, W2, W6 |
+| SKILL.md → Error Codes | which status each failure produces (400 / 404 / 500) | none | low — partially covered by R8, W2, W6 |
 | SKILL.md → Language Handling for non-text editors (DOM, FS_REFERENCE) | GET → jq → PATCH works on structured editors too | a page with such editors | medium — every write probe hits a text field |
 | content-management.md → Release Workflow (real release, not `checkOnly`) | release changes state | released throwaway page | not planned — state change on shared projects |
 

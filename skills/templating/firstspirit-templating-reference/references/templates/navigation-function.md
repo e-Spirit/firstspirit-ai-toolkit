@@ -38,8 +38,14 @@ Facts marked `[odfs]` are taken from the FirstSpirit Online Documentation (links
   </CMS_FUNCTION>
 </CMS_HEADER>
 
-$CMS_IF(!fr_nav.isEmpty)$<ul>$CMS_VALUE(fr_nav)$</ul>$CMS_END_IF$
+$CMS_SET(set_nav, fr_nav.toString)$
+$CMS_IF(!set_nav.isEmpty)$<ul>$CMS_VALUE(set_nav)$</ul>$CMS_END_IF$
 ```
+
+`fr_nav` is the navigation **object**, not rendered text, and its `isEmpty` is always `false` — even
+when the function renders nothing `[core]` `[observed]` (2026-10-07: `fr_nav.isEmpty` = false while
+`fr_nav.toString.length` = 0). Render once with `.toString` and test the string, as above; a guard
+on `fr_nav.isEmpty` still emits the empty `<ul></ul>`.
 
 `CMS_ARRAY_ELEMENT index` names the **menu level** the fragment applies to; levels are counted
 from `0`. `index="1..2"` covers a range. `[odfs]`
@@ -156,8 +162,12 @@ Path only, last crumb unlinked, no wrapper hooks — the whole output is the seq
   </CMS_ARRAY_PARAM>
 </CMS_FUNCTION>
 …
-$CMS_IF(!fr_breadcrumb.isEmpty)$<ol class="breadcrumb">$CMS_VALUE(fr_breadcrumb)$</ol>$CMS_END_IF$
+$CMS_SET(set_crumbs, fr_breadcrumb.toString)$
+$CMS_IF(!set_crumbs.isEmpty)$<ol class="breadcrumb">$CMS_VALUE(set_crumbs)$</ol>$CMS_END_IF$
 ```
+
+The same rule as for the menu: the function result's `isEmpty` is always `false`; test the rendered
+string `[core]`. A page whose folder sits directly below the root renders no crumbs at all.
 
 Switch to `parentpath` when intermediate folders are flagged *not* to display in the menu and
 you want that setting respected in the crumb too (see the `[verify]` note above on the exact

@@ -3,9 +3,9 @@ name: firstspirit-external-sync-export
 description: >-
   Run the FirstSpirit Command Line Interface (fs-cli / FSDevTools / fsdevtools) against a server: export a project (stores, project properties) to an external-sync directory on disk, or import a sync directory back. Use it to keep a project in git, work on its source outside the server, move a project to another server, or build a git-based pipeline on a self-hosted or local server. Covers installing fsdevtools, the version-matched Access API jar (fs-isolated-runtime), the JRE --add-opens flags, connection modes (HTTP / HTTPS / SOCKET; Cloud needs HTTPS 443, Keycloak SSO), authenticating without exposing a password, the export command (store identifiers, projectproperty, path:, entities:, schema:, --useReleaseState, --keepObsoleteFiles), the import command (--layerMapping, --import-comment, --permissionMode) and a failure→fix table for the common errors. Triggers on "external sync", "FSDevTools", "fs-cli", "export a FirstSpirit project to disk", "fs-cli import", "layer mapping", "connect fs-cli to Cloud".
 metadata:
-  source-commit: "889cb43"
-  published: "2026-10-02"
-  toolkit-version: "0.3.1"
+  source-commit: "9c191a5"
+  published: "2026-10-08"
+  toolkit-version: "0.4.0"
 ---
 
 > **Beta.** Early public release. Feedback welcome; behaviour and structure may change.
@@ -31,7 +31,7 @@ There are two ways a project gets exported. Pick before you start.
   server-side from an `fs-project.yaml` and commits the result to Git — the
   `externalSync.exportElements` / `designForQa|Prod|Subprojects` model. This is
   the *maintained* export of a Cloud project, not an ad-hoc pull. It is owned by
-  **the FirstSpirit Cloud documentation** (Distributed development, Template Transport). If the
+  **`firstspirit-cloud`** (Distributed development, Template Transport). If the
   project already has such a repo, use it instead of a manual run; this skill
   does not restate that workflow.
 

@@ -19,7 +19,7 @@ below.
 
 **Packaging is not this file's job.** All of these ship as `<public>` components inside a
 `@WebAppComponent` — see the last section and
-the FirstSpirit module development documentation (ODFS: web-app components and `<public>` components) for the module side.
+`firstspirit-module-development/references/component-types.md` for the module side.
 
 ## Which plug-in for which spot
 
@@ -34,7 +34,7 @@ the FirstSpirit module development documentation (ODFS: web-app components and `
 | Suggested **crop / focus areas** for a picture | `FocusAreaProviderPlugin` | `…webedit.plugin.focus` |
 | Items in the **entity management** (dataset) views | `EntityManagementItemsPlugin` | `de.espirit.cxt.cc.plugin.entity` — separate API jar, see below |
 | A button in the **media management** view | `MediaManagementItemsPlugin` → `ClientScriptProvidingMediaManagementItem` / executable item, context `MediaManagementContext` (`getElement`, `getRemoteName`, `getLanguage`, `show(MediaFolder)`, `refresh()`) | `…webedit.plugin.media` **[jar]** |
-| A **report** (search panel with drag-and-drop results) | `DataAccessPlugin` with the `Reporting` aspect, or the older `ReportPlugin<T>` | `de.espirit.firstspirit.client.plugin.dataaccess` — owned by the FirstSpirit module development documentation (ODFS: DataAccessPlugin and reports) |
+| A **report** (search panel with drag-and-drop results) | `DataAccessPlugin` with the `Reporting` aspect, or the older `ReportPlugin<T>` | `de.espirit.firstspirit.client.plugin.dataaccess` — owned by `firstspirit-module-development/references/data-access-and-reports.md` |
 | JavaScript/CSS loaded into **every** ContentCreator session | `ClientResourcePlugin` (`getScriptUrls()`, `getStylesheetUrls()`) | `…webedit.plugin` **[jar]** — the one-off variant is the operation in `client-resource-operation.md` |
 | Where a **new page** lands in the Page Store | `WebeditStoreMappingPlugin` (`PageFolder requestMappedFolder(SiteStoreFolder)` / `requireMappedFolder(SiteStoreFolder)`) | `de.espirit.firstspirit.store` **[jar]** **[javadoc]** — see "Store mapping" below |
 | An **external preview** entry in the SiteArchitect (device labs, staging hosts) | `ExternalPreviewItemsPlugin` → `ExternalPreviewItem` (`getLabel`, `getIcon` (Swing `Icon`), `getBrowserType()` → `EngineType`, `getUrl(ExternalPreviewContext)`) | `de.espirit.firstspirit.client.plugin` **[jar]** — SiteArchitect only; the official *BrowserStack* example builds the URL with `GenerateElementOperation.perform(PageRef, Language)` **[jar]** |
@@ -376,7 +376,7 @@ public class MyCcWebApp extends AbstractWebApp implements WebApp { }
   against the ContentCreator web-app root the plug-in was deployed to **[odfs]**.
 - The plug-in jar goes in `fsWebCompile`; anything the `execute` methods call on the
   server side that is not in the web scope must also be in `fsModuleCompile`:
-  the FirstSpirit module Gradle plugin documentation (`fsWebCompile` / `fsModuleCompile`). The two official
+  `firstspirit-module-development/references/multi-project-layout.md`. The two official
   example descriptors do it differently: they list the same jar as a **server-scope**
   `<resource>` and again inside `<web-resources>` (2019 `module.xml`; 2024
   `module-isolated.xml` with `mode="isolated"`, `<web-app scopes="PROJECT,GLOBAL"

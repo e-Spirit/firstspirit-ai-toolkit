@@ -30,7 +30,8 @@
 # git-ignored. Exit code 1 if anything failed.
 #
 # O1 keeps a normalised copy of the server's OpenAPI spec per host under
-# ./internal/openapi/<host>/ (override: FS_OPENAPI_SNAPSHOTS) and WARNs with a
+# results/firstspirit-rest-api/openapi/<host>/ in the shared output root (override:
+# FS_OPENAPI_SNAPSHOTS) and WARNs with a
 # diff (<run>.diff.md) when the surface changed since the last run — the early
 # warning that a skill section may be stale. scripts/claim-coverage.md maps probes
 # and OpenAPI paths to skill sections.
@@ -142,17 +143,21 @@ else skip R2b "OpenAPI spec at /rest/v3/api-docs" "HTTP $STATUS — spec endpoin
 # against this host. Normalised spec (sorted keys) is kept per host under $SNAP_DIR; a new file
 # is written only when it differs from the newest one there. Changes are WARN, not FAIL: the
 # server moved, the skill may be stale — re-read the affected sections.
-SNAP_DIR="${FS_OPENAPI_SNAPSHOTS:-./internal/openapi}"
+# Default: <output root>/results/firstspirit-rest-api/openapi — git-ignored (results/) and writable,
+# unlike the skill directory, which is a read-only cache when installed as a plugin.
+SNAP_DIR="${FS_OPENAPI_SNAPSHOTS:-$ROOT_OUT/results/firstspirit-rest-api/openapi}"
 if is2xx && [ -n "$(jqr '.openapi // .swagger')" ]; then
   HOST="$(printf '%s' "$FS_REST_BASE_URL" | sed -E 's#^[a-z]+://##; s#[/:].*##')"
   SNAP_HOST="$SNAP_DIR/$HOST"; mkdir -p "$SNAP_HOST"
   NEW="$OUT/openapi.json"; jq -S . "$BODY" > "$NEW"
-  API_VERSION="$(jq -r '.info.version // ("openapi " + .openapi)' "$NEW")"   # the spec carries no module version (0.0.23-beta)
+  API_VERSION="$(jq -r '.info.version // ("openapi " + .openapi)' "$NEW")"   # the spec carries no module version (0.0.23-beta … 0.0.25-beta); GET /modules/ has it
   N_PATHS="$(jq '.paths | length' "$NEW")"
-  PREV="$(ls -1 "$SNAP_HOST"/*.json 2>/dev/null | sort | tail -1)"
+  # newest by the timestamp in the file name (digits only, so the older YYYYMMDD-HHMMSS names and the
+  # current YYYY-MM-DD-HHMMSS names sort together); mtime is arbitrary after a checkout or a copy
+  PREV="$(for f in "$SNAP_HOST"/*.json; do [ -e "$f" ] || continue; k="$(basename "$f" .json | tr -cd '0-9')"; printf '%s %s\n' "$k" "$f"; done | sort | tail -1 | cut -d' ' -f2-)"
   if [ -z "$PREV" ]; then
     cp "$NEW" "$SNAP_HOST/$RUN.json"
-    pass O1 "OpenAPI snapshot recorded for $HOST ($API_VERSION, $N_PATHS paths) → ${SNAP_HOST#./}/$RUN.json"
+    pass O1 "OpenAPI snapshot recorded for $HOST ($API_VERSION, $N_PATHS paths) → ${SNAP_HOST#"$ROOT_OUT"/}/$RUN.json"
   elif cmp -s "$PREV" "$NEW"; then
     pass O1 "OpenAPI surface unchanged since $(basename "$PREV" .json) ($API_VERSION, $N_PATHS paths)"
   else
@@ -175,7 +180,7 @@ if is2xx && [ -n "$(jqr '.openapi // .swagger')" ]; then
       echo "## schemas (+ new, - gone, ~ changed)"; printf '%s\n' "$SCHEMAS"
     } > "$SNAP_HOST/$RUN.diff.md"
     warn O1 "OpenAPI surface CHANGED since $(basename "$PREV" .json) ($API_VERSION): +$(printf '%s' "$ADDED" | grep -c .) ops, -$(printf '%s' "$REMOVED" | grep -c .) ops, ~$(printf '%s' "$CHANGED" | grep -c .) paths, $(printf '%s' "$SCHEMAS" | grep -c .) schema deltas" \
-      "details in ${SNAP_HOST#./}/$RUN.diff.md — check the skill sections for the listed paths (scripts/claim-coverage.md maps paths → sections)"
+      "details in ${SNAP_HOST#"$ROOT_OUT"/}/$RUN.diff.md — check the skill sections for the listed paths (scripts/claim-coverage.md maps paths → sections)"
   fi
 else
   skip O1 "OpenAPI snapshot diff" "no spec body to snapshot (see R2b)"
@@ -245,17 +250,27 @@ for cand in $CANDIDATES; do
   bn="$(jqr 'if type=="array" then .[] else (.content[]?) end | .name // .uid // empty' | head -1)"
   [ -n "$bn" ] || continue
   req GET "$P/pages/$cand/bodies/$bn"
-  sec="$(jqr '(.sections // .content // .children // [])[0] | .name // .uid // empty')"
+  sec_id="$(jqr '(.sections // .content // .children // [])[0] | .id // empty')"
+  sec_name="$(jqr '(.sections // .content // .children // [])[0] | .name // .uid // empty')"
+  [ -n "$sec_id$sec_name" ] || continue
+  # ≥ 0.0.24-beta the path segment is the numeric section id (a name answers 400);
+  # ≤ 0.0.23-beta it is the section name (an id answers 404). Try the id first, fall back to the name.
+  # Each form is checked with a GET; a candidate whose section answers under neither address is
+  # dropped, so R6 never reports against an address that was never seen to work.
+  sec=""
+  if [ -n "$sec_id" ] && { req GET "$P/pages/$cand/bodies/$bn/sections/$sec_id/form"; is2xx; }; then sec="$sec_id"; sec_kind=id
+  elif [ -n "$sec_name" ] && { req GET "$P/pages/$cand/bodies/$bn/sections/$sec_name/form"; is2xx; }; then sec="$sec_name"; sec_kind=name
+  fi
   [ -n "$sec" ] || continue
-  FOUND_PAGE="$cand"; BODYNAME="$bn"; SECTION="$sec"; break
+  FOUND_PAGE="$cand"; BODYNAME="$bn"; SECTION="$sec"; SECTION_KIND="$sec_kind"; break
 done
 if [ -z "$FOUND_PAGE" ]; then
   skip R6 "page/bodies/section/form chain" "no page with a body+section in $N_CAND candidate(s) (headless/data/ODFS project?) — set FS_TEST_PAGE to a content page"
 else
   PAGE="$FOUND_PAGE"
-  req GET "$P/pages/$PAGE/bodies/$BODYNAME/sections/$SECTION/form"
+  # $BODY still holds the successful section-form GET from the loop above
   if is2xx && [ "$(jqr '.editors | type')" = array ]; then
-    pass R6 "section form is {editors:[…]} ($(jqr '.editors|length') editors on $PAGE/$BODYNAME/$SECTION)"
+    pass R6 "section form is {editors:[…]} ($(jqr '.editors|length') editors on $PAGE/$BODYNAME/$SECTION, section addressed by $SECTION_KIND)"
     EDITOR="$(jqr '[.editors[] | select(.type=="CMS_INPUT_TEXT" or .type=="CMS_INPUT_TEXTAREA")][0].name // .editors[0].name // empty')"
   else
     fail R6 "section form is {editors:[…]}" "HTTP $STATUS, shape $(keys)"
@@ -313,6 +328,21 @@ else
   else fail R11 "datasets addressed directly under the data-source" "/data-sources/$DS/ → $NEWP, …/datasets/ → $OLDP"; fi
 fi
 
+# R12 — page-template content areas are a resource from 0.0.25-beta (…/page-templates/{uid}/bodies/)
+if [ -z "$PAGE_TEMPLATE" ]; then skip R12 "page-template /bodies/ resource" "no page template found — set FS_TEST_PAGE_TEMPLATE"
+else
+  # The template itself must exist before a 404 on /bodies/ may be read as "module too old":
+  # a typo in FS_TEST_PAGE_TEMPLATE also answers 404.
+  req GET "$P/templates/page-templates/$PAGE_TEMPLATE"
+  if ! is2xx; then fail R12 "page template '$PAGE_TEMPLATE' exists" "GET …/page-templates/$PAGE_TEMPLATE → HTTP $STATUS; check FS_TEST_PAGE_TEMPLATE"
+  else
+    req GET "$P/templates/page-templates/$PAGE_TEMPLATE/bodies/"
+    if is2xx && [ "$(jqr type)" = array ]; then pass R12 "GET /templates/page-templates/$PAGE_TEMPLATE/bodies/ lists $(jqr length) content area(s) (≥ 0.0.25-beta)"
+    elif [ "$STATUS" = 404 ] || [ "$STATUS" = 405 ]; then warn R12 "page-template /bodies/ resource" "HTTP $STATUS on an existing template — REST module older than 0.0.25-beta; content areas are create-only here"
+    else fail R12 "GET /templates/page-templates/{uid}/bodies/" "HTTP $STATUS, shape $(keys)"; fi
+  fi
+fi
+
 # ---- Write probes (throwaway page) -------------------------------------------
 if [ "$DO_WRITE" = 1 ]; then
   say "Write probes  (throwaway page, deleted at the end)"
@@ -356,16 +386,24 @@ if [ "$DO_WRITE" = 1 ]; then
       fail W2 "/rename {name,language} sets display name, uid unchanged" "{name,language} → $RN, {uid} → $RU, GET by original uid → $STILL"
     fi
 
-    # W3 — add a section
+    # W3 — add a section. ≥ 0.0.24-beta: POST …/sections/ {name,templateUid} → SectionDTO with a numeric id,
+    # which addresses the section from then on. ≤ 0.0.23-beta: PUT …/sections/{name} {templateUid}.
     req GET "$P/pages/$CREATED_PAGE/bodies/"
     TBODY="$(jqr 'if type=="array" then .[0] else .content[0] end | .name // .uid // empty')"
+    TSECTION=""
     if [ -z "$TBODY" ] || [ -z "$SECTION_TEMPLATE" ]; then
-      skip W3 "PUT …/sections/{name} adds a section" "body '$TBODY' / section template '$SECTION_TEMPLATE' missing"
+      skip W3 "add a section" "body '$TBODY' / section template '$SECTION_TEMPLATE' missing"
     else
-      printf '{"templateUid":"%s"}' "$SECTION_TEMPLATE" > "$OUT/add-section.json"
-      req PUT "$P/pages/$CREATED_PAGE/bodies/$TBODY/sections/smoke" application/json "$OUT/add-section.json"
-      if is2xx; then pass W3 "PUT …/bodies/$TBODY/sections/smoke {templateUid:$SECTION_TEMPLATE} → $STATUS"
-      else skip W3 "PUT …/sections/smoke" "HTTP $STATUS — template '$SECTION_TEMPLATE' may not be allowed in body '$TBODY'; set FS_TEST_SECTION_TEMPLATE"; fi
+      printf '{"name":"smoke","templateUid":"%s"}' "$SECTION_TEMPLATE" > "$OUT/add-section.json"
+      req POST "$P/pages/$CREATED_PAGE/bodies/$TBODY/sections/" application/json "$OUT/add-section.json"
+      if is2xx; then TSECTION="$(jqr '.id // empty')"; pass W3 "POST …/bodies/$TBODY/sections/ {name,templateUid:$SECTION_TEMPLATE} → $STATUS (section id ${TSECTION:-?}; ≥ 0.0.24-beta form)"
+      else
+        POSTSTATUS="$STATUS"
+        printf '{"templateUid":"%s"}' "$SECTION_TEMPLATE" > "$OUT/add-section.json"
+        req PUT "$P/pages/$CREATED_PAGE/bodies/$TBODY/sections/smoke" application/json "$OUT/add-section.json"
+        if is2xx; then TSECTION="smoke"; pass W3 "PUT …/bodies/$TBODY/sections/smoke {templateUid:$SECTION_TEMPLATE} → $STATUS (≤ 0.0.23-beta form; POST → $POSTSTATUS)"
+        else skip W3 "add a section" "POST …/sections/ → $POSTSTATUS, PUT …/sections/smoke → $STATUS — template '$SECTION_TEMPLATE' may not be allowed in body '$TBODY'; set FS_TEST_SECTION_TEMPLATE"; fi
+      fi
     fi
 
     # W4–W7 — GET → jq → PATCH on a text editor. Look on the page form first, then in the section
@@ -373,8 +411,8 @@ if [ "$DO_WRITE" = 1 ]; then
     FBASE="$P/pages/$CREATED_PAGE/form"
     req GET "$FBASE"
     TEDITOR="$(jqr '[.editors[]? | select(.type=="CMS_INPUT_TEXT" or .type=="CMS_INPUT_TEXTAREA")][0].name // empty')"
-    if [ -z "$TEDITOR" ] && [ -n "${TBODY:-}" ]; then
-      SFBASE="$P/pages/$CREATED_PAGE/bodies/$TBODY/sections/smoke/form"
+    if [ -z "$TEDITOR" ] && [ -n "${TBODY:-}" ] && [ -n "${TSECTION:-}" ]; then
+      SFBASE="$P/pages/$CREATED_PAGE/bodies/$TBODY/sections/$TSECTION/form"
       req GET "$SFBASE"
       TEDITOR="$(jqr '[.editors[]? | select(.type=="CMS_INPUT_TEXT" or .type=="CMS_INPUT_TEXTAREA")][0].name // empty')"
       [ -n "$TEDITOR" ] && FBASE="$SFBASE"
@@ -395,25 +433,22 @@ if [ "$DO_WRITE" = 1 ]; then
         pass W4 "GET→jq→PATCH on ${FBASE#"$P/"}/$TEDITOR$SUFFIX round-trips (apostrophes, quotes, umlaut, newline intact)"
       else fail W4 "GET→jq→PATCH round trip" "PATCH → $PS, read-back content: $(jqr .content | head -c 80)"; fi
 
-      # Rule 1 (refined): the full DTO is required for FS_CATALOG/FS_REFERENCE, but a plain scalar
-      # editor may ACCEPT a minimal {name,type,content} PATCH. This probe hits a scalar editor, so
-      # either outcome is consistent with the skill — it records which, and never fails on accept.
-      # (GET→jq→PATCH stays the universal advice regardless.)
+      # Rule 1: only name and type are required; configuration/description/language are ignored on
+      # write for every editor type (module source). A minimal {name,type,content} PATCH must be accepted.
       jq '{name,type,content}' "$OUT/editor.patched.json" > "$OUT/editor.minimal.json"
       req PATCH "$FBASE/$TEDITOR$SUFFIX" application/json "$OUT/editor.minimal.json"
       case "$STATUS" in
-        4??|5??) pass W5 "minimal {name,type,content} PATCH rejected on scalar editor ($STATUS) — full DTO enforced" ;;
-        2??)     pass W5 "minimal {name,type,content} PATCH accepted on scalar editor ($STATUS) — Rule 1 is scalar-lenient (still send full DTO; FS_CATALOG/FS_REFERENCE require it)" ;;
+        2??)     pass W5 "minimal {name,type,content} PATCH accepted on scalar editor ($STATUS) — configuration/description/language not required" ;;
+        4??|5??) warn W5 "minimal {name,type,content} PATCH was rejected" "HTTP $STATUS: $(head -c 120 "$BODY") — behaviour varies by module version and editor type; informational" ;;
         *)       skip W5 "minimal-PATCH behaviour" "unexpected HTTP $STATUS" ;;
       esac
 
-      # Rule 4: wrong Content-Type is rejected — 415 on some endpoints, 500 on /form/{editor}.
-      # Either rejection is correct per the skill; a 2xx would mean it silently accepted text/plain.
+      # Rule 4: wrong Content-Type is rejected — the module maps it to 500 (generic handler; 415 is
+      # never produced). A 2xx would mean it silently accepted text/plain on a JSON editor.
       req PATCH "$FBASE/$TEDITOR$SUFFIX" text/plain "$OUT/editor.patched.json"
       case "$STATUS" in
-        415)     pass W6 "PATCH Content-Type text/plain rejected → 415" ;;
-        500)     pass W6 "PATCH Content-Type text/plain rejected → 500 (the /form/{editor} code, documented)" ;;
-        4??|5??) pass W6 "PATCH Content-Type text/plain rejected → $STATUS" ;;
+        500)     pass W6 "PATCH Content-Type text/plain rejected → 500 (the generic-handler code, documented)" ;;
+        4??|5??) pass W6 "PATCH Content-Type text/plain rejected → $STATUS (skill documents 500; note the difference)" ;;
         *)       fail W6 "wrong Content-Type is rejected (Rule 4)" "got $STATUS — text/plain was accepted on a JSON editor" ;;
       esac
     fi
@@ -513,25 +548,35 @@ if [ "$DO_WRITE" = 1 ]; then
   # W18–W20 — dataset: POST with no body mints a dataset (gid in response), fields edited via the
   # /form/{editor} pattern, /entity read-only (content-management.md → Data Sources).
   # Data source: FS_TEST_DATA_SOURCE, else the first one whose datasets carry a CMS_INPUT_TEXT.
-  DS="${FS_TEST_DATA_SOURCE:-}"; DS_EDITOR=""
-  if [ -z "$DS" ]; then
-    req GET "$P/data-sources/"
-    for cand in $(jqr '.[]?.uid' | head -12); do
+  # A data source whose table template has a save rule requiring a field rejects the empty dataset
+  # (500 ValidationError, nothing created); such candidates are skipped and named in the PASS line.
+  DS=""; DS_EDITOR=""; GID=""; DC=""; DS_SKIPPED=""
+  if [ -n "${FS_TEST_DATA_SOURCE:-}" ]; then DS_CANDS="$FS_TEST_DATA_SOURCE"
+  else req GET "$P/data-sources/"; DS_CANDS="$(jqr '.[]?.uid' | head -12)"; fi
+  for cand in $DS_CANDS; do
+    E=""
+    if [ -z "${FS_TEST_DATA_SOURCE:-}" ]; then
       req GET "$P/data-sources/$cand/"
       G0="$(jqr '.[0].gid // empty')"; [ -n "$G0" ] || continue
       req GET "$P/data-sources/$cand/$G0/form"
       E="$(jqr '[.editors[]? | select(.type=="CMS_INPUT_TEXT")][0].name // empty')"
-      if [ -n "$E" ]; then DS="$cand"; DS_EDITOR="$E"; break; fi
-    done
-  fi
-  if [ -z "$DS" ]; then
-    skip W18 "dataset probes" "no data source with a CMS_INPUT_TEXT editor found — set FS_TEST_DATA_SOURCE"
-  else
-    req POST "$P/data-sources/$DS/"; DC="$STATUS"
+      [ -n "$E" ] || continue
+    fi
+    req POST "$P/data-sources/$cand/"; DC="$STATUS"
     GID="$(jqr '.gid // empty')"
+    if [ "${DC:0:1}" = 2 ] && [ -n "$GID" ]; then DS="$cand"; DS_EDITOR="$E"; break; fi
+    if grep -q 'ValidationError' "$BODY"; then DS_SKIPPED="$DS_SKIPPED $cand(save rule)"; continue; fi
+    # an explicitly named data source is reported by W18 below; an auto-discovered one that fails
+    # for another reason (403, 500, …) is skipped like the save-rule ones so a later candidate can run
+    if [ -n "${FS_TEST_DATA_SOURCE:-}" ]; then DS="$cand"; break; fi
+    DS_SKIPPED="$DS_SKIPPED $cand(HTTP $DC)"
+  done
+  if [ -z "$DS" ]; then
+    skip W18 "dataset probes" "no data source with a CMS_INPUT_TEXT editor that accepts an empty dataset — set FS_TEST_DATA_SOURCE${DS_SKIPPED:+; rejected:$DS_SKIPPED}"
+  else
     if [ "${DC:0:1}" = 2 ] && [ -n "$GID" ]; then
       CREATED_DS="$DS"; CREATED_GID="$GID"
-      pass W18 "POST /data-sources/$DS/ (no body) → $DC, gid $GID"
+      pass W18 "POST /data-sources/$DS/ (no body) → $DC, gid $GID${DS_SKIPPED:+ (skipped:$DS_SKIPPED)}"
       DBASE="$P/data-sources/$DS/$GID/form"
       req GET "$DBASE"
       [ -n "$DS_EDITOR" ] || DS_EDITOR="$(jqr '[.editors[]? | select(.type=="CMS_INPUT_TEXT")][0].name // empty')"
@@ -679,7 +724,7 @@ fi
 
 # ---- Summary -----------------------------------------------------------------
 say "Summary: $PASS passed, $FAIL failed, $SKIP skipped, $WARN warning(s) — responses in ${OUT#"$ROOT_OUT"/}"
-MODE=read; [ "$DO_WRITE" = 1 ] && MODE=write; [ "$DO_SCRIPTS" = 1 ] && MODE="$MODE+scripts"
+MODE="read"; [ "$DO_WRITE" = 1 ] && MODE="write"; [ "$DO_SCRIPTS" = 1 ] && MODE="$MODE+scripts"
 HOST="${FS_REST_BASE_URL#*://}"; HOST="${HOST%%/*}"
 RESULT=ok; [ "$FAIL" -eq 0 ] || RESULT=fail
 printf '%s smoke mode=%s host=%s project=%s pass=%s fail=%s skip=%s warn=%s result=%s took=%ss dir=%s\n' \

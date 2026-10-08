@@ -195,7 +195,7 @@ When the project is developed Git-first, the same export is expressed
 declaratively in `fs-project.yaml` (`externalSync.exportElements`) and run by a
 Bamboo plan, not by hand. That model — and the `features` /
 `designForQa|Prod|Subprojects` content-transport layer around it — is owned by
-**the FirstSpirit Cloud documentation** (Distributed development / Template Transport). Use it
+**`firstspirit-cloud`** (Distributed development / Template Transport). Use it
 for a maintained Cloud project; use the direct command here for a one-off pull.
 
 ---

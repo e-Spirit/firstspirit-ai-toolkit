@@ -73,7 +73,7 @@ The agents you reach for most (all via `requireSpecialist(X.TYPE)`):
 | `ServerInformationAgent` | Server version / build info |
 | `MaintenanceModeAgent`, `RunLevelAgent` | Server state (admin) |
 | `BrokerAgent` | Obtain a *project-scoped* broker from a non-project context (e.g. server schedule) |
-| `IDProviderEventAgent` | React to element saves: `addListener(Predicate<EventInfo>, Consumer<RevisionEvent>)` / `removeListener(consumer)` `[jar]`. The agent holds the consumer *weakly* — keep your own reference `[javadoc]`; obtain it from a **project** broker `[observed]` (the FirstSpirit module development documentation (ODFS), component-types "Reacting to element changes") |
+| `IDProviderEventAgent` | React to element saves: `addListener(Predicate<EventInfo>, Consumer<RevisionEvent>)` / `removeListener(consumer)` `[jar]`. The agent holds the consumer *weakly* — keep your own reference `[javadoc]`; obtain it from a **project** broker `[observed]` (`firstspirit-module-development`, component-types "Reacting to element changes") |
 | `ModuleAgent` | Installed module components by interface: `getComponents(Class<?>)`, `getTypeForName(name, Class<T>)`, `getClassLoader()`. Package `de.espirit.firstspirit.access`, not `agency` |
 | `ServerConfigurationAgent` | Server properties: `getServerProperty(ServerProperty<T>)` returns **`Optional<T>`**; `setServerProperty`, `removeServerProperty`, `getAllowedRedirectHosts()` |
 | `FileSystemsAgent` | File systems for I/O from scripts and modules: `getOSFileSystem(path)`, `getMemoryFileSystem()`, `getRelativeFileSystem(handle)`. Package `de.espirit.firstspirit.io` |
@@ -100,7 +100,7 @@ storeAgent = projectBroker.requireSpecialist(StoreAgent.TYPE);
 `getBroker(String)` and `getBroker(long)` `[jar]`. Module services prefer the **id**
 variant: a project can be renamed, its id cannot change, and `ProjectEnvironment.getProjectId()`
 or `Project.getId()` is usually already in hand. Server-scope code in modules
-(the FirstSpirit module development documentation, ODFS) uses exactly this hop to load a `PageRef` by uid:
+(`firstspirit-module-development`) uses exactly this hop to load a `PageRef` by uid:
 
 ```
 projectBroker = brokerAgent.getBrokerByProjectId(project.getId());

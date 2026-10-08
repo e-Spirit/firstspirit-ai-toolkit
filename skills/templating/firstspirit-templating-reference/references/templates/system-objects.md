@@ -52,7 +52,7 @@ $CMS_VALUE(#global.dataset.javaClientUrl)$ $-- SiteArchitect edit link --$
 $CMS_VALUE(#nav.label)$          $-- menu name --$
 $CMS_VALUE(#nav.id)$             $-- node id --$
 $CMS_VALUE(#nav.ref.getUid())$   $-- referenced page-ref UID --$
-$CMS_VALUE(#nav.pos)$            $-- position --$
+$CMS_VALUE(#nav.levelPos)$       $-- position on its level; #nav.pos exists only in PageGroup/MenuGroup [core] --$
 $CMS_VALUE(#nav.comment)$        $-- comment --$
 $CMS_VALUE(#nav.isFirst)$        $-- first item? --$
 $CMS_VALUE(#nav.hasSubFolders)$  $-- has children? --$

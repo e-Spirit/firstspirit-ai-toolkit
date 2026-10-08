@@ -63,8 +63,9 @@ The Navigation function generates multi-level menus from the SiteStore structure
   </CMS_FUNCTION>
 </CMS_HEADER>
 
-$CMS_IF(!fr_nav.isEmpty)$
-  <nav><ul>$CMS_VALUE(fr_nav)$</ul></nav>
+$CMS_SET(set_nav, fr_nav.toString)$
+$CMS_IF(!set_nav.isEmpty)$
+  <nav><ul>$CMS_VALUE(set_nav)$</ul></nav>
 $CMS_END_IF$
 ```
 
@@ -73,7 +74,8 @@ Key points:
 - `CMS_ARRAY_ELEMENT index="0"` = depth 0 (top-level), `index="1"` = depth 1, `index="1..2"` = depths 1 and 2
 - `#nav.label` = menu name, `#nav.ref` = page reference, `#nav.id` = element ID
 - `#nav.hasSubFolders` = has child pages, `#nav.level` = current depth
-- `#nav.isFirst`, `#nav.pos`, `#nav.comment` = position info
+- `#nav.isFirst`, `#nav.isLast`, `#nav.levelPos`, `#nav.positions`, `#nav.comment` = position info (`#nav.pos` exists only in `PageGroup` / `MenuGroup`; in `Navigation` it is undefined and prints nothing `[core]`)
+- The guard tests `fr_nav.toString`, because the function result's own `isEmpty` is always `false` `[core]` `[observed]` (see `navigation-function.md`)
 - `expansionVisibility="all"` renders all levels regardless of current page
 - `beginHTML`/`endHTML` wrap each item, `innerBeginHTML`/`innerEndHTML` wrap sub-level containers
 - `unselectedHTML` vs `selectedHTML` distinguish current page from others
@@ -429,7 +431,7 @@ $CMS_IF(!prm_headline.isEmpty())$
   $CMS_END_IF$
   <$CMS_VALUE(tag)$
     $CMS_IF(!prm_cssClasses.isEmpty())$class="$CMS_VALUE(prm_cssClasses)$"$CMS_END_IF$>
-    $CMS_VALUE(prm_headline.convert2())$   $-- HTML-escape [odfs] --$
+    $CMS_VALUE(prm_headline.convert2())$   $-- apply the template set's conversion rule in quote mode [odfs] [core] --$
   </$CMS_VALUE(tag)$>
 $CMS_END_IF$
 ```
@@ -437,7 +439,7 @@ $CMS_END_IF$
 Key points:
 - `#global.context("PAGE")` provides a page-scoped map that persists across all template renders within one page generation
 - First call sets `set_h1Rendered = true`, all subsequent calls find it already set
-- `convert2()` converts special characters to HTML entities (including quotes)
+- `convert2()` applies the template set's conversion rule (with an HTML rule such as "Convert HTML": `< > & " '` become entities; without a rule the text is unchanged) `[core]`
 - Dynamic tag names via `<$CMS_VALUE(tag)$>` allow programmatic HTML tag selection
 
 ---

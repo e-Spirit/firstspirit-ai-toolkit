@@ -3,9 +3,9 @@ name: firstspirit-templating-reference
 description: >-
   Concrete lookup reference for FirstSpirit template development: template language ($CMS_VALUE$, $CMS_IF$, $CMS_FOR$, $CMS_REF$, $CMS_RENDER$, system objects, string operations, Navigation and PageGroup functions, content projection), GOM input components (CMS_INPUT_*, FS_REFERENCE, FS_CATALOG, FS_INDEX, FS_DATASET) and the datatype each yields, database schemas (table templates, column types and which component maps onto which, foreign keys, KEY column, queries, Remote Data), Rules (validation, visibility, editability, value), identifier and casing rules, deprecated components. Use whenever you need exact template syntax, the right input component, what a component produces and how to read it in the output channel, or whether something is deprecated — e.g. "syntax for CMS_FOR", "which component for a single choice", "what datatype does FS_REFERENCE produce", "is FS_LIST still supported", "review my Ruleset.xml", "why does this field stay invalid". Explains GomSource.xml / Ruleset.xml / ChannelSource files.
 metadata:
-  source-commit: "889cb43"
-  published: "2026-10-02"
-  toolkit-version: "0.3.1"
+  source-commit: "9c191a5"
+  published: "2026-10-08"
+  toolkit-version: "0.4.0"
 ---
 
 > **Beta.** Early public release. Feedback welcome; behaviour and structure may change.

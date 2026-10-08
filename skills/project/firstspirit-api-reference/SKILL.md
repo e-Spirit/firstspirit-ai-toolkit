@@ -12,11 +12,11 @@ description: >-
   write an fs query — for example "what interface is a section", "how do I get the
   PageStore", "which UidType for a media", or "fs query to find an element by
   uid". Pair with firstspirit-scripting (how to run code + the script contexts)
-  and the FirstSpirit module development documentation (ODFS) (how to package it).
+  and firstspirit-module-development (how to package it).
 metadata:
-  source-commit: "889cb43"
-  published: "2026-10-02"
-  toolkit-version: "0.3.1"
+  source-commit: "9c191a5"
+  published: "2026-10-08"
+  toolkit-version: "0.4.0"
 ---
 
 > **Beta.** Early public release. Feedback welcome; behaviour and structure may change.
@@ -25,7 +25,7 @@ metadata:
 
 Fast, factual lookup for the **FirstSpirit Java Access API object model** — the
 "nouns" you read and manipulate from scripts (`firstspirit-scripting`) and modules
-(the FirstSpirit module development documentation, ODFS). Where those skills cover *how you run code*,
+(`firstspirit-module-development`). Where those skills cover *how you run code*,
 this skill answers *what objects exist, how they relate, and how you reach them*.
 
 This is a compact orientation layer distilled from the FirstSpirit Access API: enough to
@@ -53,11 +53,17 @@ release notes when changing versions. Source:
   query — then stop. Point into `references/` for the full catalogue.
 - **State vs release matters.** Most store access takes a `boolean release`
   (`false` = current/edit state, `true` = released state). Name which you mean.
+- **Not every `IDProvider` can be released.** `release()`, `isReleased()` and `getReleaseStatus()` sit on
+  `IDProvider` `[jar]`, so every store element type shows them, templates included
+  (`TemplateStoreElement extends IDProvider` `[jar]`). **Nothing in the TemplateStore can be released**
+  (templates of every kind, scripts, schemas `[observed]`; the REST API has no release action for templates). Do not call
+  `release()` on a TemplateStore element or promise a "released template"; guard any generic release code with
+  `isReleaseSupported()` `[javadoc]`. Template store content moves between projects by transport or Git.
 - **Reach objects through agents, never `new`.** Obtain stores and services from
   the `SpecialistsBroker` via `requireSpecialist(...)`. See
   [references/agents.md](references/agents.md).
 - **Defer.** Script contexts / BeanShell → `firstspirit-scripting`. Module
-  packaging & component types → the FirstSpirit module development documentation (ODFS). Template
+  packaging & component types → `firstspirit-module-development`. Template
   language & GOM → `firstspirit-templating-reference`.
 
 ## Quick answers

@@ -112,17 +112,23 @@ components appear under **Customize**. A symlink rather than a copy means
 ### Skills
 
 Skills are organised into FirstSpirit domain categories. The toolkit currently
-ships five:
+ships these (the `skills/` tree is the authoritative list):
 
 | Skill | Category | What it covers |
 |-------|----------|----------------|
 | `firstspirit-templating-reference` | `templating/` | Template language (`$CMS_VALUE$`, `$CMS_IF$`, `$CMS_FOR$`, …), GOM form/input components and their datatypes, Rules, deprecated→current components |
+| `firstspirit-template-design` | `templating/` | Design principles and review guidance for template development — naming and coding conventions, section/page composition, input-component choice, editorial usability, localisation, documenting a template set |
 | `firstspirit-api-reference` | `project/` | The Java Access API object model — store trees, `StoreElement`/`IDProvider`, the `SpecialistsBroker` and its agents, and QueryAgent search syntax |
 | `firstspirit-scripting` | `project/` | BeanShell scripting — script types and their bound `context` objects, logging, and safe Access-API patterns (lock/save/unlock, form data, transitions) |
 | `firstspirit-rest-api` | `project/` | CMS operations over the REST API with `curl` — templates, pages and sections, form field writes, media upload, content search |
+| `firstspirit-module-development` | `project/` | Building FirstSpirit modules (FSM): module descriptor and component annotations, Gradle layout, component types, packaging and deployment |
+| `firstspirit-operations` | `project/` | Client operations obtained through `OperationAgent` — dialogs, element forms, preview and client-script operations, each with its exact `perform(...)` parameter type and client |
+| `firstspirit-contentcreator-extensions` | `project/` | Extending ContentCreator: the `WE_API` JavaScript API, `ClientScriptOperation` / `ClientResourceOperation`, the Java plug-in interfaces, what does not work there |
+| `firstspirit-headless` | `deployment/` | Headless delivery: CaaS Platform (REST and GraphQL), CaaS Connect, preview vs release, custom JSON output |
+| `firstspirit-cloud` | `deployment/` | FirstSpirit Cloud (the managed SaaS): what the platform does differently or does not allow, and how to build and run a project on it |
 | `firstspirit-external-sync-export` | `deployment/` | Running FS-CLI / FSDevTools to export and import a project as an external-sync tree on disk, for git-based workflows |
 
-A sixth skill, `using-firstspirit-toolkit`, is the index the harness loads at
+One more, `using-firstspirit-toolkit`, is the index the harness loads at
 session start; it points the assistant at the others.
 
 `content/` and `diagnostics/` are reserved for future skills and are currently
