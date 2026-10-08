@@ -15,7 +15,7 @@ fs-cli's global connection options (before the command word):
 | `-c`, `--conn-mode` | `HTTP` \| `HTTPS` \| `SOCKET` | default `HTTP` |
 | `-sz`, `--servletzone` | servlet zone | default `/` |
 | `-u`, `--user` | FirstSpirit login | |
-| `-pwd`, `--password` | password | **never inline in a shared shell** |
+| `-pwd`, `--password` | password | **avoid** — visible in `ps`; use the `fspwd` env var (see below) |
 | `-p`, `--project` | project **name** | not the numeric id |
 
 ### Choosing the connection mode
@@ -46,7 +46,7 @@ the auth gate.
 
 ## Authentication
 
-Pass a FirstSpirit login valid for that instance via `-u` / `-pwd`. On a
+Pass a FirstSpirit login valid for that instance via `-u` and the `fspwd` environment variable (not `-pwd`, which `ps` shows). On a
 **Cloud** instance the login is the account in the instance's Keycloak realm
 (username is typically the email); fs-cli's HTTPS connection performs the login,
 so a normal user/password works — you do **not** hand fs-cli an OAuth token.
@@ -80,14 +80,14 @@ chmod 600 ~/.fs-cli-creds.env
 ```bash
 # at run time: source it, use the vars, redact on the way out
 set -a; . ~/.fs-cli-creds.env; set +a
-fs-cli … -u "$FS_USER" -pwd "$FS_PWD" … 2>&1 | sed -E "s/${FS_PWD//\//\\/}/***/g"
+fsuser="$FS_USER" fspwd="$FS_PWD" fs-cli … 2>&1 | sed -E "s/$(printf '%s' "$FS_PWD" | sed 's/[][\.*^$\/+?(){}|]/\\&/g')/***/g"
 ```
 
 Notes:
 - The `<<'EOF'` (quoted heredoc) stops the shell expanding `$` in the password.
 - Any pre-existing project `.env` with a different variable naming
   (`FS_USERNAME` / `FS_PASSWORD`, `FS_REST_BASE_URL`, `FS_PROJECT_ID`) is fine —
-  map its names onto `-u` / `-pwd`. Confirm its **non-secret** fields (base URL,
+  map its names onto `fsuser` / `fspwd`. Confirm its **non-secret** fields (base URL,
   project id) point at the intended server before trusting its secrets.
 - `-pwd` has a documented default of `Admin`; never rely on it.
 

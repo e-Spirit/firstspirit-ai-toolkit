@@ -68,6 +68,12 @@ fi
 export JAVA_HOME
 
 # --- assemble connection options from env ------------------------------------
+for a in "$@"; do
+  case "$a" in
+    -pwd|--password|-pwd=*|--password=*)
+      echo "fs-cli-export: refusing -pwd on the command line (visible in ps); set FS_PWD (or FS_PASSWORD) instead" >&2; exit 2 ;;
+  esac
+done
 USER_VAL="${FS_USER:-${FS_USERNAME:-}}"
 PWD_VAL="${FS_PWD:-${FS_PASSWORD:-}}"
 
@@ -140,7 +146,7 @@ run() {
 tmp=$(mktemp); trap 'rm -f "$tmp"' EXIT
 run "$@" >"$tmp" 2>&1; status=$?
 if [ -n "$PWD_VAL" ]; then
-  esc=$(printf '%s' "$PWD_VAL" | sed 's/[.[\*^$/]/\\&/g')
+  esc=$(printf '%s' "$PWD_VAL" | sed 's/[][\.*^$/+?(){}|]/\\&/g')
   sed -E "s/${esc}/***/g" "$tmp" > "$OUT/fs-cli.log"
 else
   cp "$tmp" "$OUT/fs-cli.log"

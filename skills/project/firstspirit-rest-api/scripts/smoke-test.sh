@@ -30,7 +30,8 @@
 # git-ignored. Exit code 1 if anything failed.
 #
 # O1 keeps a normalised copy of the server's OpenAPI spec per host under
-# the skill's internal/openapi/<host>/ (override: FS_OPENAPI_SNAPSHOTS) and WARNs with a
+# results/firstspirit-rest-api/openapi/<host>/ in the shared output root (override:
+# FS_OPENAPI_SNAPSHOTS) and WARNs with a
 # diff (<run>.diff.md) when the surface changed since the last run — the early
 # warning that a skill section may be stale. scripts/claim-coverage.md maps probes
 # and OpenAPI paths to skill sections.
@@ -142,10 +143,9 @@ else skip R2b "OpenAPI spec at /rest/v3/api-docs" "HTTP $STATUS — spec endpoin
 # against this host. Normalised spec (sorted keys) is kept per host under $SNAP_DIR; a new file
 # is written only when it differs from the newest one there. Changes are WARN, not FAIL: the
 # server moved, the skill may be stale — re-read the affected sections.
-# Default: the skill's own git-ignored internal/openapi, wherever the script is run from
-# (resolved from the script's location, so `bash smoke-test.sh` inside scripts/ lands in the same place).
-SKILL_DIR="$(cd "$(dirname "$0")/.." && pwd)"
-SNAP_DIR="${FS_OPENAPI_SNAPSHOTS:-$SKILL_DIR/internal/openapi}"
+# Default: <output root>/results/firstspirit-rest-api/openapi — git-ignored (results/) and writable,
+# unlike the skill directory, which is a read-only cache when installed as a plugin.
+SNAP_DIR="${FS_OPENAPI_SNAPSHOTS:-$ROOT_OUT/results/firstspirit-rest-api/openapi}"
 if is2xx && [ -n "$(jqr '.openapi // .swagger')" ]; then
   HOST="$(printf '%s' "$FS_REST_BASE_URL" | sed -E 's#^[a-z]+://##; s#[/:].*##')"
   SNAP_HOST="$SNAP_DIR/$HOST"; mkdir -p "$SNAP_HOST"
@@ -157,7 +157,7 @@ if is2xx && [ -n "$(jqr '.openapi // .swagger')" ]; then
   PREV="$(for f in "$SNAP_HOST"/*.json; do [ -e "$f" ] || continue; k="$(basename "$f" .json | tr -cd '0-9')"; printf '%s %s\n' "$k" "$f"; done | sort | tail -1 | cut -d' ' -f2-)"
   if [ -z "$PREV" ]; then
     cp "$NEW" "$SNAP_HOST/$RUN.json"
-    pass O1 "OpenAPI snapshot recorded for $HOST ($API_VERSION, $N_PATHS paths) → ${SNAP_HOST#./}/$RUN.json"
+    pass O1 "OpenAPI snapshot recorded for $HOST ($API_VERSION, $N_PATHS paths) → ${SNAP_HOST#"$ROOT_OUT"/}/$RUN.json"
   elif cmp -s "$PREV" "$NEW"; then
     pass O1 "OpenAPI surface unchanged since $(basename "$PREV" .json) ($API_VERSION, $N_PATHS paths)"
   else
@@ -180,7 +180,7 @@ if is2xx && [ -n "$(jqr '.openapi // .swagger')" ]; then
       echo "## schemas (+ new, - gone, ~ changed)"; printf '%s\n' "$SCHEMAS"
     } > "$SNAP_HOST/$RUN.diff.md"
     warn O1 "OpenAPI surface CHANGED since $(basename "$PREV" .json) ($API_VERSION): +$(printf '%s' "$ADDED" | grep -c .) ops, -$(printf '%s' "$REMOVED" | grep -c .) ops, ~$(printf '%s' "$CHANGED" | grep -c .) paths, $(printf '%s' "$SCHEMAS" | grep -c .) schema deltas" \
-      "details in ${SNAP_HOST#./}/$RUN.diff.md — check the skill sections for the listed paths (scripts/claim-coverage.md maps paths → sections)"
+      "details in ${SNAP_HOST#"$ROOT_OUT"/}/$RUN.diff.md — check the skill sections for the listed paths (scripts/claim-coverage.md maps paths → sections)"
   fi
 else
   skip O1 "OpenAPI snapshot diff" "no spec body to snapshot (see R2b)"
@@ -258,19 +258,19 @@ for cand in $CANDIDATES; do
   # Each form is checked with a GET; a candidate whose section answers under neither address is
   # dropped, so R6 never reports against an address that was never seen to work.
   sec=""
-  if [ -n "$sec_id" ] && { req GET "$P/pages/$cand/bodies/$bn/sections/$sec_id/form"; is2xx; }; then sec="$sec_id"
-  elif [ -n "$sec_name" ] && { req GET "$P/pages/$cand/bodies/$bn/sections/$sec_name/form"; is2xx; }; then sec="$sec_name"
+  if [ -n "$sec_id" ] && { req GET "$P/pages/$cand/bodies/$bn/sections/$sec_id/form"; is2xx; }; then sec="$sec_id"; sec_kind=id
+  elif [ -n "$sec_name" ] && { req GET "$P/pages/$cand/bodies/$bn/sections/$sec_name/form"; is2xx; }; then sec="$sec_name"; sec_kind=name
   fi
   [ -n "$sec" ] || continue
-  FOUND_PAGE="$cand"; BODYNAME="$bn"; SECTION="$sec"; break
+  FOUND_PAGE="$cand"; BODYNAME="$bn"; SECTION="$sec"; SECTION_KIND="$sec_kind"; break
 done
 if [ -z "$FOUND_PAGE" ]; then
   skip R6 "page/bodies/section/form chain" "no page with a body+section in $N_CAND candidate(s) (headless/data/ODFS project?) — set FS_TEST_PAGE to a content page"
 else
   PAGE="$FOUND_PAGE"
-  req GET "$P/pages/$PAGE/bodies/$BODYNAME/sections/$SECTION/form"
+  # $BODY still holds the successful section-form GET from the loop above
   if is2xx && [ "$(jqr '.editors | type')" = array ]; then
-    pass R6 "section form is {editors:[…]} ($(jqr '.editors|length') editors on $PAGE/$BODYNAME/$SECTION)"
+    pass R6 "section form is {editors:[…]} ($(jqr '.editors|length') editors on $PAGE/$BODYNAME/$SECTION, section addressed by $SECTION_KIND)"
     EDITOR="$(jqr '[.editors[] | select(.type=="CMS_INPUT_TEXT" or .type=="CMS_INPUT_TEXTAREA")][0].name // .editors[0].name // empty')"
   else
     fail R6 "section form is {editors:[…]}" "HTTP $STATUS, shape $(keys)"
@@ -439,7 +439,7 @@ if [ "$DO_WRITE" = 1 ]; then
       req PATCH "$FBASE/$TEDITOR$SUFFIX" application/json "$OUT/editor.minimal.json"
       case "$STATUS" in
         2??)     pass W5 "minimal {name,type,content} PATCH accepted on scalar editor ($STATUS) — configuration/description/language not required" ;;
-        4??|5??) fail W5 "minimal {name,type,content} PATCH is accepted" "HTTP $STATUS: $(head -c 120 "$BODY")" ;;
+        4??|5??) warn W5 "minimal {name,type,content} PATCH was rejected" "HTTP $STATUS: $(head -c 120 "$BODY") — behaviour varies by module version and editor type; informational" ;;
         *)       skip W5 "minimal-PATCH behaviour" "unexpected HTTP $STATUS" ;;
       esac
 
@@ -566,10 +566,13 @@ if [ "$DO_WRITE" = 1 ]; then
     GID="$(jqr '.gid // empty')"
     if [ "${DC:0:1}" = 2 ] && [ -n "$GID" ]; then DS="$cand"; DS_EDITOR="$E"; break; fi
     if grep -q 'ValidationError' "$BODY"; then DS_SKIPPED="$DS_SKIPPED $cand(save rule)"; continue; fi
-    DS="$cand"; break   # any other failure is reported by W18 below
+    # an explicitly named data source is reported by W18 below; an auto-discovered one that fails
+    # for another reason (403, 500, …) is skipped like the save-rule ones so a later candidate can run
+    if [ -n "${FS_TEST_DATA_SOURCE:-}" ]; then DS="$cand"; break; fi
+    DS_SKIPPED="$DS_SKIPPED $cand(HTTP $DC)"
   done
   if [ -z "$DS" ]; then
-    skip W18 "dataset probes" "no data source with a CMS_INPUT_TEXT editor that accepts an empty dataset — set FS_TEST_DATA_SOURCE${DS_SKIPPED:+; rejected by a save rule:$DS_SKIPPED}"
+    skip W18 "dataset probes" "no data source with a CMS_INPUT_TEXT editor that accepts an empty dataset — set FS_TEST_DATA_SOURCE${DS_SKIPPED:+; rejected:$DS_SKIPPED}"
   else
     if [ "${DC:0:1}" = 2 ] && [ -n "$GID" ]; then
       CREATED_DS="$DS"; CREATED_GID="$GID"
