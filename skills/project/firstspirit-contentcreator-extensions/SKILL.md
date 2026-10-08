@@ -3,8 +3,8 @@ name: firstspirit-contentcreator-extensions
 description: >-
   Lookup reference for extending the FirstSpirit ContentCreator. Browser side: the WE_API JavaScript API (top.WE_API.Common / Dialog / Preview / Report, FSID, jumpTo, execute, showMessage, createDialog, preview reload / rescan / repaint, report shortcodes), the server→browser bridges ClientScriptOperation (sync vs async, callback-must-fire) and ClientResourceOperation, a "does not work in ContentCreator" list, MPP_API / JC_API (SiteArchitect). Java side: the ContentCreator plug-in interfaces a module implements (toolbar, inline edit, status notes, element status, timeline, translation) and the @WebAppComponent they need. Use whenever JavaScript in a ContentCreator preview or action must talk to the client, a BeanShell script or Executable must run JavaScript in the editor's browser, or a module adds ContentCreator UI — e.g. "reload only this section after my script ran", "open a report with a preset filter", "why does my ClientScriptOperation never return", "add a button to the ContentCreator toolbar".
 metadata:
-  source-commit: "91d76a9"
-  published: "2026-10-07"
+  source-commit: "9c191a5"
+  published: "2026-10-08"
   toolkit-version: "0.4.0"
 ---
 

@@ -89,7 +89,9 @@ done
 [ -n "${FS_HOST:-}" ]    && set -- "$@" -h "$FS_HOST"
 set -- "$@" -port "${FS_PORT:-443}" -c "${FS_CONN:-HTTPS}"
 [ -n "$USER_VAL" ]       && set -- "$@" -u "$USER_VAL"
-[ -n "$PWD_VAL" ]        && { fspwd="$PWD_VAL"; export fspwd; }   # env, not argv: keeps it out of `ps`
+# env, not argv: keeps the password out of `ps`. FS_PWD / FS_PASSWORD win over an fspwd already in the
+# caller's environment; with neither set, an inherited fspwd is left as it is. Never falls back to -pwd.
+[ -n "$PWD_VAL" ]        && { fspwd="$PWD_VAL"; export fspwd; }
 [ -n "${FS_PROJECT:-}" ] && set -- "$@" -p "$FS_PROJECT"
 [ -n "${FS_SYNC_DIR:-}" ]&& set -- "$@" -sd "$FS_SYNC_DIR"
 [ -n "${FS_RESULT:-}" ]  && set -- "$@" -rf "$FS_RESULT"

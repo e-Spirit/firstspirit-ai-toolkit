@@ -3,8 +3,8 @@ name: firstspirit-operations
 description: >-
   Catalogue of FirstSpirit client operations obtained through OperationAgent: RequestOperation dialogs, OpenElementDataFormOperation / OpenElementMetaFormOperation, OpenMergeDialogOperation, PreviewOperation, ShowFormDialogOperation, SelectOptionOperation, ClientScriptOperation and more — each with the EXACT perform(...) parameter type, the configuration setters it really has, and the client (SiteArchitect / ContentCreator) it runs in. Use whenever a script or module needs to open a dialog, open an element's form, show a message or trigger a client action — e.g. "show a yes/no question from an FS_BUTTON", "open the data form of a page from a script", "why does perform(media) throw ReflectError", "which operation opens the meta form". First rule: check the perform parameter type before writing the call — a plausible operation name is not enough. Pair with firstspirit-scripting (your context object) and firstspirit-api-reference (the element types you pass in).
 metadata:
-  source-commit: "91d76a9"
-  published: "2026-10-07"
+  source-commit: "9c191a5"
+  published: "2026-10-08"
   toolkit-version: "0.4.0"
 ---
 

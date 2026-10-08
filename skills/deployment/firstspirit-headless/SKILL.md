@@ -14,8 +14,8 @@ description: >-
   click-to-edit with TPP_SNAP", "how does a frontend authenticate to CaaS". Template
   structure for headless: firstspirit-template-design.
 metadata:
-  source-commit: "91d76a9"
-  published: "2026-10-07"
+  source-commit: "9c191a5"
+  published: "2026-10-08"
   toolkit-version: "0.4.0"
 ---
 

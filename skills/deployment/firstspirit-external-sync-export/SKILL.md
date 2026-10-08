@@ -3,8 +3,8 @@ name: firstspirit-external-sync-export
 description: >-
   Run the FirstSpirit Command Line Interface (fs-cli / FSDevTools / fsdevtools) against a server: export a project (stores, project properties) to an external-sync directory on disk, or import a sync directory back. Use it to keep a project in git, work on its source outside the server, move a project to another server, or build a git-based pipeline on a self-hosted or local server. Covers installing fsdevtools, the version-matched Access API jar (fs-isolated-runtime), the JRE --add-opens flags, connection modes (HTTP / HTTPS / SOCKET; Cloud needs HTTPS 443, Keycloak SSO), authenticating without exposing a password, the export command (store identifiers, projectproperty, path:, entities:, schema:, --useReleaseState, --keepObsoleteFiles), the import command (--layerMapping, --import-comment, --permissionMode) and a failure→fix table for the common errors. Triggers on "external sync", "FSDevTools", "fs-cli", "export a FirstSpirit project to disk", "fs-cli import", "layer mapping", "connect fs-cli to Cloud".
 metadata:
-  source-commit: "91d76a9"
-  published: "2026-10-07"
+  source-commit: "9c191a5"
+  published: "2026-10-08"
   toolkit-version: "0.4.0"
 ---
 

@@ -1,20 +1,20 @@
 # Release Notes
 
-## 0.4.0 — 2026-10-06
+## 0.4.0 — 2026-10-08
 
 Skills in this release (each SKILL.md carries the same source commit in its `metadata:` block):
 
-- `firstspirit-api-reference` @ 91d76a9 (beta)
-- `firstspirit-templating-reference` @ 91d76a9 (beta)
-- `firstspirit-scripting` @ 91d76a9 (beta)
-- `firstspirit-rest-api` @ 91d76a9 (beta)
-- `firstspirit-external-sync-export` @ 91d76a9 (beta)
-- `firstspirit-operations` @ 91d76a9 (beta)
-- `firstspirit-contentcreator-extensions` @ 91d76a9 (beta)
-- `firstspirit-template-design` @ 91d76a9 (beta)
-- `firstspirit-cloud` @ 91d76a9 (beta)
-- `firstspirit-headless` @ 91d76a9 (beta)
-- `firstspirit-module-development` @ 91d76a9 (beta)
+- `firstspirit-api-reference` @ 9c191a5 (beta)
+- `firstspirit-templating-reference` @ 9c191a5 (beta)
+- `firstspirit-scripting` @ 9c191a5 (beta)
+- `firstspirit-rest-api` @ 9c191a5 (beta)
+- `firstspirit-external-sync-export` @ 9c191a5 (beta)
+- `firstspirit-operations` @ 9c191a5 (beta)
+- `firstspirit-contentcreator-extensions` @ 9c191a5 (beta)
+- `firstspirit-template-design` @ 9c191a5 (beta)
+- `firstspirit-cloud` @ 9c191a5 (beta)
+- `firstspirit-headless` @ 9c191a5 (beta)
+- `firstspirit-module-development` @ 9c191a5 (beta)
 
 Changes since 0.3.1 — three skills join the toolkit (all beta); the eight existing skills are
 republished from the same source commit with the corrections listed below.
@@ -56,8 +56,16 @@ republished from the same source commit with the corrections listed below.
   …/page-templates/{uid}/bodies/`, `PUT|DELETE …/bodies/{bodyName}`, with the whitelist
   semantics the API document states); "bodies are create-only" is gated to older modules; the
   version-drift notes no longer point at a non-existent `info.version`; the smoke test gains a
-  read-only probe for the new resource. Surface verified against the live OpenAPI document; the
-  write behaviour is marked `[verify]` until the next credentialed smoke run.
+  read-only probe for the new resource (R12), which checks that the template exists before
+  reading a 404 as a version signal. The content-area *write* behaviour stays `[verify]`: the
+  read surface was verified live, no write probe exists yet. From the credentialed runs against
+  a `0.0.25-beta` module: the smoke test addresses sections by numeric id from `0.0.24-beta`
+  (R6/W3/W4, with a GET-verified fallback to the name on older modules); the module never
+  answers `415`; only `name`, `type` and `content` are read on a form PATCH; the GOM examples
+  parse (`LANGINFOS` inside `ENTRY`, catalog `TEMPLATES type`, `LINKEDITORS` on links); dataset
+  writes are marked as not working yet in the beta module. The OpenAPI snapshot directory is
+  resolved from the script's location and the previous snapshot is picked by the timestamp in
+  its name, not by modification time.
 - **`firstspirit-templating-reference`**: `.convert`/`.convert2` apply the template set's
   conversion rule (no rule = text unchanged); inline `if()` evaluates only the chosen branch
   (corrects an earlier observation); the Navigation result's `isEmpty` is never true, so guards
@@ -65,12 +73,6 @@ republished from the same source commit with the corrections listed below.
   variables is strict, the getter alias is the only tolerance; `CMS_SWITCH` default placement;
   editor order follows the GOM. Settled by Core reading and a probe page previewed on a 2026.11
   server.
-- **`firstspirit-rest-api`** (in addition to the surface change above): the smoke test addresses
-  sections by numeric id from `0.0.24-beta` (R6/W3/W4) and was run against a `0.0.25-beta` module;
-  the module never answers `415`; only `name`, `type` and `content` are read on a form PATCH; the
-  GOM examples parse (`LANGINFOS` inside `ENTRY`, catalog `TEMPLATES type`, `LINKEDITORS` on
-  links); dataset writes are marked as not working yet in the beta module; R12 checks that the
-  template exists before reading a 404 as a version signal.
 - **`firstspirit-api-reference`**: templates expose `getGomSource` / `getFormDefaults` /
   `getChannelSource` / `getMetaFormData`, not `getFormData`; nothing in the TemplateStore can be
   released; pointers to the new skills.

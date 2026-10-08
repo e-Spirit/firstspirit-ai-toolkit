@@ -112,7 +112,7 @@ components appear under **Customize**. A symlink rather than a copy means
 ### Skills
 
 Skills are organised into FirstSpirit domain categories. The toolkit currently
-ships eleven:
+ships these (the `skills/` tree is the authoritative list):
 
 | Skill | Category | What it covers |
 |-------|----------|----------------|
@@ -128,7 +128,7 @@ ships eleven:
 | `firstspirit-cloud` | `deployment/` | FirstSpirit Cloud (the managed SaaS): what the platform does differently or does not allow, and how to build and run a project on it |
 | `firstspirit-external-sync-export` | `deployment/` | Running FS-CLI / FSDevTools to export and import a project as an external-sync tree on disk, for git-based workflows |
 
-A twelfth skill, `using-firstspirit-toolkit`, is the index the harness loads at
+One more, `using-firstspirit-toolkit`, is the index the harness loads at
 session start; it points the assistant at the others.
 
 `content/` and `diagnostics/` are reserved for future skills and are currently

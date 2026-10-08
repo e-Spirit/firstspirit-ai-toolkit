@@ -142,15 +142,19 @@ else skip R2b "OpenAPI spec at /rest/v3/api-docs" "HTTP $STATUS — spec endpoin
 # against this host. Normalised spec (sorted keys) is kept per host under $SNAP_DIR; a new file
 # is written only when it differs from the newest one there. Changes are WARN, not FAIL: the
 # server moved, the skill may be stale — re-read the affected sections.
-# Default: the skill's own git-ignored internal/openapi, wherever the script is run from.
-SNAP_DIR="${FS_OPENAPI_SNAPSHOTS:-$(dirname "$(dirname "$0")")/internal/openapi}"
+# Default: the skill's own git-ignored internal/openapi, wherever the script is run from
+# (resolved from the script's location, so `bash smoke-test.sh` inside scripts/ lands in the same place).
+SKILL_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+SNAP_DIR="${FS_OPENAPI_SNAPSHOTS:-$SKILL_DIR/internal/openapi}"
 if is2xx && [ -n "$(jqr '.openapi // .swagger')" ]; then
   HOST="$(printf '%s' "$FS_REST_BASE_URL" | sed -E 's#^[a-z]+://##; s#[/:].*##')"
   SNAP_HOST="$SNAP_DIR/$HOST"; mkdir -p "$SNAP_HOST"
   NEW="$OUT/openapi.json"; jq -S . "$BODY" > "$NEW"
   API_VERSION="$(jq -r '.info.version // ("openapi " + .openapi)' "$NEW")"   # the spec carries no module version (0.0.23-beta … 0.0.25-beta); GET /modules/ has it
   N_PATHS="$(jq '.paths | length' "$NEW")"
-  PREV="$(ls -1t "$SNAP_HOST"/*.json 2>/dev/null | head -1)"   # newest by mtime; file names changed format once
+  # newest by the timestamp in the file name (digits only, so the older YYYYMMDD-HHMMSS names and the
+  # current YYYY-MM-DD-HHMMSS names sort together); mtime is arbitrary after a checkout or a copy
+  PREV="$(for f in "$SNAP_HOST"/*.json; do [ -e "$f" ] || continue; k="$(basename "$f" .json | tr -cd '0-9')"; printf '%s %s\n' "$k" "$f"; done | sort | tail -1 | cut -d' ' -f2-)"
   if [ -z "$PREV" ]; then
     cp "$NEW" "$SNAP_HOST/$RUN.json"
     pass O1 "OpenAPI snapshot recorded for $HOST ($API_VERSION, $N_PATHS paths) → ${SNAP_HOST#./}/$RUN.json"
@@ -251,8 +255,12 @@ for cand in $CANDIDATES; do
   [ -n "$sec_id$sec_name" ] || continue
   # ≥ 0.0.24-beta the path segment is the numeric section id (a name answers 400);
   # ≤ 0.0.23-beta it is the section name (an id answers 404). Try the id first, fall back to the name.
-  sec="$sec_id"
-  if [ -z "$sec" ] || ! { req GET "$P/pages/$cand/bodies/$bn/sections/$sec/form"; is2xx; }; then sec="$sec_name"; fi
+  # Each form is checked with a GET; a candidate whose section answers under neither address is
+  # dropped, so R6 never reports against an address that was never seen to work.
+  sec=""
+  if [ -n "$sec_id" ] && { req GET "$P/pages/$cand/bodies/$bn/sections/$sec_id/form"; is2xx; }; then sec="$sec_id"
+  elif [ -n "$sec_name" ] && { req GET "$P/pages/$cand/bodies/$bn/sections/$sec_name/form"; is2xx; }; then sec="$sec_name"
+  fi
   [ -n "$sec" ] || continue
   FOUND_PAGE="$cand"; BODYNAME="$bn"; SECTION="$sec"; break
 done
@@ -713,7 +721,7 @@ fi
 
 # ---- Summary -----------------------------------------------------------------
 say "Summary: $PASS passed, $FAIL failed, $SKIP skipped, $WARN warning(s) — responses in ${OUT#"$ROOT_OUT"/}"
-MODE=read; [ "$DO_WRITE" = 1 ] && MODE=write; [ "$DO_SCRIPTS" = 1 ] && MODE="$MODE+scripts"
+MODE="read"; [ "$DO_WRITE" = 1 ] && MODE="write"; [ "$DO_SCRIPTS" = 1 ] && MODE="$MODE+scripts"
 HOST="${FS_REST_BASE_URL#*://}"; HOST="${HOST%%/*}"
 RESULT=ok; [ "$FAIL" -eq 0 ] || RESULT=fail
 printf '%s smoke mode=%s host=%s project=%s pass=%s fail=%s skip=%s warn=%s result=%s took=%ss dir=%s\n' \

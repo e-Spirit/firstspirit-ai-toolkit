@@ -3,8 +3,8 @@ name: firstspirit-template-design
 description: >-
   Design principles and review guidance for FirstSpirit template development. Use whenever creating, generating, reviewing or auditing FirstSpirit templates: page, section, format and link templates, input components and forms (GOM), CMS tags and output, headless and CaaS projects, content modelling and datasets, naming and coding conventions, reuse, editorial usability, localisation and multi-language handling, and documenting a created template set. Trigger it for any FirstSpirit template task (ContentCreator, SiteArchitect, ODFS, CaaS, AI Suite), even when the request does not say "design principles" — e.g. "build a section template", "review this FirstSpirit template", "which input component should I use", "document the templates you generate", "check our templates against our conventions". Component, tag, datatype and naming reference in references/. Write precisely and in FirstSpirit vocabulary when the deliverable is written content (a report or documentation).
 metadata:
-  source-commit: "91d76a9"
-  published: "2026-10-07"
+  source-commit: "9c191a5"
+  published: "2026-10-08"
   toolkit-version: "0.4.0"
 ---
 
