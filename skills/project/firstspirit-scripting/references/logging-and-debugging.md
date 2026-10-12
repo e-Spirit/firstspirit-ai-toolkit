@@ -2,9 +2,11 @@
 
 ## Log through `context`, not `print()`
 
-`print()` writes to the BeanShell console only — fine while exploring, wrong in a
-finished script. In production, use the context's four log levels so output lands
-in the FirstSpirit log files and can be filtered/switched on demand.
+`print()` writes to the BeanShell console — or, outside the console, to standard out — never
+to the FirstSpirit script log (over REST `/execute` it does not show up in the response; live
+2026-10-09). Fine while exploring, wrong in a finished script. In production, use the
+context's four log levels so output lands in the FirstSpirit log files and can be
+filtered/switched on demand.
 
 | Level | Method | Use for |
 | --- | --- | --- |
@@ -25,8 +27,9 @@ try {
 ```
 
 > The log methods live on the script `context` (see
-> [script-contexts.md](script-contexts.md)). In a generation script the context
-> is bound as `gc`, so use `gc.logInfo(...)`.
+> [script-contexts.md](script-contexts.md)). In a generation script the same
+> `GenerationContext` is bound as `gc` *and* as `context` `[core]`, so `gc.logInfo(...)` and
+> `context.logInfo(...)` are the same call.
 
 ## Extended logging (SiteArchitect)
 
@@ -37,11 +40,11 @@ trace a problem, then off again without touching the script.
 
 ## Debugging workflow
 
-1. **Prototype in the BeanShell console** (context menu → *DeveloperScripts →
-   BeanShellConsole*) against a real node. A live `context` and the convenience
-   methods (`print`, `getMethods`, `javap` — see
-   [beanshell-language.md](beanshell-language.md)) let you inspect objects before
-   committing code.
+1. **Prototype in the BeanShell console** (if the *Developer-Scripts* package is imported
+   into the project: context menu → *DeveloperScripts → BeanShellConsole*) against a real
+   node. A live `context`, the commands `print` and `javap`, and plain reflection
+   (`obj.getClass().getMethods()` — see [beanshell-language.md](beanshell-language.md)) let
+   you inspect objects before committing code.
 2. **Log at boundaries** — before/after locks, saves, and external calls — so a
    failure narrows quickly.
 3. **Always log the `Throwable`**, not just a message: `logError(msg, e)` retains
@@ -56,23 +59,37 @@ When a script is executed **over the REST API** (`POST …/scripts/{name}/execut
 a client, capturing its outcome needs care. These were proven live against a real project
 (source: PS website-migration tool, `knowledge/fs-facts.md` §2):
 
-- **HTTP `200` does not mean the script succeeded.** The status describes the *request*; a script
-  that threw, stopped halfway, or never reached the point that mattered still answers `200`. The
-  outcome exists only in what the script **logged**.
+- **HTTP `200` does not mean the script succeeded.** It only means the script ran to its end
+  without an *unhandled* exception. A script that caught its error, stopped halfway, or never
+  reached the point that mattered still answers `200`. The outcome exists only in what the
+  script **logged**.
+- **An uncaught exception or a syntax error answers `500`**, with a JSON body whose `error` field
+  carries the BeanShell message (`bsh.ParseException: Parse error at line 1, column 90.
+  Encountered: |`, or `TargetError … Target exception: java.lang.IllegalStateException: boom`).
+  The engine turns both into an unchecked `ExecutionException` that the REST module does not
+  catch `[core]`; the log records written *before* the throw are lost from the response (live
+  2026-10-09, REST module 0.0.25-beta).
 - **The response body is the log-listener output — nothing else.** Each record is appended as
-  `[LEVEL] message` with **no separator between records**; `print(...)` and the return value never
-  appear. So emit a sentinel and believe the log — `context.logInfo("=== DONE")` on success,
-  `context.logError("=== FAILED: " + e.getMessage())` on failure — then search for the marker, and
-  do not split the output on newlines.
-- **The uploaded source is wrapped server-side in `__execute() { … }`** (a method body): a bare
-  trailing expression without its `;` is a parse error → HTTP `500`, not a returned value.
-  `context` (the `ScriptContext`) is in scope.
+  `[LEVEL] message` with **no separator between records** (`[INFO] LOGGED[WARN] WARNED`);
+  `print(...)`, the `return` value and `result.setValue(...)` never appear (a script that only
+  returns answers `200` with an empty body; live 2026-10-09). So emit a sentinel and believe the
+  log — `context.logInfo("=== DONE")` on success, `context.logError("=== FAILED: " +
+  e.getMessage())` on failure — then search for the marker, and do not split the output on
+  newlines.
+- **The uploaded source is wrapped in `__execute() { … }`** (a method body — the wrapper shows
+  in every error message, `Called from method: __execute`): a bare trailing expression without
+  its `;` is a parse error → HTTP `500`, not a returned value. `context` is in scope; over REST it
+  is a `ProjectScriptContext` (concrete class `ProjectScriptContextImpl`; `is(Env.HEADLESS)` and
+  `is(Env.PREVIEW)` are both `false`; live 2026-10-09).
 
 ### Access-API create defaults worth spelling out
 
 - `setLock(boolean)` / `save(String)` are **recursive** (whole subtree); the two-argument forms
   `setLock(boolean, boolean)` / `save(String, boolean)` are not — use those to lock/save a single
   element (already the safe pattern in [common-patterns.md](common-patterns.md)).
-- **`unifyUid` defaults oppositely between stores:** `GlobalContentArea.createGCAPage(uid, template)`
-  defaults it `true` and silently **renames** on a collision, while the SiteStore create throws.
-  Spell the flag out on every create rather than relying on the default.
+- **`unifyUid` defaults to `false`:** `GlobalContentArea.createGCAPage(uid, template)` delegates to
+  the three-argument form with `false` `[core]` and throws `DuplicateReferenceNameException` on a
+  collision, like the SiteStore create. The silent rename exists only in the SiteArchitect
+  *create* action, which passes `true` explicitly `[core]`. Spell the flag out on every create
+  rather than relying on the default. (An earlier version of this bullet said the opposite; the
+  claim came from a migration tool's notes and was not checked against the source.)

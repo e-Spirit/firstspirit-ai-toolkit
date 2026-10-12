@@ -21,7 +21,7 @@ fsuser=user fspwd="$FS_PWD" fs-cli -h host -port 8000 -c HTTP -p "MyProject" \
 ```
 
 - Global options (`-h`, `-port`, `-c HTTP|HTTPS|SOCKET`, `-p`, `-u`; the password goes in the `fspwd` env var, not `-pwd`) and
-  `-sd`/`--syncDir` behave exactly as in `connect.md` / `export-command.md`.
+  `-sd`/`--syncDir` behave exactly as in `connection-and-auth.md` / `export-command.md`.
 - `test` first: `fs-cli … test` verifies the connection before you mutate a
   project.
 
@@ -37,8 +37,10 @@ Missing mapping for source layer 'null'! Please specify a layer mapping.
 
 `--layerMapping` takes comma-separated `key:value` (or `key=value`) pairs; the
 **key is the source schema UID**, the **value is the target layer name** (or the
-literal `CREATE_NEW`). Mapping is remembered for later imports into the same
-project. Verbatim examples from fs-cli:
+literal `CREATE_NEW`). fs-cli does not store the mapping (it lives in a map for
+the running call only); once a schema exists in the target project, later imports
+keep its layer, so `-lm` is only needed for schemas new to the project `[core]`.
+Verbatim examples from fs-cli:
 
 | Example | Meaning |
 |---|---|
@@ -90,11 +92,13 @@ on that GID to match rows to the target schema.
 Because import creates the project when missing, seeding a fresh server is:
 
 ```
-fsuser=user fspwd="$FS_PWD" fs-cli -h host -port 8000 -c HTTPS -p "NewProject" \
+fsuser=user fspwd="$FS_PWD" fs-cli -h host -port 8000 -c HTTP -p "NewProject" \
        -sd /path/to/syncdir import -lm *:CREATE_NEW -i "initial import"
 ```
 
-The project `NewProject` is created, the default layer is provisioned for each
+(For a Cloud target: `-port 443 -c HTTPS`. Port 8000 is fs-cli's default for both
+HTTP and HTTPS, but a standard server speaks plain HTTP there and the Cloud speaks
+HTTPS on 443 — `connection-and-auth.md`.) The project `NewProject` is created, the default layer is provisioned for each
 schema, and the tree is imported. For a project that must already exist, add
 `--dont-create-project`.
 
@@ -116,12 +120,16 @@ this skill is the direct/local fs-cli run for self-hosted or local servers.
 
 ## Not covered here: `project import`
 
-fs-cli also has a separate `import-project` / project-import command that restores
-a **whole-project export file** (a `.tar.gz` server backup), not an external-sync
-directory. That is a different feature; this skill covers external-sync `import`.
+fs-cli also has a separate `project import` command (group `project`; options
+`-ipn`/`--importProjectName`, `-pf`/`--projectFile`, `-dlm`/`--databaseLayerMapping`)
+that creates a **new project from a whole-project export file** (`.tar.gz`, as
+produced by the server's project export), not from an external-sync directory and
+not from a server backup `[core]`. That is a different feature; this skill covers
+external-sync `import`.
 
 ---
 *Sources: fs-cli `import` command (`ImportCommand.java`, FSDevTools, e-Spirit/FSDevTools
 on GitHub — options and examples quoted verbatim); FirstSpirit External
-Synchronization "Importing" how-to (docs.e-spirit.com). Import behaviour not yet
-reproduced against a live server in this skill.*
+Synchronization "Importing" how-to (docs.e-spirit.com); `[core]` = read in the FSDevTools 4.8.9
+source (`ImportProjectCommand`, the layer mapper) and the FirstSpirit schema importer. Import
+behaviour not yet reproduced against a live server in this skill.*

@@ -14,9 +14,9 @@ description: >-
   "set up SSO", "when are the patch days", "is my content backed up", "go-live
   checklist".
 metadata:
-  source-commit: "9c191a5"
-  published: "2026-10-08"
-  toolkit-version: "0.4.0"
+  source-commit: "2e7b7bc"
+  published: "2026-10-12"
+  toolkit-version: "0.4.1"
 ---
 
 > **Beta.** Early public release. Feedback welcome; behaviour and structure may change.
@@ -203,5 +203,5 @@ the skill's review log.*
 ## Feedback
 
 Found something wrong, unclear, or missing? **Tell me in the chat — I'll log it for you**
-(no form to fill). Reports are routed per `FEEDBACK.md`; on a public copy, open an issue on
+(no form to fill). To report it yourself, open an issue on
 this skill's repository.

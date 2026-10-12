@@ -3,9 +3,9 @@ name: firstspirit-scripting
 description: >-
   Concrete lookup reference for FirstSpirit scripting with BeanShell: the script types and their bound `context` objects (menu, context-menu, workflow, Content2/dataset, FS_BUTTON, template/generation, schedule, PermissionService), BeanShell language essentials, logging and debugging, and the safe Access-API patterns (lock/save/unlock, iteration, store navigation, form data, transitions). Use whenever you write, review or debug a FirstSpirit script — e.g. "which context object do I get in a workflow script", "how do I lock and save an element in BeanShell", "how do I log from a script", "how do I read a form field", "call a script from a template with $CMS_RENDER$", "open a dialog or an element's form from a client script" (operations via OperationAgent). Also use it whenever the user asks for a BeanShell ("Bean Shell") script or a `.bsh` file, even without naming FirstSpirit — outside FirstSpirit, BeanShell is almost never used.
 metadata:
-  source-commit: "9c191a5"
-  published: "2026-10-08"
-  toolkit-version: "0.4.0"
+  source-commit: "2e7b7bc"
+  published: "2026-10-12"
+  toolkit-version: "0.4.1"
 ---
 
 > **Beta.** Early public release. Feedback welcome; behaviour and structure may change.
@@ -57,8 +57,9 @@ BeanShell scripts are a **lightweight** way to add behaviour. Before writing one
 - **Script header:** first line `//!BeanShell` (case-insensitive). Put all
   `import` statements directly under it.
 - **The bound variable is `context`** — its type depends on the script type (see
-  contexts table). In a *template/generation* script the generation context is
-  bound as `gc` and the return value is set via `result.setValue(...)`.
+  contexts table). In a *template/generation* script the `GenerationContext` is
+  bound both as `gc` and as `context`; the output is the script's **return value**
+  (`result.setValue(...)` is the legacy alternative) `[core]`.
 - **Logging:** `context.logInfo/logDebug/logWarning/logError(msg)` — never `print()`
   in production scripts (`print()` is for the BeanShell console).
 - **Modify content:** always `setLock(true,false)` → change → `save(...)` →
@@ -71,8 +72,8 @@ Loaded on demand — read the file that matches the question.
 
 | File | Covers | Read when |
 | --- | --- | --- |
-| [references/script-contexts.md](references/script-contexts.md) | Every script type, where it runs, and the concrete `context` interface it binds — `GuiScriptContext`, `WorkflowScriptContext`, `Content2ScriptContext`, `ClientScriptContext` (FS_BUTTON), `GenerationScriptContext`, `ScheduleContext`, `PermissionServiceScriptContext` — with their key methods | You need to know which object `context` is, or which methods are available in a given script type |
-| [references/beanshell-language.md](references/beanshell-language.md) | BeanShell basics: `//!BeanShell` header, dynamic typing, imports, the convenience methods (`print`, `show`, `getMethods`, `javap`), and the BeanShell console | You need the language syntax, an import rule, or a console/debug helper |
+| [references/script-contexts.md](references/script-contexts.md) | Every script type, where it runs, and the concrete `context` interface it binds — `GuiScriptContext`, `WorkflowScriptContext`, `Content2ScriptContext`, `ClientScriptContext` (FS_BUTTON in a SiteArchitect form; other clients differ), `GenerationContext` (`gc`), `ScheduleContext`, `PermissionServiceScriptContext` — with their key methods | You need to know which object `context` is, or which methods are available in a given script type |
+| [references/beanshell-language.md](references/beanshell-language.md) | BeanShell basics: `//!BeanShell` header, dynamic typing, imports, the convenience commands (`print`, `show`, `javap`; `getMethods()` is plain reflection, not a command), and the BeanShell console | You need the language syntax, an import rule, or a console/debug helper |
 | [references/logging-and-debugging.md](references/logging-and-debugging.md) | The four log levels, `print()` vs logging, extended logging, and how to find/trace errors | You need to emit log output or debug a failing script |
 | [references/common-patterns.md](references/common-patterns.md) | Copy-paste Access-API patterns: lock/save/unlock, safe iteration, store navigation via `SpecialistsBroker`/`UserService`, reading `FormData`, FS_BUTTON variables, `$CMS_RENDER(script:…)$` (`gc`/`result`), workflow `doTransition`, schedule variables, `Executable` classes | You need working code for a concrete scripting task |
 | [references/real-world.md](references/real-world.md) | Fuller task-shaped getting-started examples: the IDE-to-script workflow, change a field value, create page+section, dynamic form dialog (`FormsAgent` + `ShowFormDialogOperation`), read a data source (iterate + `de.espirit.or` query), trigger a schedule | You want an end-to-end worked example, not just a snippet |
@@ -88,5 +89,5 @@ the FirstSpirit Access API, as bundled in the FirstSpirit ODFS documentation.*
 ## Feedback
 
 Found something wrong, unclear, or missing? **Tell me in the chat — I'll log it for you**
-(no form to fill). Reports are routed per `FEEDBACK.md`; on a public copy, open an issue on
+(no form to fill). To report it yourself, open an issue on
 this skill's repository.

@@ -9,8 +9,8 @@ classDiagram
     direction TB
 
     class SpecialistsBroker {
-        requireSpecialist(...) SpecialistBroker
-        requestSpecialist(...) SpecialistBroker
+        requireSpecialist(SpecialistType~S~) S
+        requestSpecialist(SpecialistType~S~) S
     }
 
     class BaseContext {
@@ -63,6 +63,7 @@ classDiagram
         getUserGroups() Group[]
     }
     note for ClientScriptContext "getStoreElement() is @deprecated"
+    note for SpecialistsBroker "requestSpecialist may return null; requireSpecialist throws IllegalStateException instead"
 
     class GenerationContext {
         getBasePath() String

@@ -53,7 +53,10 @@ Root `SiteStoreRoot` · package `de.espirit.firstspirit.access.store.sitestore`
 
 Root `GlobalStoreRoot` · package `de.espirit.firstspirit.access.store.globalstore`
 
-- GlobalContentArea *(container; itself a `GCAFolder`)*
+- ProjectProperties *(project settings; `getProjectProperties()`)*
+- URLProperties *(`getUrlProperties()`)*
+- GlobalContentArea *(container; itself a `GCAFolder`, so it may hold `GCAPage`s directly)*
+  - GCAPage
   - GCAFolder
     - GCAPage
       - GCABody
@@ -128,7 +131,9 @@ Parents and children as drawn above (folders nest recursively in addition).
 | PageRefFolder | sitestore | folder | SiteStoreRoot, PageRefFolder | PageRefFolder, PageRef, DocumentGroup |
 | PageRef | sitestore | element | PageRefFolder | — |
 | DocumentGroup | sitestore | element | PageRefFolder | — |
-| GlobalContentArea | globalstore | container | GlobalStoreRoot | GCAFolder |
+| ProjectProperties | globalstore | element | GlobalStoreRoot | — |
+| URLProperties | globalstore | element | GlobalStoreRoot | — |
+| GlobalContentArea | globalstore | container | GlobalStoreRoot | GCAFolder, GCAPage |
 | GCAFolder | globalstore | folder | GlobalContentArea, GCAFolder | GCAFolder, GCAPage |
 | GCAPage | globalstore | element | GCAFolder | GCABody |
 | GCABody | globalstore | element | GCAPage | GCASection |

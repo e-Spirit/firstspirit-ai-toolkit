@@ -50,7 +50,7 @@ $CMS_VALUE(myString.encode)$     $-- HTML id-attribute safe --$
 ## Conversion
 
 ```
-$CMS_VALUE("5".toNumber())$        $-- string to number --$
+$CMS_VALUE("5".toNumber())$        $-- string to number; usable in arithmetic ("4".toNumber() + list.size - 1 gave an integer) [observed] --$
 $CMS_VALUE(filename.getExtension)$ $-- file extension --$
 ```
 

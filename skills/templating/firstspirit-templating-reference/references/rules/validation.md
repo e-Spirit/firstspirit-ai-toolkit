@@ -3,7 +3,8 @@
 Correct, tested patterns for FirstSpirit validation rules.
 **Use these as the primary reference when writing rules. Do NOT use anti-patterns from the full documentation.**
 
-> **Key principle:** `<VALIDATION>` executes when `<WITH>` returns **FALSE**. For "must not be empty" checks, always negate with `<NOT>`.
+> **Key principle:** `<VALIDATION>` sets the field's validity to the `<WITH>` result: **FALSE** marks it
+> invalid, **TRUE** clears the mark again `[core]`. For "must not be empty" checks, always negate with `<NOT>`.
 >
 > **Second principle:** `<IF>` is safe only for preconditions that cannot flip back within an
 > editing session (language, store context). A precondition on another **editable field**
@@ -26,15 +27,20 @@ them uppercase.
 
 Two facts from the documentation `[odfs]` that projects get wrong:
 
-- **`INFO` is the default.** A `<VALIDATION>` without `scope` blocks nothing. A rule meant to
-  enforce anything must say `scope="SAVE"` or `scope="RELEASE"` explicitly.
+- **Always set `scope` explicitly.** ODFS: without a restriction level, `INFO` is used. That holds
+  for the *first* `<VALIDATION>` of a plain `<RULE>`; a later one without `scope` inherits a
+  stricter scope set earlier in the same rule (next paragraph). A rule meant to enforce anything
+  must say `scope="SAVE"` or `scope="RELEASE"` on every `<VALIDATION>`.
 
   How the parser reads the attribute `[core]`: `INFO` is the XML spelling of the internal
   *event* scope. Writing `scope="EVENT"` is **rejected** with a parsing error; write `INFO`.
-  A `<VALIDATION>` with no `scope` takes the scope of an enclosing `<ON_SAVE>` / `<ON_RELEASE>`
-  block (see `visibility.md`, *Event-triggered rules*) and only falls back to INFO in a plain
-  `<RULE>`. The token comparison is case-insensitive, which is why the mixed spellings above
-  all work.
+  A `<VALIDATION>` with no `scope` inherits the rule's *current* scope: that starts as the scope
+  of an enclosing legacy `<ON_SAVE>` / `<ON_RELEASE>` block (INFO for `<RULE>` and `<ON_EVENT>`;
+  see `visibility.md`, *Legacy restriction-level blocks*), and every earlier `<VALIDATION>` in the
+  same rule raises it to its own scope when that is stricter — it is never lowered. So a
+  scope-less `<VALIDATION>` placed after one with `scope="RELEASE"` is RELEASE, not INFO, and the
+  result depends on the order of the validations. The token comparison is case-insensitive,
+  which is why the mixed spellings above all work.
 - **Only the most severe violation is shown.** Violated `SAVE` rules (and form-definition
   breaches such as a mandatory field) display first, then `RELEASE`, then `INFO`; lower levels
   appear only once the higher ones are resolved. An editor who "does not see" an `INFO` message
@@ -48,7 +54,7 @@ optional `when` attribute on `<RULE>` changes that; it takes one value:
 | `when` | Runs | Use for |
 |---|---|---|
 | *(omitted)* | continuously while editing | almost every validation and visibility rule |
-| `ONSAVE` | once, when the element is saved (SiteArchitect save / Ctrl+S / switch to view mode; ContentCreator *Save*) | expensive checks; checks that must see the final state |
+| `ONSAVE` | once, when the element is saved **in an editor** (SiteArchitect save / Ctrl+S / switch to view mode; ContentCreator *Save*) | `<DO>` actions without `<VALIDATION>`, e.g. filling a default into a field left empty `[odfs]`. **Not** for checks that must hold at release: ONSAVE rules run only in the editor's save pass; the server-side release check and `ValidationAgent` run the rule engine without a time of execution and skip them `[core]` (live 2026-10-09, FirstSpirit 5.2.261116: a `when="ONSAVE"` rule with `scope="RELEASE"` or `"SAVE"` on an empty required field let the release check pass; the same rule without `when` failed it) |
 | `ONLOCK` | when the editor switches to edit mode or creates a new page, section or dataset — before editing starts | pre-assigning values (`<DO><PROPERTY …/></DO>`) |
 
 Constraints `[odfs]`:
@@ -57,7 +63,10 @@ Constraints `[odfs]`:
   parsing error, not a silent default `[core]`.
 - `<VALIDATION>` **cannot** be combined with `when="ONLOCK"`.
 - With `when="ONSAVE"` plus `<VALIDATION>`, the check runs once: a violation stays displayed
-  even after the editor corrects the field, until the next save.
+  even after the editor corrects the field, until the next save. ODFS advises against
+  `<VALIDATION>` in ONSAVE rules at all and against combining ONSAVE with `INFO` or `RELEASE`.
+  Put a check that must hold at release into a plain `<RULE>` with `scope="RELEASE"` (see the
+  table row above for why).
 - Neither `ONSAVE` nor `ONLOCK` rules can be tested in the template's form preview.
 
 `<SCHEDULE>` (instead of `<WITH>`) hands value determination to an external module
@@ -206,9 +215,12 @@ breaks it is the editor's other reasonable choice: remove the picture instead, o
 by accident to begin with. That path is rarely on the test list, so the rule ships looking correct.
 
 **How far the damage goes.** The stale verdict is session-local — it lives in the rule engine's
-state for the open form, not in the stored element. Saving, releasing and re-opening all
-re-evaluate the rules from scratch, so a release is not blocked and a re-opened form shows no
-phantom warning. With `scope="RELEASE"` or `INFO` the cost is editor confusion within one
+state for the open form, not in the stored element. Releasing and re-opening re-evaluate the
+rules from scratch (the release check builds a fresh rule engine `[core]`), so a release is not
+blocked and a re-opened form shows no phantom warning. Saving does **not** re-evaluate: the
+editor runs its ONSAVE rules and then checks the open form's live validation state, so the stale
+verdict stands (SiteArchitect `[core]`; ContentCreator `[verify]`). With `scope="RELEASE"` or
+`INFO` the cost is editor confusion within one
 editing session, not corrupted content or a blocked workflow — report it as a usability
 defect. With **`scope="SAVE"`** the same stale verdict **blocks the save** until the editor
 finds the field that clears it (the scope blocks the save completely, see above), so rank a
@@ -429,6 +441,7 @@ Logic: Two separate rules = separate error messages per violation.
     <DO>
         <VALIDATION scope="SAVE">
             <PROPERTY source="st_standard" name="VALID"/>
+            <MESSAGE lang="*" text="No DIN standard given"/>
             <MESSAGE lang="DE" text="Keine DIN-Norm angegeben"/>
         </VALIDATION>
     </DO>

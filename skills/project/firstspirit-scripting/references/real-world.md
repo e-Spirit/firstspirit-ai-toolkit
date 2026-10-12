@@ -28,13 +28,14 @@ get completion and type checks), then paste into a BeanShell script.
 1. Write a class with a `start(SpecialistsBroker broker)` method; declare the
    values the script context provides (e.g. `context`) as **fields**.
 2. Implement and compile against `fs-api.jar` in the IDE.
-3. Copy into the script in order: **imports first** (or you get
-   `ClassNotFoundException`), then the methods — **not** the fields that the
-   context provides automatically.
+3. Copy into the script in order: **imports first** (or the script aborts with
+   `Class: Page not found in namespace` / `Class or variable not found: Page.UID_TYPE` —
+   a BeanShell `EvalError`, not a `ClassNotFoundException`; live 2026-10-09), then the
+   methods — **not** the fields that the context provides automatically.
 4. End the script with `start(context);`.
 
-Mind BeanShell's limits while coding (e.g. no real generics — see
-[beanshell-language.md](beanshell-language.md)).
+Mind BeanShell's limits while coding (one type parameter at most, no multi-catch, no
+diamond — see [beanshell-language.md](beanshell-language.md)).
 
 ## Change a field value on a page (canonical write)
 
@@ -51,19 +52,30 @@ import de.espirit.firstspirit.agency.LanguageAgent;
 
 page = context.requireSpecialist(StoreElementAgent.TYPE)
               .loadStoreElement("mithras_home_1", Page.UID_TYPE, false);
+if (page == null) {                                       // loadStoreElement returns null for an unknown uid [javadoc]
+    context.logError("Page not found");
+    return;
+}
 try {
     page.setLock(true);                                   // recursive lock
-    lang = context.requireSpecialist(LanguageAgent.TYPE).getMasterLanguage();
-    fd = page.getFormData();
-    fd.get(lang, "pt_headline").set("New title");
-    page.setFormData(fd);
-    page.save();
-} catch (ElementDeletedException | LockException e) {
-    context.logError("Rename failed", e);
-} finally {
-    try { page.setLock(false); } catch (Exception e) { context.logError("Unlock failed", e); }
+    try {
+        lang = context.requireSpecialist(LanguageAgent.TYPE).getMasterLanguage();
+        fd = page.getFormData();
+        fd.get(lang, "pt_headline").set("New title");
+        page.setFormData(fd);
+        page.save();
+    } finally {
+        page.setLock(false);                              // unlock only what we locked
+    }
+} catch (ElementDeletedException e) {                     // no multi-catch in BeanShell (parse error)
+    context.logError("Page was deleted", e);
+} catch (LockException e) {
+    context.logError("Page is locked", e);
 }
 ```
+
+The lock sits *outside* the inner `try`, so a failed `setLock(true)` (someone else holds the
+lock) never reaches the `finally` that would try to unlock an element we do not own.
 
 ## Create a page and a section (example 3)
 
@@ -73,13 +85,14 @@ import de.espirit.firstspirit.access.store.pagestore.PageFolder;
 import de.espirit.firstspirit.access.store.pagestore.Page;
 import de.espirit.firstspirit.access.store.templatestore.PageTemplate;
 import de.espirit.firstspirit.access.store.templatestore.SectionTemplate;
+import de.espirit.firstspirit.agency.StoreElementAgent;
 
 sea = context.requireSpecialist(StoreElementAgent.TYPE);
 folder   = (PageFolder)   sea.loadStoreElement("root",        PageFolder.UID_TYPE,   false);
 pageTpl  = sea.loadStoreElement("standard",    PageTemplate.UID_TYPE, false);
 secTpl   = (SectionTemplate) sea.loadStoreElement("textpicture", SectionTemplate.UID_TYPE, false);
 
-page = folder.createPage("new_page_uid", pageTpl, true);          // lock folder as needed
+page = folder.createPage("new_page_uid", pageTpl, true);          // true = ensureUnique: server renames the uid on a collision; false may throw DuplicateReferenceNameException [javadoc]
 page.getBodyByName("Content center").createSection("My section", secTpl);
 // then lock/save the page (see the write pattern above)
 ```
@@ -95,6 +108,7 @@ see [script-contexts.md](script-contexts.md).)
 //!BeanShell
 import de.espirit.firstspirit.agency.FormsAgent;
 import de.espirit.firstspirit.agency.LanguageAgent;
+import de.espirit.firstspirit.agency.OperationAgent;
 import de.espirit.firstspirit.forms.Form;
 import de.espirit.firstspirit.forms.FormData;
 import de.espirit.firstspirit.ui.operations.ShowFormDialogOperation;
@@ -125,7 +139,9 @@ if (result != null) {
 }
 ```
 
-(Pre-5.2 the `perform(...)` could throw `InvalidRulesetException` — catch it.)
+`perform(...)` declares `ShowFormDialogOperation.InvalidRulesetDefinition` — an unchecked
+`AccessRuntimeException`, thrown when an invalid rule definition was set via `setRuleset(...)`
+`[jar]` (both 5.2.240208 and 5.2.261011). There is no `InvalidRulesetException` in the API.
 
 ## Read a data source — two ways (example 6)
 
@@ -135,6 +151,8 @@ Iterate the datasets, or run a real query against the schema session.
 //!BeanShell
 import de.espirit.firstspirit.access.store.contentstore.Content2;
 import de.espirit.firstspirit.access.store.contentstore.Dataset;
+import de.espirit.firstspirit.agency.StoreElementAgent;
+import de.espirit.firstspirit.agency.LanguageAgent;
 
 content2 = context.requireSpecialist(StoreElementAgent.TYPE)
                   .loadStoreElement("contacts", Content2.UID_TYPE, false);

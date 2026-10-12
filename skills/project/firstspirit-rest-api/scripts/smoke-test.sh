@@ -458,6 +458,50 @@ if [ "$DO_WRITE" = 1 ]; then
     req POST "$P/pages/$CREATED_PAGE/actions" application/json "$OUT/release-check.json"
     if is2xx; then pass W7 "POST /actions {release, checkOnly:true} → $STATUS"
     else fail W7 "release dry-run via /actions" "HTTP $STATUS: $(head -c 160 "$BODY")"; fi
+
+    # W26/W27 — DOM lists (content-management.md → CMS_INPUT_DOM). A list keeps its FirstSpirit list
+    # properties only as <p><ul style="N" [start="M"]>: the server turns the attributes into
+    # data-list-attributes (URL-encoded name=value pairs joined by ":|:") plus a style of its own.
+    # A <ul> outside a <p> is stored plain, and ContentCreator then resets an editor's type change on
+    # save. The payload is built from scratch each time — never GET→PATCH a DOM field with lists (the
+    # server nests the properties and SiteArchitect fails on the section).
+    DFBASE="$P/pages/$CREATED_PAGE/form"
+    req GET "$DFBASE"
+    DEDITOR="$(jqr '[.editors[]? | select(.type=="CMS_INPUT_DOM")][0].name // empty')"
+    if [ -z "$DEDITOR" ] && [ -n "${TBODY:-}" ] && [ -n "${TSECTION:-}" ]; then
+      req GET "$P/pages/$CREATED_PAGE/bodies/$TBODY/sections/$TSECTION/form"
+      DEDITOR="$(jqr '[.editors[]? | select(.type=="CMS_INPUT_DOM")][0].name // empty')"
+      [ -n "$DEDITOR" ] && DFBASE="$P/pages/$CREATED_PAGE/bodies/$TBODY/sections/$TSECTION/form"
+    fi
+    if [ -z "$DEDITOR" ]; then
+      skip W26 "DOM list properties survive a <p><ul style start> write" "no CMS_INPUT_DOM on the page form or the added section of $CREATED_PAGE"
+      skip W27 "a <ul> outside a <p> is stored without attributes" "no CMS_INPUT_DOM editor"
+    else
+      req GET "$DFBASE/$DEDITOR"
+      DSUFFIX=""; [ "$(jqr '.configuration.usesLanguages')" = true ] && DSUFFIX="/$MASTER"
+      jq -n --arg n "$DEDITOR" '{name:$n, type:"CMS_INPUT_DOM", content:"<p>smoke</p><p><ul style=\"2\" start=\"4\"><li>four</li><li>five</li></ul></p>"}' > "$OUT/dom-list.json"
+      req PATCH "$DFBASE/$DEDITOR$DSUFFIX" application/json "$OUT/dom-list.json"; DPS="$STATUS"
+      req GET "$DFBASE/$DEDITOR$DSUFFIX"; DCONTENT="$(jqr .content)"
+      case "$DCONTENT" in
+        *'data-list-attributes="start%3D4%3A%7C%3Astyle%3D2"'*'list-style-type:decimal'*)
+          pass W26 "<p><ul style=\"2\" start=\"4\"> stored as data-list-attributes=\"start%3D4%3A%7C%3Astyle%3D2\" + list-style-type:decimal on $DEDITOR (PATCH → $DPS)" ;;
+        *'data-list-attributes='*)
+          warn W26 "list properties stored in a different shape" "PATCH → $DPS, read-back: $(printf '%s' "$DCONTENT" | head -c 200) — update the CMS_INPUT_DOM section if the encoding changed" ;;
+        *)
+          fail W26 "DOM list properties survive a <p><ul style start> write" "PATCH → $DPS, read-back has no data-list-attributes: $(printf '%s' "$DCONTENT" | head -c 200)" ;;
+      esac
+      jq -n --arg n "$DEDITOR" '{name:$n, type:"CMS_INPUT_DOM", content:"<p>smoke</p><ul style=\"2\" start=\"4\"><li>four</li><li>five</li></ul>"}' > "$OUT/dom-list-bare.json"
+      req PATCH "$DFBASE/$DEDITOR$DSUFFIX" application/json "$OUT/dom-list-bare.json"; DPS="$STATUS"
+      req GET "$DFBASE/$DEDITOR$DSUFFIX"; DCONTENT="$(jqr .content)"
+      case "$DCONTENT" in
+        *'data-list-attributes='*|*'start="4"'*|*'style="2"'*)
+          warn W27 "a <ul> outside a <p> now keeps its attributes" "read-back: $(printf '%s' "$DCONTENT" | head -c 200) — the skill says they are dropped; re-check the <p> requirement" ;;
+        *'<ul>'*)
+          pass W27 "<ul style=\"2\" start=\"4\"> outside a <p> stored as plain <ul> (attributes dropped, as documented; PATCH → $DPS)" ;;
+        *)
+          fail W27 "a <ul> outside a <p> is stored without attributes" "PATCH → $DPS, read-back: $(printf '%s' "$DCONTENT" | head -c 200)" ;;
+      esac
+    fi
   fi
 
   # ---- Other throwaways (scripts/claim-coverage.md tier 2): page reference, medium, dataset,
@@ -660,18 +704,20 @@ if [ "$DO_SCRIPTS" = 1 ]; then
   # stored type comes back MENU regardless of what's sent, and description is dropped. This probe
   # asserts that DOCUMENTED behaviour; it fails only if the server starts honouring the DTO (good
   # news — update the skill) or does something else.
-  printf '{"name":"%s","type":"TEMPLATE","location":"/","description":"smoke description","comment":"smoke comment"}' "$TSCRIPT" > "$OUT/create-script.json"
+  # location is ignored as well (stored "/", re-tested 0.0.25-beta 2026-10-12), so a non-root
+  # location is sent and "/" expected back.
+  printf '{"name":"%s","type":"TEMPLATE","location":"/smoke_folder","description":"smoke description","comment":"smoke comment"}' "$TSCRIPT" > "$OUT/create-script.json"
   req POST "$P/scripts/" application/json "$OUT/create-script.json"
   if is2xx; then
     CREATED_SCRIPT="$TSCRIPT"
     req GET "$P/scripts/$TSCRIPT"
-    STYPE="$(jqr '.type // "?"')"; SDESC="$(jqr '.description // "null"')"
-    if [ "$STYPE" = MENU ] && [ "$SDESC" = "null" ]; then
-      pass S1 "POST /scripts/ ignores type/description as documented (stored type=MENU, description=null)"
+    STYPE="$(jqr '.type // "?"')"; SDESC="$(jqr '.description // "null"')"; SLOC="$(jqr '.location // "?"')"
+    if [ "$STYPE" = MENU ] && [ "$SDESC" = "null" ] && [ "$SLOC" = "/" ]; then
+      pass S1 "POST /scripts/ ignores type/description/location as documented (stored type=MENU, description=null, location=/)"
     elif [ "$STYPE" = TEMPLATE ] && [ "$SDESC" = "smoke description" ]; then
-      fail S1 "create-DTO handling changed (now honoured)" "stored type=$STYPE, description set — the server now honours the DTO; update SKILL.md → Scripts and this probe"
+      fail S1 "create-DTO handling changed (now honoured)" "stored type=$STYPE, description set, location=$SLOC — the server now honours the DTO; update SKILL.md → Scripts and this probe"
     else
-      fail S1 "POST /scripts/ create-DTO behaviour" "expected type=MENU/description=null (documented); got type=$STYPE, description=$SDESC"
+      fail S1 "POST /scripts/ create-DTO behaviour" "expected type=MENU/description=null/location=/ (documented); got type=$STYPE, description=$SDESC, location=$SLOC"
     fi
   else fail S1 "POST /scripts/ creates a script" "HTTP $STATUS: $(head -c 160 "$BODY")"; fi
 
@@ -700,7 +746,7 @@ if [ "$DO_SCRIPTS" = 1 ]; then
       if [ "${PUTS:0:1}" = 2 ] && is2xx && grep -q 42 "$BODY"; then
         fail S3 "/execute echoes the return value (behaviour changed)" "execute → $STATUS returned '42' — the empty-body behaviour documented in SKILL.md → Scripts no longer holds; update it"
       elif [ "${PUTS:0:1}" = 2 ] && is2xx; then
-        pass S3 "PUT source + POST /execute → $STATUS with empty body ($BODYSIZE bytes) — matches the documented no-echo behaviour"
+        pass S3 "PUT source + POST /execute → $STATUS with empty body ($BODYSIZE bytes) — the smoke script logs nothing, so no log records are echoed, as documented"
       else
         fail S3 "PUT …/template-sets/$TSET then POST /execute succeeds" "PUT → $PUTS, execute → $STATUS: $(head -c 120 "$BODY")"; fi
 

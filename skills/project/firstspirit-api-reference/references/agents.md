@@ -5,7 +5,11 @@ You never `new` a FirstSpirit store or service — you **request it from the
 receive one. Agents are the typed entry points to stores, services, and
 operations.
 
-Package: `de.espirit.firstspirit.agency`.
+Package: mostly `de.espirit.firstspirit.agency`. Exceptions in the table below `[jar]`:
+`WorkflowAgent` → `de.espirit.firstspirit.workflow`, `FeatureInstallAgent` / `FeatureAgent` →
+`de.espirit.firstspirit.feature`, `ModuleAgent` → `de.espirit.firstspirit.access`,
+`FileSystemsAgent` → `de.espirit.firstspirit.io`, `WebeditUiAgent` → `de.espirit.firstspirit.webedit`.
+An import from `agency` fails for these.
 
 ---
 
@@ -52,23 +56,23 @@ The agents you reach for most (all via `requireSpecialist(X.TYPE)`):
 | `StoreAgent` | Store roots by `Store.Type` (+ release flag) |
 | `StoreElementAgent` | `loadStoreElement(uid, uidType, release)`, `loadReference(...)` |
 | `QueryAgent` | Repository search via `fs.*` query syntax — see [querying.md](querying.md) |
-| `ProjectAgent` | The current `Project`, its languages, resolutions, config |
+| `ProjectAgent` | Project master data, **not** the `Project` object `[jar]`: `getName()`, `getId()`, `getSymbolicName()`, `getTemplateSets()`, `useRelease()`, `getRemoteProjectConfigurations(...)`, `getMetaDataTemplate()`; `getUuid()` and `getReleaseMode()` on 5.2.261011 only. Languages → `LanguageAgent`, resolutions → `ResolutionAgent`, the `Project` itself → `context.getProject()` |
 | `LanguageAgent` | Project `Language`s, the master language, language lookup |
 | `OperationAgent` | GUI/editorial **operations** via `getOperation(<Operation>.TYPE)` — `RequestOperation` (messages/questions), `OpenElementDataFormOperation` / `OpenElementMetaFormOperation` (open an element's form), `ShowFormDialogOperation`, `PreviewOperation` (all `de.espirit.firstspirit.ui.operations`), `ClientScriptOperation` (`de.espirit.firstspirit.webedit.server`); operations are not specialists — never `requireSpecialist(<Operation>.TYPE)` |
-| `WorkflowAgent` | Run / continue workflows on objects headlessly (no UI) |
+| `WorkflowAgent` | Run / continue workflows on objects headlessly (no UI). Package `de.espirit.firstspirit.workflow` |
 | `UserAgent` | Information about the current user |
 | `ResolutionAgent` | Access project image resolutions |
-| `FeatureInstallAgent` / feature agents | Entry point to the ContentTransport API (feature transport between projects) |
+| `FeatureInstallAgent` / `FeatureAgent` | Entry point to the ContentTransport API (feature transport between projects). Package `de.espirit.firstspirit.feature` |
 | `TransferAgent` | Drag-and-drop / clipboard transfer handling |
-| `ImageAgent` | Load/transform images from media |
+| `ImageAgent` | Create UI image objects (`Image<…>`) from a URL, an icon or a `Media` — `getImageFromUrl` / `getImageFromIcon` / `getImageFromMedia`; **no** loading or transformation of media binaries `[jar]` |
 | `RenderingAgent` | Render a template/element to a string from code |
-| `UrlAgent` / `UrlCreatorAgent` | Generated URLs for elements/media |
+| `UrlAgent` / `UrlCreatorAgent` | `UrlAgent`: the stored SEO and short URL entries (`getSEOUrls()`, `getShortUrls()`); `UrlCreatorAgent`: the available URL-creator specifications. **Neither yields a URL for a given element** `[jar]` — use `ContentProducer.getStoredUrl(...)`, `Media.getStoredUrl(...)` or `PreviewUrlAgent` |
 | `PreviewUrlAgent` / `ClientUrlAgent` | Preview URLs; client (SiteArchitect/ContentCreator) URLs |
 | `SnippetAgent` | The editor snippet (label/thumbnail) for an element |
 | `FormsAgent` | Access to form definitions / `FormData` handling |
-| `RuleValidationAgent` / `ValidationAgent` | Run rule/element validation from code |
+| `RuleValidationAgent` / `ValidationAgent` | Run rule/element validation from code. `RuleValidationAgent` on 5.2.261011, not on 5.2.240208 `[jar]` |
 | `ModuleAdminAgent` | Install/configure modules and components (admin) |
-| `ScheduleTaskAgent` | Start/inspect schedule tasks |
+| `ScheduleTaskAgent` | Look up the registered `ScheduleTaskFactory`s only: `getTaskFactories()`, `getTaskFactory(Class)` `[jar]`. It does **not** start or inspect schedule entries — for that use `AdminService.getScheduleStorage()` (`firstspirit-scripting`, "Trigger a schedule") |
 | `ScriptAgent` | Execute a project script by identifier from code |
 | `ServerInformationAgent` | Server version / build info |
 | `MaintenanceModeAgent`, `RunLevelAgent` | Server state (admin) |
@@ -79,7 +83,7 @@ The agents you reach for most (all via `requireSpecialist(X.TYPE)`):
 | `FileSystemsAgent` | File systems for I/O from scripts and modules: `getOSFileSystem(path)`, `getMemoryFileSystem()`, `getRelativeFileSystem(handle)`. Package `de.espirit.firstspirit.io` |
 | `ProcessAgent` | Start an OS process on the server: `getBuilder()` returns a `ProcessAgent.ProcessBuilder` |
 | `FeatureToggleAgent` | Server feature toggles: `isAvailable(name)`, `isEnabled(name)`, `isEnabled(name, default)`; `enable` / `disable`. On 5.2.261011, not on 5.2.240208 `[jar]` |
-| `UrlRegistryAgent` | URLs registered by the URL factory: `getPath(IDProviderKey)`, `getEntries(url)` (every element registered under a URL), `clearCaches()` |
+| `UrlRegistryAgent` | **Internal API — do not use.** Annotated `@ApiStatus.Internal` on both jars `[jar]` and declared in the runtime, not the Access API `[core]`; `checkCompliance` rejects it. (It was listed here as a public agent after an external contribution; the javap check at the time only confirmed the methods existed.) |
 | `EventBusAgent` | Generic publish/subscribe between components: `post`, `register`, `unregister` with a `BusIdentifier<T>` (`T` must be `Serializable`) |
 
 > Not the full set — the `de.espirit.firstspirit.agency` package has more (see
@@ -96,8 +100,11 @@ projectBroker = brokerAgent.getBrokerByProjectName("MyProject");
 storeAgent = projectBroker.requireSpecialist(StoreAgent.TYPE);
 ```
 
-`BrokerAgent` offers `getBrokerByProjectName(String)`, `getBrokerByProjectId(long)`,
-`getBroker(String)` and `getBroker(long)` `[jar]`. Module services prefer the **id**
+`BrokerAgent` offers `getBrokerByProjectName(String)` and `getBrokerByProjectId(long)` for
+project brokers. The two shorter overloads are **not** project variants `[javadoc]`:
+`getBroker(String symbolicName)` is for a *remote* project registered under that symbolic name,
+and `getBroker(long revision)` returns a broker operating on a *revision* — `getBroker(projectId)`
+yields the wrong broker. All four are `@Nullable` `[jar]`. Module services prefer the **id**
 variant: a project can be renamed, its id cannot change, and `ProjectEnvironment.getProjectId()`
 or `Project.getId()` is usually already in hand. Server-scope code in modules
 (`firstspirit-module-development`) uses exactly this hop to load a `PageRef` by uid:

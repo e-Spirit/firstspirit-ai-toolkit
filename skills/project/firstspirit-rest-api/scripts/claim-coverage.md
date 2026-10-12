@@ -31,9 +31,11 @@ Legend: R = read-only (default run) · W = `--write` (W1–W9 page, W10–W12 pa
 | W2 | `PATCH …/rename` takes `{name, language}` and changes the display name; `{uid}` is rejected; the uid cannot change | content-management.md → Pages (rename) |
 | W3 | `POST …/bodies/{body}/sections/ {name,templateUid}` adds a section and answers its numeric `id` (`0.0.24-beta`+); `PUT …/sections/{name} {templateUid}` on `0.0.23-beta` (fallback, logged in the PASS line) | content-management.md → Add Section to Body; SKILL.md → version drift |
 | W4 | GET → jq → PATCH round trip on a text editor keeps apostrophes, quotes, umlauts, newline (file-based payload); the fallback section is addressed by the id or name W3 recorded | SKILL.md → The One Rule, Rule 2 |
-| W5 | a minimal `{name,type,content}` PATCH is accepted on a scalar editor (`configuration`/`description`/`language` are not required) | SKILL.md → Rule 1; content-management.md → PATCH Pattern |
+| W5 | a minimal `{name,type,content}` PATCH is accepted on a scalar editor (`configuration`/`description`/`language` are not required); a rejection is a WARN, not a FAIL — the behaviour may differ by module version and editor type | SKILL.md → Rule 1; content-management.md → PATCH Pattern |
 | W6 | wrong Content-Type on PATCH is rejected with 500 (the module never answers 415) | SKILL.md → Critical Content-Type Rules, Error Codes |
 | W7 | `POST …/actions {release, checkOnly:true}` dry-run works | content-management.md → Release Workflow; SKILL.md → Actions Pattern |
+| W26 | a DOM list written as `<p><ul style="2" start="4">` is stored with `data-list-attributes="start%3D4%3A%7C%3Astyle%3D2"` and the server's own `list-style-type` style (a different encoding is a WARN); the payload is built fresh, never GET → PATCH | content-management.md → CMS_INPUT_DOM (lists) |
+| W27 | the same `<ul>` outside a `<p>` is stored as a plain `<ul>` (attributes dropped); kept attributes are a WARN against the `<p>` rule | content-management.md → CMS_INPUT_DOM (lists) |
 | (manual) | `POST …/templates/page-templates/{uid}/actions` → 404: nothing in the TemplateStore can be released (templates answer 404; scripts and schemas by statement, not probed) | content-management.md → end of Release Workflow; SKILL.md → Actions Pattern. Observed 2026-10-07 by hand, no probe yet |
 | W9 | `DELETE /pages/{uid}` then GET → 404 | content-management.md → Delete Page |
 | W10 | `POST /page-references/ {uid, pageId, location}` creates a page reference pointing at the page (server answers 200) | content-management.md → Create PageReference |
@@ -54,9 +56,9 @@ Legend: R = read-only (default run) · W = `--write` (W1–W9 page, W10–W12 pa
 | W24 | `GET …/gom` returns the stored XML | content-templates.md → Read GOM |
 | W25 | `DELETE /templates/section-templates/{uid}` → 204, then GET → 404 | content-templates.md → Create Templates |
 | S0 | `GET /template-sets/` lists template sets (a 500 here was project-specific: broken conversion table) | content-templates.md → Determine Template-Set UID |
-| S1 | `POST /scripts/` ignores `type`/`description` (stored MENU, description null) | SKILL.md → Scripts |
+| S1 | `POST /scripts/` ignores `type`/`description`/`location` (stored MENU, description null, location `/`) | SKILL.md → Scripts |
 | S2 | there is no `PATCH /scripts/{name}` (404/405) | SKILL.md → Scripts |
-| S3 | `PUT …/scripts/{name}/template-sets/{set}` (text/plain) + `POST …/execute` → 2xx with an EMPTY body; verify by read-back | SKILL.md → Scripts |
+| S3 | `PUT …/scripts/{name}/template-sets/{set}` (text/plain) + `POST …/execute` → 2xx; the body is the script's log records (empty for a script that logs nothing); verify by read-back | SKILL.md → Scripts |
 | S4 | `/execute` surfaces BeanShell parse errors in the response | SKILL.md → Scripts |
 | S5 | the `/execute` context has no `getElement()` | SKILL.md → Scripts |
 | S6 | `DELETE /scripts/{name}` | SKILL.md → Scripts |

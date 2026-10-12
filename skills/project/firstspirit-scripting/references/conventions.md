@@ -70,6 +70,7 @@ The only reliable way to guarantee the lock is released (full pattern in
 ```
 //!BeanShell
 import de.espirit.firstspirit.access.store.LockException;
+import de.espirit.firstspirit.access.store.ElementDeletedException;
 try {
     elm.setLock(true, false);
     try {
@@ -81,8 +82,14 @@ try {
     }
 } catch (LockException e) {
     // element already locked
+} catch (ElementDeletedException e) {
+    // element was deleted meanwhile
 }
 ```
+
+`setLock(boolean, boolean)` declares both `LockException` and `ElementDeletedException` `[jar]`;
+catch them separately — BeanShell has no multi-catch (`catch (A | B e)` is a parse error, see
+[beanshell-language.md](beanshell-language.md)).
 
 ### DO iterate with iterators, not full lists/arrays
 Child collections can be very large (especially recursive). Use the iterator and
@@ -90,6 +97,8 @@ filter by class:
 
 ```
 //!BeanShell
+import de.espirit.firstspirit.access.store.pagestore.Page;
+
 for (page : folder.getChildren(Page.class, true).iterator()) {   // any element interface works as the filter
     context.logInfo(page.getUid());
 }

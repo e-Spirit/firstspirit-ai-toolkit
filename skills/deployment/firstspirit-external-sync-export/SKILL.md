@@ -3,9 +3,9 @@ name: firstspirit-external-sync-export
 description: >-
   Run the FirstSpirit Command Line Interface (fs-cli / FSDevTools / fsdevtools) against a server: export a project (stores, project properties) to an external-sync directory on disk, or import a sync directory back. Use it to keep a project in git, work on its source outside the server, move a project to another server, or build a git-based pipeline on a self-hosted or local server. Covers installing fsdevtools, the version-matched Access API jar (fs-isolated-runtime), the JRE --add-opens flags, connection modes (HTTP / HTTPS / SOCKET; Cloud needs HTTPS 443, Keycloak SSO), authenticating without exposing a password, the export command (store identifiers, projectproperty, path:, entities:, schema:, --useReleaseState, --keepObsoleteFiles), the import command (--layerMapping, --import-comment, --permissionMode) and a failure→fix table for the common errors. Triggers on "external sync", "FSDevTools", "fs-cli", "export a FirstSpirit project to disk", "fs-cli import", "layer mapping", "connect fs-cli to Cloud".
 metadata:
-  source-commit: "9c191a5"
-  published: "2026-10-08"
-  toolkit-version: "0.4.0"
+  source-commit: "2e7b7bc"
+  published: "2026-10-12"
+  toolkit-version: "0.4.1"
 ---
 
 > **Beta.** Early public release. Feedback welcome; behaviour and structure may change.
@@ -74,13 +74,14 @@ FS_USER=<login> FS_PWD=<password> \
 
 Each run keeps fs-cli's (password-redacted) output in
 `results/firstspirit-external-sync-export/<run>/fs-cli.log` and appends one summary line to
-`logs/firstspirit-external-sync-export.log` — under `FS_OUT_ROOT`, else the skills monorepo
-root, else the working directory; add `results/` and `logs/` to your project's `.gitignore` when
-you run it inside a repo. The export itself goes to `FS_SYNC_DIR`.
+`logs/firstspirit-external-sync-export.log` — under `FS_OUT_ROOT` if set, else the current
+working directory; add `results/` and `logs/` to your project's `.gitignore` when you run it
+inside a repo. The export itself goes to `FS_SYNC_DIR`. The wrapper defaults to HTTPS on 443;
+with `FS_CONN=HTTP` or `SOCKET` it leaves the port to fs-cli (8000 / 1088) unless `FS_PORT` is set.
 
 Read `references/export-command.md` before trusting the identifier list — a
-"whole project" is a choice, and entities (database content) and schemas need
-explicit identifiers.
+"whole project" is a choice, and entities (database content) need explicit
+`entities:` identifiers (each one also exports its data source's schema).
 
 ## Non-negotiables
 
@@ -114,5 +115,5 @@ customer project "just to try it out" ahead of that sign-off.
 ## Feedback
 
 Found something wrong, unclear, or missing? **Tell me in the chat — I'll log it for you**
-(no form to fill). Reports are routed per `FEEDBACK.md`; on a public copy, open an issue on
+(no form to fill). To report it yourself, open an issue on
 this skill's repository.
