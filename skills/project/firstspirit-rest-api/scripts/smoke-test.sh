@@ -77,8 +77,10 @@ else
 fi
 
 # The variables stay shell-local: nothing here is exported to child processes (git-ignore the .env file).
+set +u   # +u: a mis-quoted $ must not abort, E1 already said why
 # shellcheck disable=SC1090
-set +u; . "$ENV_FILE"; set -u   # +u: a mis-quoted $ must not abort, E1 already said why
+. "$ENV_FILE"
+set -u
 for v in FS_USERNAME FS_PASSWORD FS_REST_BASE_URL FS_PROJECT_ID; do
   [ -n "${!v:-}" ] || { echo "$v is empty after sourcing $ENV_FILE" >&2; exit 2; }
 done
@@ -461,7 +463,9 @@ if [ "$DO_WRITE" = 1 ]; then
     if is2xx; then pass W7 "POST /actions {release, checkOnly:true} → $STATUS"
     else fail W7 "release dry-run via /actions" "HTTP $STATUS: $(head -c 160 "$BODY")"; fi
 
-    # W26/W27 — DOM lists (content-management.md → CMS_INPUT_DOM). A list keeps its FirstSpirit list
+    # W26/W27 — DOM lists (content-management.md → CMS_INPUT_DOM); numbered after W25 because they
+    # were added last, run here because they need the smoke page before its cleanup. No earlier
+    # probe writes to a DOM editor, so nothing of this run is overwritten. A list keeps its FirstSpirit list
     # properties only as <p><ul style="N" [start="M"]>: the server turns the attributes into
     # data-list-attributes (URL-encoded name=value pairs joined by ":|:") plus a style of its own.
     # A <ul> outside a <p> is stored plain, and ContentCreator then resets an editor's type change on
@@ -483,10 +487,19 @@ if [ "$DO_WRITE" = 1 ]; then
       DSUFFIX=""; [ "$(jqr '.configuration.usesLanguages')" = true ] && DSUFFIX="/$MASTER"
       jq -n --arg n "$DEDITOR" '{name:$n, type:"CMS_INPUT_DOM", content:"<p>smoke</p><p><ul style=\"2\" start=\"4\"><li>four</li><li>five</li></ul></p>"}' > "$OUT/dom-list.json"
       req PATCH "$DFBASE/$DEDITOR$DSUFFIX" application/json "$OUT/dom-list.json"; DPS="$STATUS"
-      req GET "$DFBASE/$DEDITOR$DSUFFIX"; DCONTENT="$(jqr .content)"
+      if ! is2xx; then
+        fail W26 "PATCH a <p><ul style start> list into $DEDITOR" "HTTP $DPS: $(head -c 160 "$BODY") — the read-back is not judged; the field still holds its previous content"
+        DCONTENT="__patch_rejected__"
+      else
+        req GET "$DFBASE/$DEDITOR$DSUFFIX"; DCONTENT="$(jqr .content)"
+      fi
+      # the two markers are checked independently: the server's attribute order is not part of the claim
       case "$DCONTENT" in
-        *'data-list-attributes="start%3D4%3A%7C%3Astyle%3D2"'*'list-style-type:decimal'*)
+        __patch_rejected__) : ;;
+        *'data-list-attributes="start%3D4%3A%7C%3Astyle%3D2"'*)
+          case "$DCONTENT" in *'list-style-type:decimal'*)
           pass W26 "<p><ul style=\"2\" start=\"4\"> stored as data-list-attributes=\"start%3D4%3A%7C%3Astyle%3D2\" + list-style-type:decimal on $DEDITOR (PATCH → $DPS)" ;;
+          *) warn W26 "list properties stored, but without the server's list-style-type style" "PATCH → $DPS, read-back: $(printf '%s' "$DCONTENT" | head -c 200)" ;; esac ;;
         *'data-list-attributes='*)
           warn W26 "list properties stored in a different shape" "PATCH → $DPS, read-back: $(printf '%s' "$DCONTENT" | head -c 200) — update the CMS_INPUT_DOM section if the encoding changed" ;;
         *)
@@ -494,8 +507,14 @@ if [ "$DO_WRITE" = 1 ]; then
       esac
       jq -n --arg n "$DEDITOR" '{name:$n, type:"CMS_INPUT_DOM", content:"<p>smoke</p><ul style=\"2\" start=\"4\"><li>four</li><li>five</li></ul>"}' > "$OUT/dom-list-bare.json"
       req PATCH "$DFBASE/$DEDITOR$DSUFFIX" application/json "$OUT/dom-list-bare.json"; DPS="$STATUS"
-      req GET "$DFBASE/$DEDITOR$DSUFFIX"; DCONTENT="$(jqr .content)"
+      if ! is2xx; then
+        fail W27 "PATCH a bare <ul style start> list into $DEDITOR" "HTTP $DPS: $(head -c 160 "$BODY") — the read-back is not judged; the field still holds the W26 content"
+        DCONTENT="__patch_rejected__"
+      else
+        req GET "$DFBASE/$DEDITOR$DSUFFIX"; DCONTENT="$(jqr .content)"
+      fi
       case "$DCONTENT" in
+        __patch_rejected__) : ;;
         *'data-list-attributes='*|*'start="4"'*|*'style="2"'*)
           warn W27 "a <ul> outside a <p> now keeps its attributes" "read-back: $(printf '%s' "$DCONTENT" | head -c 200) — the skill says they are dropped; re-check the <p> requirement" ;;
         *'<ul>'*)

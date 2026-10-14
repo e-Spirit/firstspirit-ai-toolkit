@@ -101,7 +101,7 @@ done
 # -port only when we know it: FS_PORT, or 443 for the HTTPS (Cloud) default. For HTTP / SOCKET
 # fs-cli falls back to the fsport env var, then to its mode default (8000 / 1088).
 if [ -n "${FS_PORT:-}" ]; then set -- "$@" -port "$FS_PORT"
-elif [ "${FS_CONN:-HTTPS}" = HTTPS ]; then set -- "$@" -port 443; fi
+elif [ "$(printf '%s' "${FS_CONN:-HTTPS}" | tr '[:lower:]' '[:upper:]')" = HTTPS ]; then set -- "$@" -port 443; fi   # case-insensitive: FS_CONN=https is common
 set -- "$@" -c "${FS_CONN:-HTTPS}"
 [ -n "$USER_VAL" ]       && set -- "$@" -u "$USER_VAL"
 # env, not argv: keeps the password out of `ps`. FS_PWD / FS_PASSWORD win over an fspwd already in the

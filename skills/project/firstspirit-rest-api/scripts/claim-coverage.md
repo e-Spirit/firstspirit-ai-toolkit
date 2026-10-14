@@ -6,7 +6,7 @@ and where that claim is stated, followed by the skill sections that have **no pr
 are verified only by the 2026-09-11 live test and the 2026-09-14 multi-project run, i.e. by
 hand, once. Update both halves when a probe is added or a section is rewritten.
 
-Legend: R = read-only (default run) · W = `--write` (W1–W9 page, W10–W12 page reference, W13–W17 medium, W18–W21 dataset, W22–W25 section template) · S = `--scripts` · E/O = environment/spec.
+Legend: R = read-only (default run) · W = `--write` (W1–W9 page, W10–W12 page reference, W13–W17 medium, W18–W21 dataset, W22–W25 section template, W26–W27 DOM lists on the page, run right after W7) · S = `--scripts` · E/O = environment/spec.
 
 ## Probes → claims
 
