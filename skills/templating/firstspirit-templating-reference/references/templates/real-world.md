@@ -251,7 +251,7 @@ Queries database entities and builds data structures for use in templates.
 ```
 <CMS_HEADER>
   <CMS_FUNCTION name="contentSelect" resultname="fr_translations">
-    <CMS_PARAM name="schema" value="crownpeak"/>
+    <CMS_PARAM name="schema" value="website"/>
     <QUERY entityType="translation"/>
   </CMS_FUNCTION>
 </CMS_HEADER>
@@ -307,12 +307,12 @@ $CMS_TRIM(level:4)$
 $CMS_IF(!prm_dataset.isEmpty())$
   $CMS_SWITCH(prm_dataset.getTableTemplate().getUid())$
     $CMS_VALUE(#global.logWarning("Unknown dataset type: '" + prm_dataset.getTableTemplate().getUid() + "'"))$
-  $CMS_CASE("crownpeak.blog")$
+  $CMS_CASE("website.blog")$
     $CMS_REF(ps_blog_detail_page, abs:1, contentId: prm_dataset.getEntity().getId())$
-  $CMS_CASE("crownpeak.event")$
+  $CMS_CASE("website.event")$
     $CMS_REF(ps_event_detail_page, abs:1, contentId: prm_dataset.getEntity().getId())$
-  $CMS_CASE("crownpeak.partner")$
-    $CMS_REF(ps_partner_detail_page, abs:1, contentId: prm_dataset.getEntity().getId())$
+  $CMS_CASE("website.partner")$
+    $CMS_REF(partner_detail_page, abs:1, contentId: prm_dataset.getEntity().getId())$
   $CMS_END_SWITCH$
 $CMS_END_IF$
 $CMS_END_TRIM$

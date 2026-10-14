@@ -85,7 +85,7 @@ Allows editors to upload media directly from the form into a specific media fold
     <LANGINFO lang="*" label="Image"/>
   </LANGINFOS>
   <PROJECTS>
-    <LOCAL name="." uploadFolder="cloud_logos">
+    <LOCAL name="." uploadFolder="images">
       <SOURCES>
         <FOLDER name="images" store="MEDIASTORE"/>
       </SOURCES>
@@ -96,7 +96,7 @@ Allows editors to upload media directly from the form into a specific media fold
 
 Key points:
 - `upload="yes"` enables the upload button in the form
-- `uploadFolder="cloud_logos"` sets where uploaded files are stored in the media store
+- `uploadFolder="images"` sets where uploaded files are stored in the media store
 - `<LOCAL name=".">` means current project (`.` = self)
 - `<FOLDER name="images" store="MEDIASTORE"/>` restricts the file browser to that folder
 - `sections="no"` disables section anchoring in the selection dialog

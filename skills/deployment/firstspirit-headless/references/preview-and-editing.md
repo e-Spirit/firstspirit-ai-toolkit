@@ -25,9 +25,7 @@ Sources:
 
 > **Not headless?** For a page rendered by FirstSpirit's *own* integrated preview
 > use the ODFS JS APIs (`WE_API`/`JC_API`/`MPP_API`) — see the last section; they
-> are **not** the headless path. And building the actual Next.js preview wiring is
-> the FirstSpirit PWA reference implementation (JavaScript Content API) (`PreviewProvider`, resolve route, preview-id builders).
-> This file is the platform-level API reference.
+> are **not** the headless path. This file is the platform-level API reference.
 
 ---
 
@@ -91,8 +89,7 @@ Script inclusion (the handshake origin secures it):
 **Workflows / execute**
 - `startWorkflow(previewId, workflow)` · `processWorkflow(previewId, transition)`
 - `execute(identifier, params, result)` → `Promise<any>` — run a FirstSpirit
-  script/executable. Identifier form `script:<UID>` / `class:<FQCN>`
-  (**(UNVERIFIED)** — prefix convention inferred from the sibling `JC_API`).
+  script/executable.
 
 **Language**
 - `getPreviewLanguage()` · `languages()` → `Promise<string[]>` · `locales()`
@@ -118,8 +115,8 @@ Script inclusion (the handshake origin secures it):
 - **`data-tpp-context-image-resolution`** — resolution used for crop actions.
 - Script-tag: **`data-firstspirit-origin`** (handshake security).
 
-**`data-preview-id` value forms.** SNAP docs and OCM 3.0 docs describe them
-slightly differently — verify against the version in play:
+**`data-preview-id` value forms.** The SNAP and OCM 3.0 documentation describe
+them slightly differently; use the forms of the version you run:
 - Element preview id (page/section/dataset): UUID `+ .language`, e.g.
   `8326527a-...b660249.de_DE`.
 - Inline editing of an input component: `#INPUT_COMPONENT_NAME`.
@@ -129,9 +126,7 @@ slightly differently — verify against the version in play:
   — e.g. `...de_DE/st_catalog/0` (card index may be a UUID instead of an ordinal).
 - Custom: `custom:action:path:name`.
 
-> The FirstSpirit PWA reference implementation (JavaScript Content API) is prescriptive here (always build ids with
-> `buildPreviewId` / `buildCatalogItemPreviewId`, locale as `en_GB` not `EN`,
-> catalog separator `/`). Defer to it for the consumer rules.
+> Write the locale as `en_GB`, not `EN`, and use `/` as the catalog separator.
 
 ---
 
@@ -197,25 +192,15 @@ standard executables:
 
 ## Adjacent: ODFS JavaScript APIs — *not* the headless path
 
-The ODFS "JavaScript APIs" index
-(<https://docs.e-spirit.com/odfs/template-develo/javascript-apis/index.html>)
-documents three APIs for HTML shown inside **FirstSpirit's own integrated
-previews** (SiteArchitect's embedded browser, ContentCreator). Listed here so you
-reach for TPP/SNAP instead of these in a headless project:
-
-- **`top.WE_API`** (ContentCreator) — `Common`, `Dialog`, `Preview`
-  (`reload()`, `reload(element)`, element reload listener, `repaint()`,
-  `rescan(element)`, `getWindow()`), `Report`. Controls ContentCreator's own UI.
-  **Headless: not applicable.** *(Some ODFS method pages 404'd at research time;
-  `WE_API.Common` method names not retrieved — **(UNVERIFIED)**.)*
-- **`top.JC_API`** (SiteArchitect embedded preview) — `reload()`,
-  `execute("script:<UID>" | "class:<FQCN>")`, `execute(exec, params, callback)`.
-  **Headless: not applicable.**
-- **`top.MPP_API`** (Multi Perspective Preview) — `isParameterized()`,
-  `get/setTimeParameter`, `get/setParameter(name[, value])`; does not expose the
-  viewport. **Headless: partial** — MPP time/role parameters reach a headless
-  frontend via the **`TPP_SNAP.mpp*`** wrappers above, not `MPP_API` directly.
+FirstSpirit's own integrated previews (SiteArchitect's embedded browser,
+ContentCreator) expose three JavaScript APIs — **`top.WE_API`**, **`top.JC_API`**
+and **`top.MPP_API`**. They drive FirstSpirit's own preview and ContentCreator's
+UI; they are **not** the headless path — in a headless project the bridge is
+TPP/SNAP. The one overlap: MPP time/role parameters reach a headless frontend via
+the **`TPP_SNAP.mpp*`** wrappers above, not `MPP_API` directly. The APIs
+themselves (members, dialogs, preview reload, reports, the ODFS index) are the
+`firstspirit-contentcreator-extensions` skill's.
 
 Preview URL configuration, PreviewRenderingPlugin selection, the preview
-ProjectApp, and OCM 2.x migration are parked →
-[for-later-configuration-and-install.md](for-later-configuration-and-install.md).
+ProjectApp, and OCM 2.x migration →
+[configuration-and-install.md](configuration-and-install.md).

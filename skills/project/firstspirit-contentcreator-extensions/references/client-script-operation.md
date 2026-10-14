@@ -82,7 +82,7 @@ minimum.
 
 ## Return value
 
-`Serializable`, `null` "if there is no value to return". [javadoc] The field test recorded in
+`Serializable`, `null` "if there is no value to return". [javadoc] The live test recorded in
 `firstspirit-operations` saw the async form return the callback's value — which is what the
 Javadoc's async example shows too (`// returnValue => "methodReturnValue"`). [javadoc] [verify]
 Types crossing the bridge are JavaScript primitives/strings; do not expect a structured object

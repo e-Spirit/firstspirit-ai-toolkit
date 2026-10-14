@@ -130,14 +130,14 @@ The deployment does **not** convert unsafe or reserved characters — it follows
 paths (from page names, structure, filenames) stay within the allowed character
 set; sanitise at the template/structure level, not at deploy time.
 
-## Security at the delivery layer (open ownership)
+## Security at the delivery layer
 
 TLS/certificates, custom domains, **security headers** (CSP, HSTS, …), **WAF**,
-and access control exist at the CloudFront layer. **Which of these a customer can
-configure directly vs. must request from the FirstSpirit Cloud team is not fully
-documented** and is a **known open question (OPEN)**. When a requirement touches
-delivery-layer security, treat it as *possibly a Support request* and confirm —
-don't promise self-service configuration.
+and access control exist at the CloudFront layer. Which of these a customer can
+configure directly vs. must request from Support: confirm with Support per
+setting. When a requirement touches delivery-layer security, treat it as
+*possibly a Support request* and confirm — don't promise self-service
+configuration.
 
 > Governance-level security (certifications, data protection, sub-processors) is
 > **not** this — that's the **Governance Center** (link, never restate). See
@@ -170,5 +170,4 @@ folder redirects, allowed-paths section confirmed 2026-07-31; **the exact
 Cache-Control values and the ~15 wildcard limit were not surfaced in this pass —
 they rest on the Cloud-docs-home summary, still to confirm from the German
 source**); the reference architectures (static-deployment); the FirstSpirit Cloud
-documentation-home drafts (delivery-layer security open question). Version- and
-release-dependent — see the skill's review log.*
+documentation pages. Version- and release-dependent; not yet verified live.*

@@ -1,6 +1,6 @@
 # Naming and coding conventions
 
-Look-up reference for FirstSpirit naming and coding conventions. The principles in SKILL.md explain why these matter; this file holds the detail. Source: the two FirstSpirit coding-conventions documents and an older FirstSpirit overview handout, with corrections from current practice noted inline.
+Look-up reference for FirstSpirit naming and coding conventions. The principles in SKILL.md explain why these matter; this file holds the detail. Source: the FirstSpirit coding-conventions documents and FirstSpirit overview material; verify component details in firstspirit-templating-reference.
 
 ## Reference names versus display names and descriptions
 

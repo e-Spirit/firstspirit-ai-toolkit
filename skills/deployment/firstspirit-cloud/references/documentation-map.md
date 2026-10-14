@@ -38,7 +38,7 @@ Center and the status page, which are canonical and change.
 | Topic | Source | Owner |
 | --- | --- | --- |
 | Template Development Guide (root) — Cloud env, developing/distributing templates | docs.crownpeak.com/template-development-guide/ | template *technology* → firstspirit-template-design / firstspirit-templating-reference (the FirstSpirit product documentation (hosting choice, modules, licensing) routes there); the **Cloud Git workflow** sub-page → this skill |
-| Git-based / distributed development | docs.crownpeak.com/template-development-guide/distributed-development-of-firstspirit-projects/ (**2026.8; link prominently — findability ticket-driver**) | this skill (environments-and-workflow) |
+| Git-based / distributed development | docs.crownpeak.com/template-development-guide/distributed-development-of-firstspirit-projects/ (**2026.8; link it prominently; it is the page people look for**) | this skill (environments-and-workflow) |
 | Templates (template language, GOM, rules) | ODFS (docs.e-spirit.com/odfs/) + Training | firstspirit-template-design / firstspirit-templating-reference |
 | Module development (FSM) | docs.crownpeak.com/module-development-guide/ | firstspirit-module-development |
 | FirstSpirit REST API | (REST API docs) | firstspirit-rest-api |
@@ -73,7 +73,6 @@ belongs to that future skill (and to the official docs linked above).
 
 ---
 
-*Sources: the FirstSpirit Cloud documentation-home + inventory drafts (the
-fold/link register and canonical link set); the docs and KB URLs listed above.
-First pass — URLs and the docs.firstspirit.com consolidation are in flux; see
-the skill's review log.*
+*Sources: the FirstSpirit Cloud documentation pages; the docs and KB URLs listed
+above. First pass — URLs and the docs.firstspirit.com consolidation are in flux;
+not yet verified live.*

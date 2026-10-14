@@ -73,8 +73,7 @@ $CMS_END_IF$
 ```
 
 The documentation's own compact form is `|< < 2 / 4 > >|` built from `first`, `previous`,
-`directory` (or `pos`/`groupSize`), `next`, `last`. `[odfs]` `pos` **counts from 1** (the
-implementation returns the node's index plus one and documents it as "starting with 1") `[core]`, so
+`directory` (or `pos`/`groupSize`), `next`, `last`. `[odfs]` `pos` **counts from 1** `[core]`, so
 `pos` is printed as is — unlike `#global.pageParams.index` in a content projection, which counts
 from `0` `[odfs]`. Not yet seen on a live page group.
 

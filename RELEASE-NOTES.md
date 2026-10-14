@@ -1,5 +1,65 @@
 # Release Notes
 
+## 0.5.0 — 2026-10-14
+
+Skills in this release (each SKILL.md carries the same source commit in its `metadata:` block):
+
+- `firstspirit-api-reference` @ ba64160 (beta)
+- `firstspirit-templating-reference` @ ba64160 (beta)
+- `firstspirit-scripting` @ ba64160 (beta)
+- `firstspirit-rest-api` @ ba64160 (beta)
+- `firstspirit-external-sync-export` @ ba64160 (beta)
+- `firstspirit-operations` @ ba64160 (beta)
+- `firstspirit-contentcreator-extensions` @ ba64160 (beta)
+- `firstspirit-template-design` @ ba64160 (beta)
+- `firstspirit-cloud` @ ba64160 (beta)
+- `firstspirit-headless` @ ba64160 (beta)
+- `firstspirit-module-development` @ ba64160 (beta)
+- `firstspirit-ai-suite` @ ba64160 (beta)
+- `firstspirit-smartsearch` @ ba64160 (beta)
+- `firstspirit-collaboration` @ ba64160 (beta)
+
+Changes since 0.4.1 — three new product skills, and a customer-readability pass over every
+published skill after a review by the CaaS product team.
+
+- **New: `firstspirit-ai-suite`** — the FirstSpirit AI Suite in ContentCreator: the four assistants
+  and their limits, connecting a model (OpenAI or Azure endpoint, API key header, self-hosted
+  models), activating assistants per server and project, prompt configuration (system, global,
+  shared and project prompts; operations, options, tags, functions), calling AI from a script or
+  module (`GenerativeAIAgent`, `PromptConfigurationAgent`, structured output, function calling,
+  streaming) and the plugin points. Beta: the product team has not yet confirmed the text; the
+  open statements are marked in the skill.
+- **New: `firstspirit-smartsearch`** — SmartSearch: Prepared Searches, data generators and
+  indexing, the search API (GET and the 5.13 POST variant, autocomplete), smartsearch.js, the
+  SmartSearch Connect module and operations. Reviewed by the SmartSearch team before publication;
+  describes 5.12.2 with the 5.13 additions marked.
+- **New: `firstspirit-collaboration`** — the Collaboration Java API (comment threads on editors in
+  ContentCreator): agents, DTOs, enums, anchoring a conversation to an element, posting as an AI
+  agent. The API is `@Experimental`; names verified with javap, no live install behind the text.
+- **`firstspirit-headless`** — the CaaS product team's pre-publication review applied: internal
+  mechanism descriptions, version history and prototype references removed; the aggregation
+  timeout and the "internal fields" claim gone; `sync-gql-apps` as documented; CORS and the
+  proxy advice attributed; the ContentCreator API section reduced to a pointer; the
+  `firstspirit-pwa` pointers replaced by the public fsxa-api / PWA template; no `[verify]` marks
+  left in the text.
+- **Every published skill** — a readability pass against the public-text rules: process notes
+  ("at research time", "first pass", gap markers) removed, internal names and ticket keys removed,
+  pointers to unpublished
+  or retired skills replaced by the covering skill or the public documentation and Javadoc, the
+  ContentCreator focus wording aligned, a Professional Services helper reference removed from
+  `firstspirit-template-design`. Facts read in product source now carry a recorded verdict and
+  ship only where the documentation names the surface. The evidence tags (`[jar]`, `[javadoc]`,
+  `[odfs]`, `[core]`, `[observed]`, `[verify]`) stay by design: they tell the reader how a claim
+  was checked; `[verify]` was cleared only in `firstspirit-headless` and `firstspirit-smartsearch`.
+- **Renamed:** `firstspirit-headless/references/for-later-configuration-and-install.md` is now
+  `references/configuration-and-install.md` (same content, reviewer's title); the skill's index
+  points at the new name.
+- Restamped with those edits only: `firstspirit-api-reference`, `firstspirit-templating-reference`,
+  `firstspirit-scripting`, `firstspirit-rest-api`, `firstspirit-external-sync-export`,
+  `firstspirit-operations`, `firstspirit-contentcreator-extensions`, `firstspirit-template-design`,
+  `firstspirit-cloud`, `firstspirit-module-development`.
+
+
 ## 0.4.1 — 2026-10-12
 
 Skills in this release (each SKILL.md carries the same source commit in its `metadata:` block):

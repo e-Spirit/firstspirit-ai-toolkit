@@ -97,8 +97,8 @@ A consolidated launch checklist for a Cloud project (static delivery):
   **full generation + complete sync** (see
   [environments-and-workflow.md](environments-and-workflow.md)).
 - [ ] **Domain & DNS cutover** planned; **TLS certificate** in place for the
-  custom domain (confirm self-service vs. Support for cert/headers/WAF —
-  **OPEN**, see [hosting-and-delivery.md](hosting-and-delivery.md)).
+  custom domain (confirm with Support per setting for cert/headers/WAF, see
+  [hosting-and-delivery.md](hosting-and-delivery.md)).
 - [ ] **Cache & invalidation sanity checks** — confirm caching intent per type;
   verify invalidation worked; watch for **duplicate-URL / path-discrepancy**
   warnings.
@@ -129,8 +129,8 @@ A consolidated launch checklist for a Cloud project (static delivery):
 ### Compatibility Plans (Java / runtime rollouts)
 
 Ahead of raising the JVM (or the FirstSpirit runtime) under customer modules, the Cloud
-adds a Bamboo plan named like **"Compatibility (Eclipse Temurin N)"** that rebuilds each
-module against the target before the upgrade reaches any stage `[observed]`.
+adds a separate compatibility build that rebuilds each module against the target before
+the upgrade reaches any stage `[observed]`.
 
 - **Red** means the module will not build once the rollout lands; **green** means it is
   ready.
@@ -154,4 +154,4 @@ crownpeak.com/patchday-calendar; firstspiritstatus.crownpeak.com; support KB —
 Maintenance Window Schedule, Product Status Pages & Maintenance Notifications,
 SaaS Customer Logging quick start, Backup/recovery/data-consistency;
 docs.crownpeak.com/cloud-logging; the reference architectures (CaaS backup).
-First pass, version-dependent — see the skill's review log.*
+First pass, version-dependent; not yet verified live.*

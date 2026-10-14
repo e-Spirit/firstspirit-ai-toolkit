@@ -30,10 +30,8 @@ All components are wrapped in `<CMS_MODULE>`:
 
 ## Editor order
 
-Editors appear in the order of the components in the GOM `[odfs]`. One live session (2026-10-05)
-saw a form whose displayed order did not follow its GOM and traced the order to the project's
-`FS_META_DATA` definition `[observed]` — not reproduced, cause not proven `[verify]`. If an order
-change in the GOM has no effect, look there before anything else.
+Editors appear in the order of the components in the GOM `[odfs]`. If an order change in the GOM
+has no visible effect, check the project's `FS_META_DATA` definition before anything else `[verify]`.
 
 ## LANGINFOS pattern (used in all components)
 

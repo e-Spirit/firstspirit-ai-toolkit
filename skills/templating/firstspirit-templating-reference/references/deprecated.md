@@ -9,7 +9,7 @@ here is a signal to flag.
 
 | Deprecated / removed | Status | Use instead |
 |---|---|---|
-| `FS_LIST` | deprecated v5.2R3; **removed in version 2020-07** (the ODFS migration guide's "from 2020-01" was the planned date; actual removal was 2020-07 — SME). Still present in **older on-prem releases** before 2020-07, so legacy templates on those servers do contain it; on 2020-07+ forms with it can no longer be edited and produce no output, with no return after migration even after a downgrade. | `FS_CATALOG` / `FS_INDEX` / `CMS_INPUT_SECTIONLIST` by type — see mapping below |
+| `FS_LIST` | deprecated v5.2R3; **removed in version 2020-07** (the ODFS migration guide's "from 2020-01" was the planned date; actual removal was 2020-07). Still present in **older on-prem releases** before 2020-07, so legacy templates on those servers do contain it; on 2020-07+ forms with it can no longer be edited and produce no output, with no return after migration even after a downgrade. | `FS_CATALOG` / `FS_INDEX` / `CMS_INPUT_SECTIONLIST` by type — see mapping below |
 | `CMS_INPUT_PICTURE` | deprecated (survives only as a legacy inline example; no dedicated component page) | `FS_REFERENCE` with a `picture` filter (`<FILTER><ALLOW type="picture"/></FILTER>`) |
 
 ### FS_LIST → successor, by type
@@ -45,17 +45,16 @@ $CMS_VALUE(st_index.values.first.<field>)$     $-- right: navigate the record se
 
 ## Version-conditional (verify per project / version)
 
-- **`useLanguages="YES"`** carries an upstream note that it "will potentially no longer be
-  evaluated in FirstSpirit 5.2R5 and higher" (repeated across most input-component pages). This
-  is an aged, speculative warning — treat language-dependent content as version-sensitive and
-  verify against the project's actual version rather than trusting the note. Related:
+- **`useLanguages="YES"`**: the documentation carries a version-sensitive note on `useLanguages`
+  ("will potentially no longer be evaluated in FirstSpirit 5.2R5 and higher", repeated across most
+  input-component pages); verify against the project's version before relying on it. Related:
   `forbidPolyglotDataHierarchy` on `FS_CATALOG`.
 
 ## Client status
 
-- **SiteArchitect (the Java fat client) is being phased out** in favour of ContentCreator.
-  SiteArchitect-only surfaces and `…javaClientUrl` access still work but are on the way out;
-  prefer the ContentCreator path (`…webeditUrl`) where a choice exists. Not a component removal —
+- **New features focus on ContentCreator.** SiteArchitect (the Java client) and
+  `…javaClientUrl` access still work; prefer the ContentCreator path (`…webeditUrl`) where a
+  choice exists, since new functions (the AI Suite, for example) are fully available there. Not a component removal —
   a direction-of-travel fact worth noting when reading older templates.
 
 ## How deprecation appears in a form (diagnostic aid)

@@ -3,9 +3,9 @@ name: firstspirit-templating-reference
 description: >-
   Concrete lookup reference for FirstSpirit template development: template language ($CMS_VALUE$, $CMS_IF$, $CMS_FOR$, $CMS_REF$, $CMS_RENDER$, system objects, string operations, Navigation and PageGroup functions, content projection), GOM input components (CMS_INPUT_*, FS_REFERENCE, FS_CATALOG, FS_INDEX, FS_DATASET) and the datatype each yields, database schemas (table templates, column types, foreign keys, KEY column, queries, Remote Data), Rules (validation, visibility, editability, value), identifier and casing rules, deprecated components. Use whenever you need exact template syntax, the right input component, what a component produces and how to read it in the output channel, whether something is deprecated, or how a page becomes a PDF (template set, Apache FOP) — e.g. "syntax for CMS_FOR", "which component for a single choice", "what datatype does FS_REFERENCE produce", "is FS_LIST still supported", "review my Ruleset.xml". Explains GomSource.xml / Ruleset.xml / ChannelSource files.
 metadata:
-  source-commit: "2e7b7bc"
-  published: "2026-10-12"
-  toolkit-version: "0.4.1"
+  source-commit: "ba64160"
+  published: "2026-10-14"
+  toolkit-version: "0.5.0"
 ---
 
 > **Beta.** Early public release. Feedback welcome; behaviour and structure may change.
@@ -26,8 +26,8 @@ in `firstspirit-scripting`; export structure in downstream analysis.
 - **Look up, then stop.** Answer with the exact syntax, component, datatype, or rule and point
   into the reference file below — don't restate a whole catalogue inline.
 - **Settle output mode and client when they change the answer.** Classic (HTML) vs. headless
-  (JSON/CaaS) differs for some questions; so does SiteArchitect (the Java client, being phased
-  out) vs. ContentCreator. Note which applies when it matters.
+  (JSON/CaaS) differs for some questions; so does SiteArchitect (the Java client) vs. ContentCreator (the
+  focus of new features). Note which applies when it matters.
 - **Defer design decisions.** When the real question is "which design is right" or "what should
   I name this", hand off to `firstspirit-template-design`.
 
@@ -105,8 +105,8 @@ Loaded on demand — read the file that matches the question.
 | `content-projection.md` | datasets rendered as pages: PageRef → page → content section → table template, entries per page, `#global.pageParams`, detail pages |
 | `real-world.md` | production output shapes |
 
-> `references/common-patterns.md` (Java Access API / BeanShell) is **transitional** — it is out
-> of scope for templating and migrates to `firstspirit-scripting`. Use that skill for scripting.
+> Scripting is covered in `firstspirit-scripting`; `references/common-patterns.md` keeps a few
+> template-side idioms for convenience.
 
 <!-- feedback-footer:v1 -->
 

@@ -124,6 +124,9 @@ ships these (the `skills/` tree is the authoritative list):
 | `firstspirit-module-development` | `project/` | Building FirstSpirit modules (FSM): module descriptor and component annotations, Gradle layout, component types, packaging and deployment |
 | `firstspirit-operations` | `project/` | Client operations obtained through `OperationAgent` — dialogs, element forms, preview and client-script operations, each with its exact `perform(...)` parameter type and client |
 | `firstspirit-contentcreator-extensions` | `project/` | Extending ContentCreator: the `WE_API` JavaScript API, `ClientScriptOperation` / `ClientResourceOperation`, the Java plug-in interfaces, what does not work there |
+| `firstspirit-ai-suite` | `project/` | The FirstSpirit AI Suite in ContentCreator: the assistants and their limits, connecting a model, activating assistants per server and project, prompt configuration, the AI API from scripts and modules, plugin points |
+| `firstspirit-smartsearch` | `project/` | SmartSearch: Prepared Searches, data generators and indexing, the search API and autocomplete, smartsearch.js, the SmartSearch Connect module, operations |
+| `firstspirit-collaboration` | `project/` | The Collaboration Java API (experimental): comment threads on editors from code — agents, DTOs, anchoring a conversation to an element |
 | `firstspirit-headless` | `deployment/` | Headless delivery: CaaS Platform (REST and GraphQL), CaaS Connect, preview vs release, custom JSON output |
 | `firstspirit-cloud` | `deployment/` | FirstSpirit Cloud (the managed SaaS): what the platform does differently or does not allow, and how to build and run a project on it |
 | `firstspirit-external-sync-export` | `deployment/` | Running FS-CLI / FSDevTools to export and import a project as an external-sync tree on disk, for git-based workflows |

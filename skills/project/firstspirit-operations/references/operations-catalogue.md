@@ -33,7 +33,7 @@ The **only** dialog operation in the API (there is no `QuestionOperation`,
 | `setTitle` | `void setTitle(String)` | dialog title; each `Kind` has a localised default ("Question", "Warning", …) [jar] |
 | `setInitialAnswer` | `void setInitialAnswer(Answer)` | preselected answer; **default = the last answer added** [javadoc/odfs] |
 | `getConfigurator` | `<C extends ClientSpecificConfigurator> C getConfigurator(Class<C>)` `throws IllegalArgumentException` | client-specific tweaks; not yet catalogued [verify] |
-| **`perform`** | **`Answer perform(String question)`** | `@Nullable` per Javadoc — treat `null` as "closed without an answer" (the ODFS narrative says "always returns"; code to the Javadoc) |
+| **`perform`** | **`Answer perform(String question)`** | `@Nullable` per Javadoc — treat `null` as "closed without an answer" (code to the Javadoc signature) |
 
 `Kind` defaults (ODFS "Message Boxes"): `INFO` / `WARN` / `ERROR` → an "OK" button; `QUESTION`
 → "Yes" / "No". `Answer` is a marker interface (no methods) — compare the returned value with
@@ -42,7 +42,7 @@ the `Answer` you added using **`equals`**, as the ODFS example does.
 Client: SiteArchitect and ContentCreator. Two ContentCreator differences: **`WARN` and `INFO`
 render identically** (both with the exclamation icon — ODFS "Message Boxes"), and HTML in the
 message text renders in SiteArchitect but is **escaped in ContentCreator** [observed —
-field test 2026-09-11, reproduce]. All such differences: `references/client-capability-matrix.md`.
+live test 2026-09-11, reproduce]. All such differences: `references/client-capability-matrix.md`.
 
 Minimal confirm dialog — works from an FS_BUTTON (`ClientScriptContext`), where
 `context.showForm()` does not exist:
@@ -199,11 +199,11 @@ the Javadoc; not yet read [verify].
 
 Client availability for all of the above: `references/client-capability-matrix.md`.
 
-## Known documentation traps
+## Differences from the ODFS examples
 
-| Source | Says | Reality |
+| Source | ODFS example | On the jar |
 | --- | --- | --- |
-| ODFS "Working With Store Elements" | `context.requireSpecialist(OpenElementDataFormDialogOperation.TYPE)` | the class does not exist → `OpenElementDataFormOperation`; and operations are obtained via `OperationAgent.getOperation(…TYPE)`, not as specialists [jar] |
+| ODFS "Working With Store Elements" | `context.requireSpecialist(OpenElementDataFormDialogOperation.TYPE)` | the class is not on the jar → `OpenElementDataFormOperation`; and operations are obtained via `OperationAgent.getOperation(…TYPE)`, not as specialists [jar] |
 | Operation names | "open element form" sounds like one operation | two, with different `perform` parameter types (`DataProvider` vs `IDProvider`) and different setters — see the trap table above [jar] |
 | `PreviewOperation` by analogy with the form operations | `perform(element)` | `perform()` takes nothing; the element goes into `setElement(IDProvider)` first [jar] |
 | `ShowFormDialogOperation.setFormData` | "the result lands in the FormData I passed" | it does not — initial values only; the result is `perform`'s return value [javadoc] |

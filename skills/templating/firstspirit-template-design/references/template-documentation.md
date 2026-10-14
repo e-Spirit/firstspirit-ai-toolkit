@@ -131,7 +131,7 @@ Delete in reverse order. Confirm any destructive or side-effectful write before 
 ## Notes
 
 - This document is plain Markdown so it lives beside the templates and reads without tooling. If
-  a styled, shareable page is wanted, hand the finished document to the `doc-builder` skill.
+  a styled, shareable page is wanted, hand the finished document to a document renderer skill.
 - Keep it per creation task, not per template — a set built together is documented together, so
   the dependencies and build order stay in one place.
 - The component and datatype detail behind the table is in `components-and-tags.md`; naming rules

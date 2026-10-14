@@ -2,8 +2,8 @@
 
 An `FS_BUTTON` script, a `ClientScriptOperation`, or preview JavaScript calling `WE_API` runs
 **only when an editor clicks in ContentCreator**. Nothing in the REST API or the toolkit can
-drive that click. The 2026-09-11 field test lost four round-trips to this; the point of this
-page is to spend at most one.
+drive that click. Each wrong guess costs a client round-trip, so the point of this page is to
+spend at most one.
 
 ## 1. Pre-check headlessly — the REST parse probe
 
@@ -13,7 +13,7 @@ answers with an empty body. So it cheaply separates "my syntax is broken" from "
 wrong". Its limit: the REST context is a project script context with **no `getElement()`**,
 so any line that touches the current element fails there even when the script is correct in
 ContentCreator. Details, the request shape and the `type: MENU` caveat when creating scripts
-over REST: `firstspirit-rest-api` SKILL.md, section "Scripts". [odfs? no — `firstspirit-rest-api`, verified 0.0.23-beta]
+over REST: `firstspirit-rest-api` SKILL.md, section "Scripts".
 
 Pattern: keep the element-dependent part behind a guard so the probe reaches the end of the file.
 
@@ -31,7 +31,7 @@ Composite; not an official example. [verify]
 ## 2. Pre-check signatures — `javap`, not the Javadoc
 
 Every `perform(...)` you call: read its parameter type from the jar before the click
-(`firstspirit-operations` SKILL.md, "the one rule"). The two `ReflectError`s in the field test
+(`firstspirit-operations` SKILL.md, "the one rule"). The two `ReflectError`s in the live test
 were both signature mismatches a `javap` would have shown.
 
 ## 3. Pre-check the "does not work here" list
@@ -55,8 +55,8 @@ One click per iteration; make each click count:
 
 ## 5. Build the dialog first, wire it second
 
-The field test's task 6 needed four clicks because the dialog HTML, the click handler and the
-server round trip were all changed at once. Sequence that costs one click each and fails
+Changing the dialog HTML, the click handler and the server round trip at once means every
+failure needs several clicks to isolate. Sequence that costs one click each and fails
 loudly: (a) static dialog with `WE_API.Common.createDialog()` from the browser console — no
 script involved; (b) the script alone, returning a fixed value through `RequestOperation`;
 (c) join them.

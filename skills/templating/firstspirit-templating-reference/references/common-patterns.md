@@ -1,8 +1,7 @@
 # Common FirstSpirit Patterns
 
-> **Transitional — leaving this skill.** This file is Java Access API / BeanShell content, which
-> is out of scope for a templating reference. It migrates to the **`firstspirit-scripting`** skill;
-> use that skill for scripting. Kept here only until the migration lands.
+> Scripting is covered in `firstspirit-scripting`; this page keeps a few template-side idioms for
+> convenience.
 
 Frequently used Java API patterns for FirstSpirit development.
 

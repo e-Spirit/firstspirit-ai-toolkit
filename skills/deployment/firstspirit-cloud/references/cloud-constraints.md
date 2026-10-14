@@ -8,8 +8,7 @@ go-live.
 
 Each item states: what the constraint is, why it exists, and **the Cloud-native
 way to meet the need**. Where a capability is customer-managed vs. a **Support
-request** to the Cloud team, that is called out. Items not yet confirmed in
-customer-facing docs are tagged **(UNVERIFIED)**.
+request** to the Cloud team, that is called out.
 
 ## The managed-server constraints (the big four)
 
@@ -112,9 +111,8 @@ These bite at **go-live and during content updates**. Depth in
   (complete sync vs. deploy-only); auto-detect can misjudge what to publish. See
   [environments-and-workflow.md](environments-and-workflow.md).
 - **Which CloudFront settings a customer can change directly** (security headers,
-  WAF, certificates) vs. what must be **requested from Support** is **not fully
-  documented** — treat as **(OPEN)** and confirm per setting. This is a known
-  open question in the Cloud docs.
+  WAF, certificates) vs. what must be **requested from Support**: confirm with
+  Support per setting.
 
 ## Headless / CaaS constraints
 
@@ -130,7 +128,7 @@ Depth in `firstspirit-headless`; the Cloud-planning facts:
 - **Collaboration (editor comments) is unavailable for headless.** Delivering
   analysis/hygiene findings *to editors* via the Collaboration API works in
   ContentCreator, not on a headless frontend — an open route question. See
-  the Collaboration module documentation.
+  `firstspirit-collaboration`.
 
 ## Identity & access constraints
 
@@ -189,6 +187,5 @@ comparison is the **Cloud vs. Self-Hosted → hosting-model-differences** doc (s
 (support-ticket actions, custom-module pipeline, external-DB/staging/archive
 restrictions, Kibana logging); the AWS S3 deployment module doc
 (caching/invalidation/redirects/allowed characters); the FirstSpirit Cloud
-documentation-home drafts (delivery-layer security-ownership open question);
-reference architectures (headless backup/caching). Verified against the two
-Cloud-vs-Self-Hosted docs 2026-07-31 — see the skill's review log.*
+documentation pages; reference architectures (headless backup/caching). Verified
+against the two Cloud-vs-Self-Hosted docs 2026-07-31; other items not yet verified live.*

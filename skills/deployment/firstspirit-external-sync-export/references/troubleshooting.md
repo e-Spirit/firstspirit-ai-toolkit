@@ -73,7 +73,7 @@ de.espirit.firstspirit.common.ConnectError … Caused by: de.espirit.firstspirit
 **Cause:** the Access API jar in `lib/` is **older than the server build** — the websocket
 channel connects, then the server's version check refuses the client before authentication.
 The message tells you both builds. **Fix:** put the jar of the server's **exact** build into
-`lib/` — the server refuses any client build that differs, newer ones included `[core]` —  — on macOS the FSLauncher keeps one per build it has ever connected to,
+`lib/` — the server refuses any client build that differs, newer ones included `[core]` — on macOS the FSLauncher keeps one per build it has ever connected to,
 `~/.firstspirit/FSLauncher/jar/<build>_isolated/fs-isolated-client-*.jar`; the `test` command
 then reports `Connected to FirstSpirit server … of version <build>`. Keep exactly one API jar
 in `lib/`. → `fs-cli-setup.md` §2. *(Reproduced 2026-09-14: server 5.2.261011 rejected the
@@ -114,7 +114,7 @@ directory with unrelated content. → `export-command.md`.
 ### `[ExternalSync - Export] failed: Entity <table> [<id>] has no gid`
 ```
 de.espirit.firstspirit.store.access.nexport.exceptions.SyncOperationException:
-[ExternalSync - Export] failed: Entity translation [9409] has no gid.
+[ExternalSync - Export] failed: Entity <table> [<id>] has no gid.
 ```
 **This is working as intended, not a defect.** External sync exists to be
 **re-imported** (into the same or another project), and import must map each
@@ -157,5 +157,5 @@ identifiers (a "whole project" is an explicit list). → `export-command.md`.
 *Every message here was reproduced on fs-cli 4.8.9 against a FirstSpirit
 5.2.260815 Cloud instance (2026-08-03); the client-build-number and Java 25
 entries against a second, 5.2.261011 Cloud instance (2026-09-14). `[core]` = read in the
-FSDevTools 4.8.9 source, the FirstSpirit Core repository or the REST module 0.0.25-beta;
+FSDevTools 4.8.9 source or the REST module 0.0.25-beta;
 `[jar]` = javap on the 5.2.261011 runtime jar.*

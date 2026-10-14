@@ -3,18 +3,18 @@ name: firstspirit-operations
 description: >-
   Catalogue of FirstSpirit client operations obtained through OperationAgent: RequestOperation dialogs, OpenElementDataFormOperation / OpenElementMetaFormOperation, OpenMergeDialogOperation, PreviewOperation, ShowFormDialogOperation, SelectOptionOperation, ClientScriptOperation and more — each with the EXACT perform(...) parameter type, the configuration setters it really has, and the client (SiteArchitect / ContentCreator) it runs in. Use whenever a script or module needs to open a dialog, open an element's form, show a message or trigger a client action — e.g. "show a yes/no question from an FS_BUTTON", "open the data form of a page from a script", "why does perform(media) throw ReflectError", "which operation opens the meta form". First rule: check the perform parameter type before writing the call — a plausible operation name is not enough. Pair with firstspirit-scripting (your context object) and firstspirit-api-reference (the element types you pass in).
 metadata:
-  source-commit: "2e7b7bc"
-  published: "2026-10-12"
-  toolkit-version: "0.4.1"
+  source-commit: "ba64160"
+  published: "2026-10-14"
+  toolkit-version: "0.5.0"
 ---
 
 > **Beta.** Early public release. Feedback welcome; behaviour and structure may change.
 
 # FirstSpirit operations (`OperationAgent`)
 
-> **First pass (2026-09-14) — SME review pending.** Signatures marked **[jar]** in the
+> **Beta.** Signatures are jar-verified; client-availability cells marked `[verify]` are not yet confirmed live. Signatures marked **[jar]** in the
 > catalogue are verified by `javap` against `fs-isolated-runtime.jar` (FS 5.2.240208);
-> **[javadoc]** = FirstSpirit Access API Javadoc; **[observed]** = toolkit field test
+> **[javadoc]** = FirstSpirit Access API Javadoc; **[observed]** = live test
 > 2026-09-11, single session; **[verify]** = not yet confirmed. Client-availability cells
 > are `[verify]` until checked on a live install.
 
@@ -52,8 +52,8 @@ ops = context.requireSpecialist(OperationAgent.TYPE);   // context is a Speciali
 req = ops.getOperation(RequestOperation.TYPE);           // null if unavailable in this client
 ```
 
-`context.requireSpecialist(<Operation>.TYPE)` — as one ODFS page writes it — does **not**
-work: operations are not specialists. (That same page names a class that does not exist,
+`context.requireSpecialist(<Operation>.TYPE)` — as one ODFS page writes it — does not
+compile against the jar: operations are not specialists. (That same page names a class that is not on the jar,
 `OpenElementDataFormDialogOperation`; see the negatives table in
 `firstspirit-scripting/references/common-patterns.md`.)
 

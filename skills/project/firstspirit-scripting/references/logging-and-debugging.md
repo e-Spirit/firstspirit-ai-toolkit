@@ -56,8 +56,7 @@ trace a problem, then off again without touching the script.
 ## Running a script over REST — output capture (live)
 
 When a script is executed **over the REST API** (`POST …/scripts/{name}/execute`) rather than in
-a client, capturing its outcome needs care. These were proven live against a real project
-(source: PS website-migration tool, `knowledge/fs-facts.md` §2):
+a client, capturing its outcome needs care. These were proven live against a real project:
 
 - **HTTP `200` does not mean the script succeeded.** It only means the script ran to its end
   without an *unhandled* exception. A script that caught its error, stopped halfway, or never
@@ -66,9 +65,8 @@ a client, capturing its outcome needs care. These were proven live against a rea
 - **An uncaught exception or a syntax error answers `500`**, with a JSON body whose `error` field
   carries the BeanShell message (`bsh.ParseException: Parse error at line 1, column 90.
   Encountered: |`, or `TargetError … Target exception: java.lang.IllegalStateException: boom`).
-  The engine turns both into an unchecked `ExecutionException` that the REST module does not
-  catch `[core]`; the log records written *before* the throw are lost from the response (live
-  2026-10-09, REST module 0.0.25-beta).
+  The log records written *before* the throw are lost from the response (live 2026-10-09,
+  REST module 0.0.25-beta).
 - **The response body is the log-listener output — nothing else.** Each record is appended as
   `[LEVEL] message` with **no separator between records** (`[INFO] LOGGED[WARN] WARNED`);
   `print(...)`, the `return` value and `result.setValue(...)` never appear (a script that only
@@ -87,9 +85,8 @@ a client, capturing its outcome needs care. These were proven live against a rea
 - `setLock(boolean)` / `save(String)` are **recursive** (whole subtree); the two-argument forms
   `setLock(boolean, boolean)` / `save(String, boolean)` are not — use those to lock/save a single
   element (already the safe pattern in [common-patterns.md](common-patterns.md)).
-- **`unifyUid` defaults to `false`:** `GlobalContentArea.createGCAPage(uid, template)` delegates to
-  the three-argument form with `false` `[core]` and throws `DuplicateReferenceNameException` on a
-  collision, like the SiteStore create. The silent rename exists only in the SiteArchitect
-  *create* action, which passes `true` explicitly `[core]`. Spell the flag out on every create
-  rather than relying on the default. (An earlier version of this bullet said the opposite; the
-  claim came from a migration tool's notes and was not checked against the source.)
+- **`unifyUid` defaults to `false`:** `GlobalContentArea.createGCAPage(uid, template)` behaves like
+  the three-argument form with `unifyUid=false` `[core]` and throws `DuplicateReferenceNameException` on a
+  collision, like the SiteStore create. The silent rename happens only when SiteArchitect itself
+  creates the page, because the client asks for a unique uid `[core]`. Spell the flag out on every create
+  rather than relying on the default.

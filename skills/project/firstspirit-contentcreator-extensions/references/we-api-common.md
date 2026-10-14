@@ -116,7 +116,7 @@ top.WE_API.Common.execute("class:com.example.MyExecutable", {}, function (result
 - Execution is **asynchronous**; the return value is delivered only through the callback.
   `callback` may be a function object or the *name* of a function. [odfs]
 - **The parameters may not arrive.** The ODFS page does not say *how* they surface, and in
-  the 2026-09-11 field test they did **not** surface at all — neither in
+  the 2026-09-11 live test they did **not** surface at all — neither in
   `context.getProperties()` nor as script variables. Single observation; details and the
   workaround in `references/does-not-work-in-contentcreator.md`. Treat the result direction
   (callback) as reliable and the parameter direction as unproven. [observed] [verify]

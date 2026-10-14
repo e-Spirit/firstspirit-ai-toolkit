@@ -60,9 +60,9 @@ Child tags:
 - `<TEMPLATE uid="Schema.table"/>` -- Table template reference (mandatory `uid` attribute, format: `SchemaName.tableName`)
 
 Notes:
-- Referenced datasets must have a GID column (`FS_GID`) `[odfs]`; the implementation falls back
-  to the primary key for rows without a GID and logs that the database "has to be updated for
-  Index-use" `[core]` — treat the GID as required.
+- Referenced datasets must have a GID column (`FS_GID`) `[odfs]`; a row without a GID falls back
+  to its primary key and a warning is logged asking for the database to be updated for index
+  use `[core]` — treat the GID as required.
 - The table template may belong to **any schema** of the project; the lookup is by UID over the
   whole Template Store `[core]`. Stored per entry: `{gid, table, schema}` `[core]`; editor order
   is kept.

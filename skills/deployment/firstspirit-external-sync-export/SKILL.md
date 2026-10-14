@@ -3,9 +3,9 @@ name: firstspirit-external-sync-export
 description: >-
   Run the FirstSpirit Command Line Interface (fs-cli / FSDevTools / fsdevtools) against a server: export a project (stores, project properties) to an external-sync directory on disk, or import a sync directory back. Use it to keep a project in git, work on its source outside the server, move a project to another server, or build a git-based pipeline on a self-hosted or local server. Covers installing fsdevtools, the version-matched Access API jar (fs-isolated-runtime), the JRE --add-opens flags, connection modes (HTTP / HTTPS / SOCKET; Cloud needs HTTPS 443, Keycloak SSO), authenticating without exposing a password, the export command (store identifiers, projectproperty, path:, entities:, schema:, --useReleaseState, --keepObsoleteFiles), the import command (--layerMapping, --import-comment, --permissionMode) and a failure→fix table for the common errors. Triggers on "external sync", "FSDevTools", "fs-cli", "export a FirstSpirit project to disk", "fs-cli import", "layer mapping", "connect fs-cli to Cloud".
 metadata:
-  source-commit: "2e7b7bc"
-  published: "2026-10-12"
-  toolkit-version: "0.4.1"
+  source-commit: "ba64160"
+  published: "2026-10-14"
+  toolkit-version: "0.5.0"
 ---
 
 > **Beta.** Early public release. Feedback welcome; behaviour and structure may change.
@@ -100,15 +100,10 @@ Read `references/export-command.md` before trusting the identifier list — a
   Import the complete tree, into a project whose settings (languages, resolutions,
   structure) match the source. See `references/import-command.md`.
 
-## Release gate — before any customer project
+## Data in the export
 
-The portfolio's **hard legal/anonymisation gate (G1)** applies to this skill by
-its nature: an external-sync export can contain **user data** (the `USERS`
-project property, editor names, dataset content). Producing an export of an
-**internal reference / demo / website project** is fine. Producing one of a
-**customer or partner project** is blocked until the legal-approval and
-data-anonymisation approach clears (the portfolio governance docs). Do not export a
-customer project "just to try it out" ahead of that sign-off.
+**Data in the export.** An export contains user data (`USERS`, editor names,
+dataset rows); handle it under your organisation's data-protection rules.
 
 <!-- feedback-footer:v1 -->
 

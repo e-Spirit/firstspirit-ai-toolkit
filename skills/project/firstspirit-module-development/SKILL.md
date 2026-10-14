@@ -14,9 +14,9 @@ description: >-
   "ValueService for a rule", "reject an upload", "run code when a page is saved",
   "connect from my IDE". Object model: firstspirit-api-reference.
 metadata:
-  source-commit: "2e7b7bc"
-  published: "2026-10-12"
-  toolkit-version: "0.4.1"
+  source-commit: "ba64160"
+  published: "2026-10-14"
+  toolkit-version: "0.5.0"
 ---
 
 > **Beta.** Early public release. Feedback welcome; behaviour and structure may change.
@@ -58,7 +58,8 @@ grade code, script-level convenience.
   public API since 2024 — see the stability signals in
   [references/best-practices.md](references/best-practices.md).
 - **Defer.** The object model / agents a component calls → `firstspirit-api-reference`.
-  BeanShell scripts → `firstspirit-scripting`. Deep plugin docs → the FirstSpirit ODFS documentation.
+  BeanShell scripts → `firstspirit-scripting`. Client plugins → `firstspirit-contentcreator-extensions`;
+  everything else in plugin development → the ODFS *Plugin development* pages.
 
 ## Quick answers
 
@@ -99,8 +100,8 @@ grade code, script-level convenience.
 - **ContentCreator toolbar / inline-edit / status-note / timeline plug-ins:** the Java
   interfaces live in `firstspirit-contentcreator-extensions/references/java-plugins.md`;
   this skill covers the `@WebAppComponent` packaging they need.
-- **A config dialog:** a `<configurable>` class (`Configuration<E>`); in practice
-  extend `GenericConfigPanel<E>` — one `builder()` line per value.
+- **A config dialog:** a `<configurable>` class implementing `Configuration<E>` (Swing
+  panel, properties file, listeners); read the values back with `ModuleAdminAgent`.
 - **Build for the Cloud pipeline:** Kotlin-DSL Gradle build driven by `gradle.properties`, the
   FSM plugin plus `maven-publish` and the release plugin, credentials only in the user-level
   `~/.gradle/gradle.properties`, at least one passing unit test. Gradle 9 needs FSM plugin 7 or
@@ -139,7 +140,7 @@ grade code, script-level convenience.
 
 *Sources: a set of small example modules (module.xml and Java component sources),
 three production connector modules, and the FirstSpirit Access/Developer API
-(the FirstSpirit ODFS documentation).*
+(the public Javadoc).*
 
 <!-- feedback-footer:v1 -->
 

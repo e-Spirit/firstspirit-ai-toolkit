@@ -79,8 +79,8 @@ Two related fragment parameters `[odfs]`:
 
 ## `expansionVisibility` — which nodes render
 
-The parameter is **mandatory**: a `$CMS_FUNCTION$` call without it fails with the parsing
-error *parameter 'expansionVisibility' is missing*, and a value outside the table below fails
+The parameter is **mandatory**: a `$CMS_FUNCTION$` call without it fails with a parsing
+error naming the missing parameter, and a value outside the table below fails
 at render time `[core]`.
 
 | Value | Renders `[odfs]` |

@@ -397,12 +397,11 @@ public class SeoUrlFactory implements UrlFactory { … }
 The plugin then emits the descriptor below — hand-write it only if you maintain the
 descriptor yourself. The documented `<class>` is the *interface*
 **`de.espirit.firstspirit.generate.UrlCreatorSpecification`** `[odfs]` (Advanced URLs →
-Configuration, FirstSpirit 2026.5). That works because the server never instantiates this
-`<class>`: it is a type key. The module manager matches every `<public>` whose class *is or
-implements* `UrlCreatorSpecification`, then builds its own internal specification object
-from the `<configuration>` block `[core]`. Consequently the internal implementation class
-`UrlCreatorSpecificationImpl` (seen in one field module) matches too, but it is
-`@ApiStatus.Internal` `[core]` — use the interface name the documentation gives.
+Configuration, FirstSpirit 2026.5). The `<class>` of this component is a type key, not a
+class to instantiate: a `<public>` component declaring the interface is picked up as a URL
+creator specification and its settings are read from the `<configuration>` block `[core]`.
+Use the interface name the documentation gives, never an implementation class: anything
+outside the documented Access API is internal and may change without notice.
 
 ```xml
 <public>
@@ -446,8 +445,7 @@ plugin you provide a `module-isolated.xml` **template** in the module directory
 achieve the same: the class is not part of the Access API, and a delegating wrapper can only
 set the parameters the factory reads itself, not those evaluated by the surrounding URL
 mechanism (`useRegistry` and friends). The descriptor route is the sanctioned one precisely
-because the class name appears only as configuration, not in code (confirmed internally at
-FirstSpirit, 2026-09-25). Put the entry in a module that carries general project
+because the class name appears only as configuration, not in code (verified 2026-09-25). Put the entry in a module that carries general project
 infrastructure, not in a single-purpose module (a DAP, say) where it would be forgotten.
 
 Implement `de.espirit.firstspirit.generate.UrlFactory`:
@@ -495,7 +493,7 @@ templateSet)` to honour editor-defined paths, but mind its contract:
   page's template set; Media Store folders take `null`; and a language-independent media
   URL can arrive with a **null language** — guard it (skip the lookup) rather than crash.
 - **The Site Store root can hold an API-set path too.** The GUI can't assign a SEO URL to
-  the store root (CORE-3344, won't-fix), but the API can, and generation honours it. If
+  the store root (a known limitation), but the API can, and generation honours it. If
   you walk the folder tree yourself, run the `lookupPath` on the root *before* you skip
   emitting its uid — otherwise a root path is silently ignored.
 
@@ -538,14 +536,14 @@ overloads also declare `IOException`. The interface contract `[javadoc]`:
 - The hook is only called while the `Media` **holds a lock**; `postProcess` runs after the
   server has stored the content, and no explicit save is needed.
 
-What triggers it (confirmed internally at FirstSpirit, 2026-09-29): technically **every
+What triggers it (verified 2026-09-29): technically **every
 `File.setFile(...)` / `Picture.setPicture(...)` call**, i.e. whenever the binary content
 changes — regardless of whether the client was SiteArchitect, ContentCreator, the REST API,
 an External Sync import or a script. For pictures the hook runs **once per resolution**.
 *Defining* a crop alone does **not** trigger it (no binary changes); rename, metadata edits,
 move and copy do not either.
 
-Field observations from a Professional Services upload-hook module `[observed]`, check
+Field observations from an upload-hook module `[observed]`, check
 against your server version:
 
 - The exception **message is shown to the editor** — write it for them, not for the log.
@@ -581,7 +579,7 @@ The contract `[javadoc]` (agent available since 5.2.210505):
 - A filter or listener that implements `Closeable` is closed when the underlying
   `Connection` closes; a closed connection delivers no more events.
 
-Field observations from Professional Services modules `[observed]`:
+Field observations from production modules `[observed]`:
 
 - **Project-scoped broker.** Get the agent from `BrokerAgent.getBrokerByProjectId(id)`;
   a server-scoped broker did not deliver element events. A `ProjectApp` receives a
@@ -596,7 +594,7 @@ A custom form component (a "gadget") is a `<public>` component whose `<class>` i
 `de.espirit.firstspirit.module.GadgetSpecification` `[odfs]` (FirstSpirit 2026.5) and whose
 `<configuration>` names your classes. Like the UrlFactory `<class>`, this is a type key the
 module manager matches, not a class you implement: it is on the 5.2.240208 runtime jar but
-no longer on 5.2.261011, while the documentation keeps the name `[jar]`. Four parts, all in
+no longer on 5.2.261011; the documentation uses this name as the type key `[jar]`. Four parts, all in
 the Access API `[jar]`:
 
 | Part | Interface | Runs in |
@@ -607,7 +605,7 @@ the Access API `[jar]`:
 | Value engineer | `de.espirit.firstspirit.client.access.editor.ValueEngineerFactory<T, F>` → `ValueEngineer<T>` (`write`/`read` node lists, `getEmpty`, `isEmpty`, `copy`) | wherever the value is (de)serialised |
 
 Descriptor shape (`@GadgetComponent` on the GOM class generates it — see
-`multi-project-layout.md`; the official example collection still hand-writes it, as noted in the skill's review log):
+`multi-project-layout.md`; the official example collection still hand-writes it):
 
 ```xml
 <public>
@@ -659,27 +657,14 @@ Pitfalls from the PS universal-input-component example `[observed]`:
 ## Configurable — the ServerManager config dialog — `<configurable>`
 
 A component's `<configurable>` class provides the dialog behind the *configure*
-button in ServerManager (for ProjectApps, Services, WebApps). The raw contract is
-`Configuration<E extends ServerEnvironment>` — but that means hand-writing Swing,
-file read/write, and listeners.
+button in ServerManager (for ProjectApps, Services, WebApps).
 
-In practice many modules use the **GenericConfiguration** helper
-(`com.espirit.ps.psci.module:generic-configuration`): extend
-`GenericConfigPanel<E>` and declare one line per value.
-
-```java
-public class DemoProjectConfig extends GenericConfigPanel<ProjectEnvironment> {
-    @Override protected void configure() {
-        builder()
-            .title("Dialog title")
-            .text("Label 1", "propName1", "default value")
-            .text("Label X", "propNameX", "", "Some tooltip")
-            .checkbox("Check me", "boolProp", false)
-            .password("Secret key", "passProp", "")
-            .button("Test", "testBtn", testAction, "Test connection");   // ExecuteAction
-    }
-}
-```
+The class implements `Configuration<E extends ServerEnvironment>`: `E` is `ServerEnvironment` (Service),
+`ProjectEnvironment` (ProjectApp) or `WebEnvironment` (WebApp) `[jar]`. It builds the
+Swing panel, reads and writes its values (a properties file in the component's
+configuration directory is the usual choice) and raises the listeners. Helper
+libraries that wrap this contract exist; if you use one, ship it **module-scoped**:
+a server-scoped copy from one module forces its version on every other module.
 
 ```xml
 <project-app>
@@ -689,19 +674,8 @@ public class DemoProjectConfig extends GenericConfigPanel<ProjectEnvironment> {
 </project-app>
 ```
 
-- Choose the type param by target: `GenericConfigPanel<ServerEnvironment>`
-  (Service), `<ProjectEnvironment>` (ProjectApp), `<WebEnvironment>` (WebApp).
-- Values persist to a properties file (default `configuration.properties`), keyed
-  by the property name.
-- **Read values back** (ProjectApp, v1.2.0+):
-  `DemoProjectConfig.values(broker, DemoProjectApp.class).getString("propNameX")` —
-  do this once in an init method (it's a server call), not in a hot path. Older
-  path: `LegacyModuleAgent.getProjectAppConfigProperties(...)` — still on the jar, but
-  `ModuleAdminAgent.getProjectAppConfig(module, app, project)` `[jar]` is the favoured API
-  (confirmed internally at FirstSpirit, 2026-09-18).
-- Also offers hidden values, "secret" values (revealed by a key sequence — for
-  PreSales feature switches), before/after-save listeners, and `setFormValue(...)`.
-- **Scope discipline (critical):** ship GenericConfig **module-scope only** — a
-  server-scope copy from any module forces its version on all others. It depends
-  on `designgridlayout` (add it too if not using Maven). After first install,
-  restart ServerManager and open the dialog once so defaults are written.
+- **Read values back:** `ModuleAdminAgent.getProjectAppConfig(module, app, project)` `[jar]`
+  is the favoured API (verified 2026-09-18); `LegacyModuleAgent.getProjectAppConfigProperties(...)`
+  is still on the jar. Do it once in an init method (it is a server call), not in a hot path.
+- After the first install, restart ServerManager and open the dialog once so the defaults are
+  written.

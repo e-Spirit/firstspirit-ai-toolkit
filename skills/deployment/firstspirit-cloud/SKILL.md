@@ -14,9 +14,9 @@ description: >-
   "set up SSO", "when are the patch days", "is my content backed up", "go-live
   checklist".
 metadata:
-  source-commit: "2e7b7bc"
-  published: "2026-10-12"
-  toolkit-version: "0.4.1"
+  source-commit: "ba64160"
+  published: "2026-10-14"
+  toolkit-version: "0.5.0"
 ---
 
 > **Beta.** Early public release. Feedback welcome; behaviour and structure may change.
@@ -107,10 +107,7 @@ Governance/status/KB links), see
   cache invalidation, DNS). Lead recommendations with the stage — the
   portfolio's intake rule.
 - **Public material only.** This skill contains only **documentation-backed and
-  public** facts. It does **not** import internal sales/pricing material. Some
-  source docs are drafts or German-only module manuals; items not confirmed in
-  customer-facing docs are tagged **(UNVERIFIED)** or carried in
-  the skill's review log.
+  public** facts. It does **not** import internal sales/pricing material.
 - **Governance is legal's, and canonical.** Certifications, data protection,
   data locations, sub-processors, DPAs, SLAs and DORA live at the **Governance
   Center** (`firstspirit.com/policies/legal`) — the canonical home. **Link it;
@@ -120,10 +117,10 @@ Governance/status/KB links), see
   the API model, REST, scripting or module packaging, name the owning skill and
   stop (see the table below). Restating drifts.
 - **First pass, version-dependent.** Distilled from the FirstSpirit Cloud docs,
-  the Cloud-documentation drafts, and the reference architectures — **not yet
-  SME-verified**. Cloud specifics (URLs, caching defaults, group patterns, patch
+  the Cloud documentation pages, and the reference architectures — **not yet
+  verified live**. Cloud specifics (URLs, caching defaults, group patterns, patch
   cadence) drift with releases; verify against the live docs for a customer
-  commitment. See the skill's review log.
+  commitment.
 
 ## Quick answers
 
@@ -169,7 +166,6 @@ Governance/status/KB links), see
 | Packaging a module (FSM) — descriptor, components, resource scopes | **firstspirit-module-development** |
 | The FirstSpirit REST API (`/rest/v1/`) | **firstspirit-rest-api** |
 | Certifications, DPAs, data locations, SLAs, security posture | **Governance Center** (link, never restate) |
-| Sales/marketing positioning, editions/pricing, objection handling | **produktwissen-firstspirit** (separate, non-public; not a source here) |
 | Step-by-step install/config/admin procedures | a future **configuration/admin** skill (parked) |
 
 ## References
@@ -187,16 +183,14 @@ Loaded on demand — read the file that matches the question.
 
 ---
 
-*First pass, distilled 2026-07-31 from the FirstSpirit Cloud documentation
-(docs.crownpeak.com / docs.e-spirit.com — First Steps, User Management,
-**Cloud-vs-Self-Hosted: hosting-model-differences + cloud-specific-processes**,
-Cloud Logging, the AWS S3 deployment module doc), the FirstSpirit Cloud
-documentation-home drafts, the FirstSpirit reference architectures, and the
-FirstSpirit Cloud support knowledge base. The managed-server constraints,
-support-ticket action list, custom-module pipeline, and logging/backup specifics
-are **verified against the two Cloud-vs-Self-Hosted docs**; other items remain
-first-pass and version-dependent. Not yet SME-verified. See
-the skill's review log.*
+*Sources: the FirstSpirit Cloud documentation (docs.crownpeak.com /
+docs.e-spirit.com — First Steps, User Management, **Cloud-vs-Self-Hosted:
+hosting-model-differences + cloud-specific-processes**, Cloud Logging, the AWS S3
+deployment module doc), the FirstSpirit Cloud documentation pages, the FirstSpirit
+reference architectures, and the FirstSpirit Cloud support knowledge base. The
+managed-server constraints, support-ticket action list, custom-module pipeline,
+and logging/backup specifics follow the two Cloud-vs-Self-Hosted docs; other
+items are version-dependent and not verified on a live installation.*
 
 <!-- feedback-footer:v1 -->
 

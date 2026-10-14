@@ -76,8 +76,7 @@ language-independent automatically — its own `useLanguages="yes"` is ignored, 
 two-level configuration does not fail to save; it quietly collapses to one level. So design for a
 single level on purpose rather than leaning on the flatten. The old behaviour
 (`forbidPolyglotDataHierarchy="no"`) did honour multiple levels, and that is exactly the polyglot
-hierarchy that caused broken translation, poor editor usability, and content that could not be
-output or edited.
+hierarchy, which produced inconsistent translations and hard-to-edit content.
 
 **Migration is out of scope, and can lose data.** Turning `forbidPolyglotDataHierarchy` on in a
 legacy project that already holds nested language-dependent content can cause data loss. That is

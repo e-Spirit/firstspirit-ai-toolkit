@@ -3,9 +3,9 @@ name: firstspirit-scripting
 description: >-
   Concrete lookup reference for FirstSpirit scripting with BeanShell: the script types and their bound `context` objects (menu, context-menu, workflow, Content2/dataset, FS_BUTTON, template/generation, schedule, PermissionService), BeanShell language essentials, logging and debugging, and the safe Access-API patterns (lock/save/unlock, iteration, store navigation, form data, transitions). Use whenever you write, review or debug a FirstSpirit script — e.g. "which context object do I get in a workflow script", "how do I lock and save an element in BeanShell", "how do I log from a script", "how do I read a form field", "call a script from a template with $CMS_RENDER$", "open a dialog or an element's form from a client script" (operations via OperationAgent). Also use it whenever the user asks for a BeanShell ("Bean Shell") script or a `.bsh` file, even without naming FirstSpirit — outside FirstSpirit, BeanShell is almost never used.
 metadata:
-  source-commit: "2e7b7bc"
-  published: "2026-10-12"
-  toolkit-version: "0.4.1"
+  source-commit: "ba64160"
+  published: "2026-10-14"
+  toolkit-version: "0.5.0"
 ---
 
 > **Beta.** Early public release. Feedback welcome; behaviour and structure may change.
@@ -13,7 +13,7 @@ metadata:
 # FirstSpirit scripting reference
 
 Fast, factual lookup for **FirstSpirit scripting with BeanShell**. Where
-the FirstSpirit ODFS documentation is the broad knowledge base (full API, docs, tutorials),
+the FirstSpirit documentation (ODFS) and the Access API Javadoc are the broad knowledge base,
 `firstspirit-templating-reference` covers template-language *output* syntax, and
 `firstspirit-api-reference` catalogues the Access-API *object model* (stores,
 elements, agents), this skill answers the concrete questions that come up while
@@ -48,9 +48,9 @@ BeanShell scripts are a **lightweight** way to add behaviour. Before writing one
 - **Settle client and mode when it matters.** Some behaviour differs between
   SiteArchitect and ContentCreator, and between preview and release generation.
   Note which applies when it changes the answer.
-- **Defer design/API depth.** For full Access-API signatures, hand off to
-  the FirstSpirit ODFS documentation; for form (GOM) and template-output syntax, use
-  `firstspirit-templating-reference`.
+- **Defer design/API depth.** For the object model and the agents, hand off to
+  `firstspirit-api-reference`; for signatures beyond it, the Access API Javadoc. For form
+  (GOM) and template-output syntax, use `firstspirit-templating-reference`.
 
 ## Quick answers
 
@@ -82,7 +82,7 @@ Loaded on demand — read the file that matches the question.
 ---
 
 *Sources: FirstSpirit online documentation (Template development → Scripting) and
-the FirstSpirit Access API, as bundled in the FirstSpirit ODFS documentation.*
+the FirstSpirit Access API Javadoc.*
 
 <!-- feedback-footer:v1 -->
 

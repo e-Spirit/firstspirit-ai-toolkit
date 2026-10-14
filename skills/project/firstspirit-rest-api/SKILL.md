@@ -9,9 +9,9 @@ description: >
   media upload, content search. Also use when the user mentions "FirstSpirit REST API" or asks how to read/write
   content via the API.
 metadata:
-  source-commit: "2e7b7bc"
-  published: "2026-10-12"
-  toolkit-version: "0.4.1"
+  source-commit: "ba64160"
+  published: "2026-10-14"
+  toolkit-version: "0.5.0"
 ---
 
 > **Beta.** Early public release. Feedback welcome; behaviour and structure may change.
@@ -20,7 +20,7 @@ metadata:
 
 ## Critical Rules (read first — these cause most failures)
 
-1. **PATCH on `/form/{editor}` needs `name` (equal to the editor in the URL), `type` and `content`.** `configuration`, `description` and `language` are ignored on write; FS_REFERENCE content needs only `{"uid":"…","uidType":"…"}` (clear with `{"empty":true}`) `[core]` (module source `0.0.23-beta` to `0.0.25-beta`; a minimal scalar PATCH verified live on `0.0.25-beta`). Still use **GET → jq → PATCH** for anything structured (FS_CATALOG cards, references, links): the GET response is valid PATCH input and already has the right `content` shape.
+1. **PATCH on `/form/{editor}` needs `name` (equal to the editor in the URL), `type` and `content`.** `configuration`, `description` and `language` are ignored on write; FS_REFERENCE content needs only `{"uid":"…","uidType":"…"}` (clear with `{"empty":true}`) `[core]` (REST module `0.0.23-beta` to `0.0.25-beta`; a minimal scalar PATCH verified live on `0.0.25-beta`). Still use **GET → jq → PATCH** for anything structured (FS_CATALOG cards, references, links): the GET response is valid PATCH input and already has the right `content` shape.
 2. **Never inline JSON with `-d '…'`**. Apostrophes/quotes in German content break shell parsing. Always write JSON to `./tmp/payload.json` and send with `--data-binary @./tmp/payload.json`.
 3. **Language suffix `/{LANG}` is required when `usesLanguages: true`** in the editor's configuration. Codes are **UPPERCASE** (`DE`, `EN`, `FR`). Check via `GET /projects/{id}/languages/`.
 4. **Send the documented Content-Type** (see table below). The module never answers `415`: a wrong type on a JSON endpoint ends in `500` (a `text/plain` PATCH to `/form/{editor}` → `500`, verified live on `0.0.23-beta` and `0.0.25-beta`); endpoints with a raw text body and no declared input type (GOM, rules, channel sources) accept any type silently `[core]`.
@@ -38,6 +38,9 @@ source .env
 # empty and every call fails with a misleading 401.
 mkdir -p ./tmp   # JSON payloads go here; avoids shell-quoting issues
 ```
+Add `.env` to your project's `.gitignore` (the smoke test's `results/` and `logs/` too, see below).
+On a shared host prefer a curl config file (`curl -K <file>` with `user = "name:password"`, mode 600)
+over `-u` so the password is not in the process list.
 
 Standard curl pattern (read):
 ```bash
@@ -66,7 +69,7 @@ reference, medium, dataset and section template — use a test project; `--scrip
 `/scripts/…/execute`). Run it once on a new server or after a
 REST-module update; report any FAIL with the `results/firstspirit-rest-api/<run>/` folder attached
 (one line per run is appended to `logs/firstspirit-rest-api.log`; both sit under `FS_OUT_ROOT`,
-else the skills monorepo root, else the working directory — add `results/` and `logs/` to your
+else the skills monorepo root, else the working directory — add `results/`, `logs/` and `.env` to your
 project's `.gitignore` when you run it inside a repo). The run
 also keeps a snapshot of the server's OpenAPI spec (`results/firstspirit-rest-api/openapi/<host>/` under the shared output root; override with `FS_OPENAPI_SNAPSHOTS`) and prints a
 WARN with a diff when the API surface changed since the last run — the cue to re-check the
@@ -106,7 +109,7 @@ Read [references/content-catalog.md](references/content-catalog.md)
 **Search & Discovery** (find elements, check references):
 Read [references/search-and-discovery.md](references/search-and-discovery.md)
 
-## Playbook: Duplicate a Page (e.g. city event variant)
+## Playbook: Duplicate a Page (e.g. event variant)
 
 Standard sequence for copying an existing page, registering it in the SiteStore and patching fields. Steps with *(∥)* may run in parallel.
 
@@ -124,7 +127,7 @@ Standard sequence for copying an existing page, registering it in the SiteStore 
    ```bash
    curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
      -X PATCH -H "Content-Type: application/json" \
-     -d '{"name":"DMEXCO Cologne","language":"EN"}' \
+     -d '{"name":"Example Event","language":"EN"}' \
      "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/pages/{copiedUid}/rename"
    ```
    > **`/rename` sets the display name, not the uid** (verified 0.0.23-beta). The body is
@@ -140,7 +143,7 @@ Standard sequence for copying an existing page, registering it in the SiteStore 
      "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/pages/{copiedUid}" | jq '.id')
    curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
      -X POST -H "Content-Type: application/json" \
-     -d "{\"uid\":\"{copiedUid}\",\"pageId\":$PAGE_ID,\"location\":\"/resources/discover/event/\"}" \
+     -d "{\"uid\":\"{copiedUid}\",\"pageId\":$PAGE_ID,\"location\":\"/events/\"}" \
      "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/page-references/"
    ```
 
@@ -151,7 +154,7 @@ Standard sequence for copying an existing page, registering it in the SiteStore 
 
 Key efficiency rules for this flow:
 - Do **not** explore field structure by reading one field at a time — fetch the whole section form via `GET …/sections/{section}/form` once, then address fields by name.
-- Use `search/by-uid` once up front to discover media UIDs you will reference (e.g. `skyline_trier`) instead of guessing.
+- Use `search/by-uid` once up front to discover media UIDs you will reference (e.g. `hero_image`) instead of guessing.
 - Keep the mutation list flat: one file per editor, one PATCH per editor, dispatched concurrently.
 
 ## Endpoint Quick Reference
@@ -265,8 +268,8 @@ GET    /projects/{id}/media/{uid}/revisions/    GET .../revisions/{revisionId}
 ```
 
 ### Data Sources & Datasets
-> **Dataset writes are not working yet in the beta module** (confirmed internally at FirstSpirit,
-> 2026-10-07). On `0.0.25-beta` creating a dataset answers `500 ValidationError` on every data source
+> **Dataset writes are not working yet in the beta module** (known limitation of the beta module,
+> verified 2026-10-07). On `0.0.25-beta` creating a dataset answers `500 ValidationError` on every data source
 > tried; treat the create / edit / delete operations below as the documented surface, not as verified
 > behaviour, and read datasets only until a release note says otherwise.
 > **Changed in this API version.** Datasets are now addressed **directly under the
@@ -308,7 +311,7 @@ POST   /projects/{id}/scripts/{name}/execute           # JSON in
 > **`POST /scripts/` answers `500`, not `409`, for a name that already exists** — the template
 > collections answer 409 on a duplicate, the scripts collection has no conflict handling. Do not
 > read the status; read the element back (`GET …/scripts/{name}`) and treat a 2xx as "exists".
-> *(Observed 2026-08-07 — PS website-migration tool.)*
+> *(Observed 2026-08-07.)*
 >
 > **`POST /scripts/` does not fully honour the create DTO** (verified 0.0.23-beta): the stored
 > element comes back with `type: MENU` regardless of the `type` you send, and `description` is
@@ -325,11 +328,8 @@ POST   /projects/{id}/scripts/{name}/execute           # JSON in
 > the request body binds as script context variables; the REST execute context has no
 > `getElement()`, so element-dependent scripts cannot run here.
 >
-> **Do not build on the "throw to return" trick.** Because only errors come back, one project
-> team made scripts `throw new RuntimeException(result)` and read the text out of the 500
-> response `[observed]`. It works for a one-off interactive probe and for nothing else: every
-> success is an HTTP error, real failures are indistinguishable from results, and automation
-> cannot tell them apart. The same goes for create → upload → execute → delete throwaway
+> Do not use `/execute` as a return channel for values: the body carries log records, not a
+> result. The same goes for create → upload → execute → delete throwaway
 > scripts as a general RPC channel. If a write is not available through REST, say so and use a
 > proper script context or an `Executable` (`firstspirit-scripting`), not the execute endpoint.
 
@@ -340,8 +340,8 @@ GET    /projects/{id}/global-content/project-properties
 PATCH  /projects/{id}/global-content/project-properties/form/{editor}
 ```
 
-Added in `0.0.24-beta` (read from the module source `[core]`; the operations are present in the
-`0.0.25-beta` OpenAPI document, their behaviour is not yet probed live) — GCA pages get the same
+Added in `0.0.24-beta` `[core]` (the operations are present in the `0.0.25-beta` OpenAPI
+document, their behaviour is not yet probed live) — GCA pages get the same
 body/section/form model as pages, sections by numeric id:
 
 ```
@@ -412,11 +412,11 @@ Actions: `copy`, `release`. Options for release:
 | 409 | Conflict: duplicate name or reference name, element locked by another session, element moved `[core]` |
 | 410 | Element was deleted `[core]` |
 | 413 | Upload too large `[core]` |
-| 429 | Rate limit or login throttle (`fs.rest.rateLimit.*` on the server; too many failed logins) `[core]` |
+| 429 | Too many requests — the server is throttling the client; wait and retry `[core]` |
 | 500 | Server error — also for: wrong Content-Type on any JSON endpoint (never `415`) `[core]`; `{uid}` sent to a `/rename` (wants `{name,language}`); a `name` in the body that differs from the editor in the URL (page forms); `null` RADIOBUTTON / COMBOBOX in a constructed card `[core]` |
 
-Codes marked `[core]` come from the module's exception handler (source at `0.0.25-beta-SNAPSHOT`);
-the smoke test has not provoked them all.
+Codes marked `[core]` are the status codes of REST module `0.0.25-beta`; the smoke test has
+not provoked them all.
 
 <!-- feedback-footer:v1 -->
 

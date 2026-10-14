@@ -37,9 +37,9 @@ Missing mapping for source layer 'null'! Please specify a layer mapping.
 
 `--layerMapping` takes comma-separated `key:value` (or `key=value`) pairs; the
 **key is the source schema UID**, the **value is the target layer name** (or the
-literal `CREATE_NEW`). fs-cli does not store the mapping (it lives in a map for
-the running call only); once a schema exists in the target project, later imports
-keep its layer, so `-lm` is only needed for schemas new to the project `[core]`.
+literal `CREATE_NEW`). fs-cli does not keep the mapping between calls; once a
+schema exists in the target project, later imports keep its layer, so `-lm` is
+only needed for schemas new to the project `[core]`.
 Verbatim examples from fs-cli:
 
 | Example | Meaning |
@@ -131,5 +131,5 @@ external-sync `import`.
 *Sources: fs-cli `import` command (`ImportCommand.java`, FSDevTools, e-Spirit/FSDevTools
 on GitHub — options and examples quoted verbatim); FirstSpirit External
 Synchronization "Importing" how-to (docs.e-spirit.com); `[core]` = read in the FSDevTools 4.8.9
-source (`ImportProjectCommand`, the layer mapper) and the FirstSpirit schema importer. Import
+source (`ImportProjectCommand`, the layer mapper) and the FirstSpirit server's schema import. Import
 behaviour not yet reproduced against a live server in this skill.*

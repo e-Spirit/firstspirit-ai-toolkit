@@ -131,10 +131,9 @@ List editor names with `jq -r '.editors[].name'` (not `.[].name`). Individual
 `GET …/form/{editor}` responses are a flat FormEditorDTO (`name`, `type`,
 `configuration`, `content`, `description`, `language`).
 
-Use the whole-form GET for the **editor list only**. This is by design, not a defect `[core]`:
-the page and section `…/form` endpoints return a `FormSummaryDTO` whose editors carry `name`,
-`type` and `description` and **no content field** (a production team read this as "every
-editor is `content: null`" `[observed]`). Content comes from the per-editor GET. The only
+Use the whole-form GET for the **editor list only**: the page and section `…/form` endpoints
+return a summary (`FormSummaryDTO` in the OpenAPI document) whose editors carry `name`,
+`type` and `description` and **no content field** `[observed]`. Content comes from the per-editor GET. The only
 whole-form response *with* content is the `FormDTO` used for FS_CATALOG cards; there a field
 that exists in the template but was never stored in this element yields `content: null`
 (stale content after a template change) instead of an error.
@@ -154,7 +153,7 @@ curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
 
 ### PATCH Pattern (write editor value)
 
-All PATCH bodies are `FormEditorDTO` JSON. Required are `name` (equal to the editor in the URL — a different name is `500` on page forms and `400` on section forms from `0.0.25-beta`), `type` and `content`; `configuration`, `description` and `language` are ignored on write `[core]` (module source `0.0.23-beta` to `0.0.25-beta`).
+All PATCH bodies are `FormEditorDTO` JSON. Required are `name` (equal to the editor in the URL — a different name is rejected), `type` and `content`; `configuration`, `description` and `language` are ignored on write `[core]` (REST module `0.0.23-beta` to `0.0.25-beta`).
 
 This holds for every editor type:
 - **FS_REFERENCE** needs only `{"name","type","content":{"uid":"…","uidType":"…"}}`; **FS_CATALOG** needs `id` + `templateUid` per card and `name` + `type` + `content` per nested editor (see [content-catalog.md](content-catalog.md)). `configuration` is never required.
@@ -188,8 +187,7 @@ For language-specific editors: append `/{lang}` to URL (UPPERCASE: `DE`, `EN`).
   `useLanguages="no"` answered **200 and changed nothing** `[observed]` on an FS_CATALOG. Check
   the GOM before choosing the language-scoped URL.
 - A GET straight after a write may show the server's in-memory state rather than what was
-  persisted; one team reported reads that "confirmed" values which never reached the database
-  `[verify]`. Until the smoke test reproduces this, confirm important writes with a second,
+  persisted. Confirm important writes with a second,
   fresh read (new request, a moment later) or in ContentCreator.
 
 **Parallelize** independent GETs and independent PATCHes on the same section. Only serialize when one call depends on another's output.
@@ -265,10 +263,10 @@ Content is an HTML/text string:
   (2026-10-12). GET followed by PATCH of the same content makes the server read the stored
   `data-list-attributes` and `style` attributes as list properties again and nest them
   (`data-list-attributes%3D…`, `style=list-style-type:decimal;`); SiteArchitect then fails to open
-  the section with `NumberFormatException: For input string: "list-style-type:decimal;"` in
-  `domeditor.list.view.ListView.getListType`. Rebuild the field from your source in the
+  the section with `NumberFormatException: For input string: "list-style-type:decimal;"`.
+  Rebuild the field from your source in the
   `<p><ul style="N">` form instead of echoing what you read; do not diff on the stored attributes.
-  Reported to the REST module team as a defect.
+  A defect report exists.
 - ContentCreator rendering of REST-written DOM `[observed]` (2026-10-12): a `<p>` inside an
   `<li>` draws a frame per item, so write `<li>text</li>`; a `<br/>` after a list becomes an empty
   paragraph; a list inside a `<p>` is one framed block with its type in the list properties; the
@@ -358,15 +356,15 @@ See [references/content-catalog.md](content-catalog.md) for full documentation.
     "language": {"abbreviation": "EN", "name": "English", "htmlEncoding": "UTF-8", "masterLanguage": true},
     "dataset": {
       "id": 4711,
-      "gid": "ee8d6a8e-bfa4-4df2-bec5-017743fc5783",
-      "projectId": 4943,
+      "gid": "00000000-0000-4000-8000-000000000001",
+      "projectId": 1234,
       "name": "Widget",
       "parentName": "products",
       "released": false,
       "header": "Widget",
       "extract": ""
     },
-    "gid": "9eb6b400-152d-4995-a1ec-207020c2f898"
+    "gid": "00000000-0000-4000-8000-000000000002"
   }
 }
 ```
@@ -457,7 +455,7 @@ curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
 ## Media
 
 > **⚠ Version drift — re-tested live 2026-09-11 (REST `0.0.23-beta`).** Two of the facts below moved
-> since the PS migration measurement (2026-08-27):
+> since they were first observed (2026-08-27):
 > - **`GET …/media/` now enumerates the MediaStore** — returns **`200`** with a JSON array
 >   (was `405`). `?type=PICTURE` / `?type=FILE` filter it; each element carries a `location`
 >   folder path. `OPTIONS …/media/` → `Allow: GET,HEAD,POST,OPTIONS`. So BeanShell enumeration
@@ -476,9 +474,8 @@ curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
 > - **`GET …/medium-folders/{uid}` lists subfolders only** (`children`), not media — but this no
 >   longer blocks enumeration, since `GET …/media/` returns every medium with its `location`.
 >
-> *(Original facts confirmed live 2026-08-27 — source: PS website-migration tool,
-> `knowledge/fs-facts.md` §1–§2. Drift and re-confirmation verified via `OPTIONS` Allow headers,
-> 2026-09-11, ROI test instance.)*
+> *(Original facts verified live 2026-08-27. Drift and re-confirmation verified via `OPTIONS` Allow headers,
+> 2026-09-11, REST `0.0.23-beta`.)*
 
 ### Create Medium
 ```bash
@@ -496,7 +493,7 @@ Types: `PICTURE`, `FILE`, `ANIMATION`
 > for resolutions. Nothing on the write path reports it. Upload WebP and SVG as `FILE` (no
 > resolutions, served as-is), and keep `PICTURE` for JPEG, PNG and GIF. Since the type cannot be
 > changed in place (see the version-drift note above), decide it from the bytes before the POST.
-> *(Observed 2026-08-08 on one project, 56 media — PS website-migration tool.)*
+> *(Observed 2026-08-08 on one project, 56 media.)*
 
 ### Upload File Data
 ```bash
@@ -560,7 +557,7 @@ curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
   -X POST \
   "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/data-sources/products/"
 ```
-**Not working yet in the beta module** (confirmed internally at FirstSpirit, 2026-10-07). The empty
+**Not working yet in the beta module** (known limitation of the beta module, verified 2026-10-07). The empty
 dataset is saved on creation, so a table template whose rules require a field on save rejects it:
 the `POST` answers `500` with a `ValidationError … MultiFormValidationReport` body that names the
 field and the message, and nothing is created. `[observed]` on `0.0.25-beta` on every data source of

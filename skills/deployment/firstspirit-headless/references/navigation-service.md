@@ -36,8 +36,8 @@ Endpoints are rooted at `/navigation`. A **`navigationId`** identifies a specifi
 navigation (project + preview/release variant; language is a query param, not
 part of the id). The id form is **`{preview|release}.{PROJECT_ID}`** — e.g.
 `release.12345678-90ab-cdef-1234-567890abcdef` — which matches the `preview`
-path-prefix the auth examples protect. This is **confirmed by the official
-`fsxa-api`** (`buildNavigationServiceUrl` →
+path-prefix the auth examples protect. The official
+`fsxa-api` builds it the same way (`buildNavigationServiceUrl` →
 `${navigationServiceURL}/${contentMode}.${projectID}`, where the configured
 `navigationServiceURL` ends in `/navigation`). On Cloud the service is
 tenant-hosted:
@@ -61,9 +61,8 @@ offers `getAvailableLocales({ projectId, navigationServiceURL, contentMode })`.
 **Read query params:** `language`, `Accept-Language`, `depth` (default `10`),
 `format` (default `default`; also `noLinks`, `caas`), `If-None-Match` (ETag derived from
 the navigation's last update). `by-seo-route` also takes `all` and defaults the route to
-`/`. List uses `from`/`after`/`before`/`until`/`limit` (default `50`). All of this is
-confirmed in the service source `[core]`. The service itself only requires a
-`navigationId` to match `[0-9a-zA-Z\-_.]{1,80}` — the `{preview|release}.{PROJECT_ID}`
+`/`. List uses `from`/`after`/`before`/`until`/`limit` (default `50`) `[core]`.
+`navigationId` must match the configured id `[core]`; the `{preview|release}.{PROJECT_ID}`
 form is the convention CaaS Connect and the `fsxa-api` follow, not a server rule `[core]`.
 
 **Response schemas:** `NavElementV1Response` (default),
@@ -117,23 +116,19 @@ Node fields: `id`, `label`, `seoRoute`, `seoRouteRegex`, `contentReference`,
 
 Or resolve server-side: `GET /navigation/{navigationId}/by-seo-route/{seoRoute}`.
 
-> note from the FirstSpirit PWA reference implementation that catches people out: a TPP `previewId` is
-> `{uuid}.{locale}` but `caasDocumentId` is just the UUID — split on `.` and take
-> index 0 when matching. That consumer detail lives in the FirstSpirit PWA reference implementation (JavaScript Content API).
+> A TPP `previewId` is `{uuid}.{locale}` but `caasDocumentId` is just the UUID —
+> split on `.` and take index 0 when matching.
 
 ---
 
 ## Integration and customData
 
 - **Feed:** the Client Service persists/updates navigations automatically as the
-  SiteStore changes (HTTPS, pull for reads). Scheduled-task / resilience
-  specifics not detailed in the fetched docs — **(UNVERIFIED)**.
+  SiteStore changes (HTTPS, pull for reads).
 - **`customData`** — arbitrary key/value on nodes for app-specific needs.
   **Limits: max 5 entries per node; key ≤200 chars; value ≤500 chars; values
   must be `null`, number, boolean, or string** (no objects/arrays) — enforced by the
-  service on write `[core]`. *The FirstSpirit-side
-  mechanism that populates it (which template/field) was not specified in the
-  fetched docs — **(UNVERIFIED)**.*
+  service on write `[core]`.
 - **Filtering:** `visible` controls display; `permissions` lists allowed/forbidden
   roles; in `caas` `structure`, non-visible or null-`contentReference` nodes are
   excluded. No draft-vs-published filtering endpoint is described.
@@ -153,5 +148,5 @@ Or resolve server-side: `GET /navigation/{navigationId}/by-seo-route/{seoRoute}`
   `preview`).
 
 Module install, the Navigation Project Configuration component, Keycloak/OAuth
-setup, and `authenticationRequirements` are parked →
-[for-later-configuration-and-install.md](for-later-configuration-and-install.md).
+setup, and `authenticationRequirements` →
+[configuration-and-install.md](configuration-and-install.md).

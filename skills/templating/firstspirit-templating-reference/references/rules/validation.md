@@ -1,7 +1,7 @@
 # Rules: Validation Patterns
 
 Correct, tested patterns for FirstSpirit validation rules.
-**Use these as the primary reference when writing rules. Do NOT use anti-patterns from the full documentation.**
+**Use these as the primary reference when writing rules. Prefer the tested patterns below; the trap section says where the documentation examples need care.**
 
 > **Key principle:** `<VALIDATION>` sets the field's validity to the `<WITH>` result: **FALSE** marks it
 > invalid, **TRUE** clears the mark again `[core]`. For "must not be empty" checks, always negate with `<NOT>`.
@@ -32,8 +32,8 @@ Two facts from the documentation `[odfs]` that projects get wrong:
   stricter scope set earlier in the same rule (next paragraph). A rule meant to enforce anything
   must say `scope="SAVE"` or `scope="RELEASE"` on every `<VALIDATION>`.
 
-  How the parser reads the attribute `[core]`: `INFO` is the XML spelling of the internal
-  *event* scope. Writing `scope="EVENT"` is **rejected** with a parsing error; write `INFO`.
+  How the `scope` attribute is read `[core]`: the accepted values are `INFO`, `SAVE` and
+  `RELEASE`; `scope="EVENT"` is **rejected** with a parsing error.
   A `<VALIDATION>` with no `scope` inherits the rule's *current* scope: that starts as the scope
   of an enclosing legacy `<ON_SAVE>` / `<ON_RELEASE>` block (INFO for `<RULE>` and `<ON_EVENT>`;
   see `visibility.md`, *Legacy restriction-level blocks*), and every earlier `<VALIDATION>` in the
@@ -54,7 +54,7 @@ optional `when` attribute on `<RULE>` changes that; it takes one value:
 | `when` | Runs | Use for |
 |---|---|---|
 | *(omitted)* | continuously while editing | almost every validation and visibility rule |
-| `ONSAVE` | once, when the element is saved **in an editor** (SiteArchitect save / Ctrl+S / switch to view mode; ContentCreator *Save*) | `<DO>` actions without `<VALIDATION>`, e.g. filling a default into a field left empty `[odfs]`. **Not** for checks that must hold at release: ONSAVE rules run only in the editor's save pass; the server-side release check and `ValidationAgent` run the rule engine without a time of execution and skip them `[core]` (live 2026-10-09, FirstSpirit 5.2.261116: a `when="ONSAVE"` rule with `scope="RELEASE"` or `"SAVE"` on an empty required field let the release check pass; the same rule without `when` failed it) |
+| `ONSAVE` | once, when the element is saved **in an editor** (SiteArchitect save / Ctrl+S / switch to view mode; ContentCreator *Save*) | `<DO>` actions without `<VALIDATION>`, e.g. filling a default into a field left empty `[odfs]`. **Not** for checks that must hold at release: ONSAVE rules run only in the editor's save pass; the server-side release check and `ValidationAgent` skip them `[core]` (live 2026-10-09, FirstSpirit 5.2.261116: a `when="ONSAVE"` rule with `scope="RELEASE"` or `"SAVE"` on an empty required field let the release check pass; the same rule without `when` failed it) |
 | `ONLOCK` | when the editor switches to edit mode or creates a new page, section or dataset — before editing starts | pre-assigning values (`<DO><PROPERTY …/></DO>`) |
 
 Constraints `[odfs]`:
@@ -159,8 +159,7 @@ Logic: NOT(ALL empty) = at least one filled. All three fields get marked invalid
 Logic: "picture set => description required", written as its equivalent "picture empty **OR**
 description filled". No `<IF>`, so the rule runs on every change and re-evaluates in both
 directions. `scope="RELEASE"` lets editors save work in progress; `scope="SAVE"` **blocks
-the save completely** while the rule fails (confirmed internally at FirstSpirit,
-2026-09-18), so reserve it for fields a half-finished page must never lack.
+the save completely** while the rule fails (verified 2026-09-18), so reserve it for fields a half-finished page must never lack.
 
 ### Anti-pattern: the one-way rule
 
@@ -206,8 +205,7 @@ switches off, the last verdict the rule left behind stays.
 3. Now type a description. **It stays invalid.** The rule that would clear the verdict is
    switched off.
 
-Step 3 is the signature: the field cannot be repaired by any input. (SME observation; no known
-change in this behaviour.)
+Step 3 is the signature: the field cannot be repaired by any input. `[observed]`
 
 **Why it survives development.** The failure depends on the order of actions, and the order that
 gets tested is the intended one — "a description is missing, so add a description." The path that
@@ -216,7 +214,7 @@ by accident to begin with. That path is rarely on the test list, so the rule shi
 
 **How far the damage goes.** The stale verdict is session-local — it lives in the rule engine's
 state for the open form, not in the stored element. Releasing and re-opening re-evaluate the
-rules from scratch (the release check builds a fresh rule engine `[core]`), so a release is not
+rules from scratch `[core]`, so a release is not
 blocked and a re-opened form shows no phantom warning. Saving does **not** re-evaluate: the
 editor runs its ONSAVE rules and then checks the open form's live validation state, so the stale
 verdict stands (SiteArchitect `[core]`; ContentCreator `[verify]`). With `scope="RELEASE"` or

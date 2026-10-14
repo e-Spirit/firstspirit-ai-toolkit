@@ -145,7 +145,7 @@ in `li` once to see whether the list is recognised `[observed]`.
 
 **Tables** need `fo:table-column` per column and a header that repeats on the next page
 (`fo:table-header` before `fo:table-body`, at least one row each). In the `table` format `#content`
-is a `TableElementRenderer$TableRowPrinter`, not a string, so the first row is found with a counter
+is a renderer object, not a string, so the first row is found with a counter
 list, not by parsing `[observed]`:
 
 ```
