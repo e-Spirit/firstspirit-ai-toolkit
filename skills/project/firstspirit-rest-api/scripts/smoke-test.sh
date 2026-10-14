@@ -774,16 +774,22 @@ if [ "$DO_SCRIPTS" = 1 ]; then
       # S4 — parse-probe: a syntax error surfaces as a parse error
       printf 'return 6 * ;\n' > "$OUT/script-bad.bsh"
       req PUT "$P/scripts/$TSCRIPT/template-sets/$TSET" text/plain "$OUT/script-bad.bsh"
-      req POST "$P/scripts/$TSCRIPT/execute" application/json "$OUT/empty.json"
-      if grep -qi 'parse' "$BODY"; then pass S4 "/execute surfaces BeanShell parse errors (cheap syntax probe)"
-      else fail S4 "/execute reports parse errors" "HTTP $STATUS: $(head -c 120 "$BODY")"; fi
+      if ! is2xx; then fail S4 "PUT the syntax-error probe script" "HTTP $STATUS: $(head -c 120 "$BODY") — /execute not judged"
+      else
+        req POST "$P/scripts/$TSCRIPT/execute" application/json "$OUT/empty.json"   # status-free: judged by the error text, any status
+        if grep -qi 'parse' "$BODY"; then pass S4 "/execute surfaces BeanShell parse errors (cheap syntax probe)"
+        else fail S4 "/execute reports parse errors" "HTTP $STATUS: $(head -c 120 "$BODY")"; fi
+      fi
 
       # S5 — the REST execute context has no getElement()
       printf 'return context.getElement();\n' > "$OUT/script-elm.bsh"
       req PUT "$P/scripts/$TSCRIPT/template-sets/$TSET" text/plain "$OUT/script-elm.bsh"
-      req POST "$P/scripts/$TSCRIPT/execute" application/json "$OUT/empty.json"
+      if ! is2xx; then fail S5 "PUT the getElement probe script" "HTTP $STATUS: $(head -c 120 "$BODY") — /execute not judged"
+      else
+      req POST "$P/scripts/$TSCRIPT/execute" application/json "$OUT/empty.json"   # status-free: judged by the error text, any status
       if grep -qiE 'getElement|method' "$BODY"; then pass S5 "/execute context has no getElement() (error mentions it) — element-dependent scripts cannot be tested here"
       else skip S5 "/execute context lacks getElement()" "HTTP $STATUS: $(head -c 120 "$BODY") — record the context class if it worked"; fi
+      fi
     fi
   fi
   cleanup_script; trap - EXIT
