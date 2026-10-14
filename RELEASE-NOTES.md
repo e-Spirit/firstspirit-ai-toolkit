@@ -43,11 +43,17 @@ published skill after a review by the CaaS product team.
   `firstspirit-pwa` pointers replaced by the public fsxa-api / PWA template; no `[verify]` marks
   left in the text.
 - **Every published skill** — a readability pass against the public-text rules: process notes
-  and authoring markers removed, internal names and ticket keys removed, pointers to unpublished
+  ("at research time", "first pass", gap markers) removed, internal names and ticket keys removed,
+  pointers to unpublished
   or retired skills replaced by the covering skill or the public documentation and Javadoc, the
   ContentCreator focus wording aligned, a Professional Services helper reference removed from
   `firstspirit-template-design`. Facts read in product source now carry a recorded verdict and
-  ship only where the documentation names the surface.
+  ship only where the documentation names the surface. The evidence tags (`[jar]`, `[javadoc]`,
+  `[odfs]`, `[core]`, `[observed]`, `[verify]`) stay by design: they tell the reader how a claim
+  was checked; `[verify]` was cleared only in `firstspirit-headless` and `firstspirit-smartsearch`.
+- **Renamed:** `firstspirit-headless/references/for-later-configuration-and-install.md` is now
+  `references/configuration-and-install.md` (same content, reviewer's title); the skill's index
+  points at the new name.
 - Restamped with those edits only: `firstspirit-api-reference`, `firstspirit-templating-reference`,
   `firstspirit-scripting`, `firstspirit-rest-api`, `firstspirit-external-sync-export`,
   `firstspirit-operations`, `firstspirit-contentcreator-extensions`, `firstspirit-template-design`,
