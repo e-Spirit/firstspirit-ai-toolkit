@@ -14,9 +14,9 @@ description: >-
   uid". Pair with firstspirit-scripting (how to run code + the script contexts)
   and firstspirit-module-development (how to package it).
 metadata:
-  source-commit: "9c191a5"
-  published: "2026-10-08"
-  toolkit-version: "0.4.0"
+  source-commit: "2e7b7bc"
+  published: "2026-10-12"
+  toolkit-version: "0.4.1"
 ---
 
 > **Beta.** Early public release. Feedback welcome; behaviour and structure may change.
@@ -68,9 +68,11 @@ release notes when changing versions. Source:
 
 ## Quick answers
 
-- **Every store node is an `IDProvider`** (extends `StoreElement`): `getId()`,
+- **Almost every store node is an `IDProvider`** (extends `StoreElement`): `getId()`,
   `getUid()`/`getUidType()`/`hasUid()`, `getName()`, `getParent()`,
-  `getChildren(...)`, `getStore()`, plus `setLock`/`save`/`revert`.
+  `getChildren(...)`, `getStore()`, plus `setLock`/`save`/`revert`. The exceptions are plain
+  `StoreElement`s with none of the id/uid/revert methods: `Picture` and `File` (via
+  `MediaElement`), `PictureResolution`, `DocLink`, `TemplateBody` `[jar]`.
 - **Get a store:** `broker.requireSpecialist(StoreAgent.TYPE).getStore(Store.Type.PAGESTORE, false)`.
 - **Load by UID:** `broker.requireSpecialist(StoreElementAgent.TYPE).loadStoreElement("uid", IDProvider.UidType.PAGESTORE, false)`.
 - **Search:** `broker.requireSpecialist(QueryAgent.TYPE).answer("fs.uid = my_uid", null)`.
@@ -106,5 +108,5 @@ context maps in `assets/` are text renderings of the classic "FirstSpirit Object
 ## Feedback
 
 Found something wrong, unclear, or missing? **Tell me in the chat — I'll log it for you**
-(no form to fill). Reports are routed per `FEEDBACK.md`; on a public copy, open an issue on
+(no form to fill). To report it yourself, open an issue on
 this skill's repository.

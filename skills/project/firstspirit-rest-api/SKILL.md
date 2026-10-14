@@ -9,9 +9,9 @@ description: >
   media upload, content search. Also use when the user mentions "FirstSpirit REST API" or asks how to read/write
   content via the API.
 metadata:
-  source-commit: "9c191a5"
-  published: "2026-10-08"
-  toolkit-version: "0.4.0"
+  source-commit: "2e7b7bc"
+  published: "2026-10-12"
+  toolkit-version: "0.4.1"
 ---
 
 > **Beta.** Early public release. Feedback welcome; behaviour and structure may change.
@@ -68,7 +68,7 @@ REST-module update; report any FAIL with the `results/firstspirit-rest-api/<run>
 (one line per run is appended to `logs/firstspirit-rest-api.log`; both sit under `FS_OUT_ROOT`,
 else the skills monorepo root, else the working directory — add `results/` and `logs/` to your
 project's `.gitignore` when you run it inside a repo). The run
-also keeps a snapshot of the server's OpenAPI spec (`./internal/openapi/<host>/`) and prints a
+also keeps a snapshot of the server's OpenAPI spec (`results/firstspirit-rest-api/openapi/<host>/` under the shared output root; override with `FS_OPENAPI_SNAPSHOTS`) and prints a
 WARN with a diff when the API surface changed since the last run — the cue to re-check the
 sections that use the listed paths before trusting them.
 
@@ -232,7 +232,7 @@ GET    /projects/{id}/pages/{uid}/metadata
 GET|PATCH /projects/{id}/pages/{uid}/metadata/{editor}
 GET|PATCH /projects/{id}/pages/{uid}/metadata/{editor}/{lang}   # language-specific metadata
 GET    /projects/{id}/pages/{uid}/usages
-GET    /projects/{id}/pages/{uid}/revisions/    GET .../revisions/{revisionId}
+GET    /projects/{id}/pages/{uid}/revisions/    GET .../revisions/{revisionId}   # metadata only (id, creationTime, comment, editor); no content read-back
 ```
 
 ### Page References (SiteStore)
@@ -312,13 +312,16 @@ POST   /projects/{id}/scripts/{name}/execute           # JSON in
 >
 > **`POST /scripts/` does not fully honour the create DTO** (verified 0.0.23-beta): the stored
 > element comes back with `type: MENU` regardless of the `type` you send, and `description` is
-> dropped (`null`). Only `name` and `location` are reliably applied. Create the script, then set
-> the source via `PUT …/template-sets/{ts}`.
+> dropped (`null`), and `location` is ignored too: the script lands in `/` whether you send an
+> existing folder or a new one (re-tested 0.0.25-beta, 2026-10-12; the create DTO has only `name`
+> in the module's OpenAPI). Only `name` is applied. Create the script, then set the source via
+> `PUT …/template-sets/{ts}`.
 >
-> **`POST …/scripts/{name}/execute` runs the script but does not echo its return value** — a
-> successful run answers `2xx` with an **empty body** (confirmed on a second project). *Errors*
-> **are** returned, though: a BeanShell parse/compile error comes back in the response body. So
-> treat a non-empty body as an error and verify success by read-back, not by the response. JSON in
+> **`POST …/scripts/{name}/execute` runs the script but does not echo its return value** — the
+> `2xx` body is the script's **log records** concatenated, without separator; a script that logs
+> nothing answers with an **empty body** `[observed]` (5.2.261116 / 0.0.25-beta, 2026-10-09). An
+> uncaught exception, including a BeanShell parse error, answers **500** with a JSON error body.
+> So read the status, not the body length, and verify success by read-back. JSON in
 > the request body binds as script context variables; the REST execute context has no
 > `getElement()`, so element-dependent scripts cannot run here.
 >
@@ -420,5 +423,5 @@ the smoke test has not provoked them all.
 ## Feedback
 
 Found something wrong, unclear, or missing? **Tell me in the chat — I'll log it for you**
-(no form to fill). Reports are routed per `FEEDBACK.md`; on a public copy, open an issue on
+(no form to fill). To report it yourself, open an issue on
 this skill's repository.

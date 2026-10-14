@@ -1,11 +1,11 @@
 ---
 name: firstspirit-templating-reference
 description: >-
-  Concrete lookup reference for FirstSpirit template development: template language ($CMS_VALUE$, $CMS_IF$, $CMS_FOR$, $CMS_REF$, $CMS_RENDER$, system objects, string operations, Navigation and PageGroup functions, content projection), GOM input components (CMS_INPUT_*, FS_REFERENCE, FS_CATALOG, FS_INDEX, FS_DATASET) and the datatype each yields, database schemas (table templates, column types and which component maps onto which, foreign keys, KEY column, queries, Remote Data), Rules (validation, visibility, editability, value), identifier and casing rules, deprecated components. Use whenever you need exact template syntax, the right input component, what a component produces and how to read it in the output channel, or whether something is deprecated — e.g. "syntax for CMS_FOR", "which component for a single choice", "what datatype does FS_REFERENCE produce", "is FS_LIST still supported", "review my Ruleset.xml", "why does this field stay invalid". Explains GomSource.xml / Ruleset.xml / ChannelSource files.
+  Concrete lookup reference for FirstSpirit template development: template language ($CMS_VALUE$, $CMS_IF$, $CMS_FOR$, $CMS_REF$, $CMS_RENDER$, system objects, string operations, Navigation and PageGroup functions, content projection), GOM input components (CMS_INPUT_*, FS_REFERENCE, FS_CATALOG, FS_INDEX, FS_DATASET) and the datatype each yields, database schemas (table templates, column types, foreign keys, KEY column, queries, Remote Data), Rules (validation, visibility, editability, value), identifier and casing rules, deprecated components. Use whenever you need exact template syntax, the right input component, what a component produces and how to read it in the output channel, whether something is deprecated, or how a page becomes a PDF (template set, Apache FOP) — e.g. "syntax for CMS_FOR", "which component for a single choice", "what datatype does FS_REFERENCE produce", "is FS_LIST still supported", "review my Ruleset.xml". Explains GomSource.xml / Ruleset.xml / ChannelSource files.
 metadata:
-  source-commit: "9c191a5"
-  published: "2026-10-08"
-  toolkit-version: "0.4.0"
+  source-commit: "2e7b7bc"
+  published: "2026-10-12"
+  toolkit-version: "0.4.1"
 ---
 
 > **Beta.** Early public release. Feedback welcome; behaviour and structure may change.
@@ -99,6 +99,7 @@ Loaded on demand — read the file that matches the question.
 | `system-objects.md` | `#global` / `#nav` / `#row` / page / section / dataset context |
 | `string-operations.md` | string methods + output escaping / XSS safety |
 | `dom-media.md` | DOM output; format templates in their DOM-styling role; `$CMS_REF$` media |
+| `pdf-fop.md` | PDF output through a second template set and the Apache FOP module: setup, page sequences, bookmarks, table of contents, format templates for lists and tables in XSL-FO |
 | `navigation-function.md` | the `Navigation` header function: the six hooks and their order, `expansionVisibility` values, `wholePathSelected`, `#nav`, breadcrumb |
 | `page-group.md` | the `PageGroup` header function: previous/next/first/last fragments, table of contents, `groupSize` |
 | `content-projection.md` | datasets rendered as pages: PageRef → page → content section → table template, entries per page, `#global.pageParams`, detail pages |
@@ -112,5 +113,5 @@ Loaded on demand — read the file that matches the question.
 ## Feedback
 
 Found something wrong, unclear, or missing? **Tell me in the chat — I'll log it for you**
-(no form to fill). Reports are routed per `FEEDBACK.md`; on a public copy, open an issue on
+(no form to fill). To report it yourself, open an issue on
 this skill's repository.

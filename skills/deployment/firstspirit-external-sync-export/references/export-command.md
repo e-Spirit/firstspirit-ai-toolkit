@@ -13,8 +13,12 @@ Give one or more identifiers after `export`. The kinds:
 | Element by uid | `<prefix>:<uid>` | `pageref:homepage` |
 | Element by path | `path:/<STORE>/<UID\|NAME>` | `path:/MediaStore/technical` |
 | Project property | `projectproperty:<NAME>` | `projectproperty:ALL` |
-| Database schema | `schema:<name>[<opt>,<opt2>]` | `schema:products` |
+| Database schema | `schema:<name>[<option>=<value>\|<option2>=<value>]` | `schema:products[setExportGidMapping=true]` |
 | Entities (DB content) | `entities:<CONTENT2_UID>` | `entities:news` |
+
+Separate schema options with `|`, not with a comma: the parser splits the bracket on `|`
+and each option on `=`; a comma-separated list (`[a=b,c=d]`) is silently ignored, although
+fs-cli's own `help export` shows commas `[core]`.
 
 **Store root identifiers:** `templatestore`, `pagestore`, `contentstore`,
 `sitestore`, `mediastore`, `globalstore`.
@@ -40,9 +44,9 @@ export projectproperty:ALL templatestore pagestore sitestore mediastore globalst
 Two things this does **not** include automatically:
 
 - **Entities (database row content).** `contentstore` exports the Content-Store
-  *structure*; actual dataset rows are exported with `entities:<content2-uid>`
-  (optionally per schema with `schema:<name>`). Add them explicitly when you
-  need content, not just the model. Large entity sets make the export much
+  *structure*; actual dataset rows are exported with `entities:<content2-uid>`,
+  which also exports the data source's schema `[core]`. Add them explicitly when
+  you need content, not just the model. Large entity sets make the export much
   bigger and slower.
 - **Anything you didn't name.** Identifiers are additive; omitted stores are
   omitted.
@@ -60,19 +64,21 @@ documentation, product catalogues, news, glossaries) therefore sees *no* dataset
 content unless you add `entities:` explicitly. Symptom in a consuming skill: the
 Content Store is present but every dataset reads as absent/empty.
 
-Export the schema plus every data source's entities:
+Export every data source's entities:
 
 ```
 export projectproperty:ALL templatestore pagestore sitestore mediastore \
        globalstore contentstore \
-       schema:<schemaName> \
        entities:<content2-uid> entities:<content2-uid> …
 ```
 
-- `schema:<name>` — the data model (tables/columns). Schema name = the folder
-  under `TemplateStore/Schemes/` (the non-`FS_*` entry).
-- `entities:<content2-uid>` — the rows behind one data source. One identifier per
-  data source; they are additive.
+- `entities:<content2-uid>` — the rows behind one data source, **plus its schema**
+  (the identifier adds the schema to the export operation and the datasets'
+  entities to it `[core]`). One identifier per data source; they are additive.
+- `schema:<name>` — the data model (tables/columns) *without* rows. Only needed
+  when you want a schema and no entities, or schema options (see the identifier
+  table). Schema name = the folder under `TemplateStore/Schemes/` (the non-`FS_*`
+  entry). Naming it alongside `entities:` is harmless but redundant.
 
 **Enumerate the data-source uids** when you don't know them. From an existing
 export, read them straight out of the Content Store:
@@ -95,10 +101,10 @@ applies to entities too: choose work vs. released deliberately.
 To add datasets to a project you already exported, you do **not** re-pull the
 whole project. Two non-destructive routes:
 
-- **Separate folder (simplest, least intensive).** Export `schema:<name>` +
-  the `entities:` you want into a *different* sync directory. The original
-  export is untouched by definition; the consuming skill reads both trees. The
-  schema is small and makes the entities folder self-contained. Entity data
+- **Separate folder (simplest, least intensive).** Export the `entities:` you
+  want into a *different* sync directory (each `entities:` identifier brings its
+  schema along, so the folder is self-contained). The original export is
+  untouched by definition; the consuming skill reads both trees. Entity data
   lands under `Entities/<schema>/<table>/…`.
 - **Into the existing export dir** — you must pass **`--keepObsoleteFiles`**, or
   the default mirroring deletes everything not named in *this* command (i.e. all
@@ -201,4 +207,4 @@ for a maintained Cloud project; use the direct command here for a one-off pull.
 ---
 *Sources: fs-cli 4.8.9 `help export`; a verified whole-project export
 (8,746 elements, ~498 MB) from a FirstSpirit 5.2.260815 Cloud instance
-(2026-08-03).*
+(2026-08-03); `[core]` = read in the FSDevTools 4.8.9 source (identifier parsers).*

@@ -67,7 +67,11 @@ Correct, tested patterns for FirstSpirit value manipulation rules.
 </RULE>
 ```
 
-## Sync two toggles oppositely
+## Set a toggle to the inverse of another (one-way: First -> Second)
+
+Both rules read only `First`, and a rule re-runs only when a component it reads in `<IF>`/`<WITH>`
+changes `[core]`. Changing `Second` therefore never updates `First`, and while `First` is still
+untouched (`null`) neither rule fires and `Second` stays as it is.
 
 ```xml
 <RULE>

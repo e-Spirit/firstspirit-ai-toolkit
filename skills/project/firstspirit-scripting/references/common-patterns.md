@@ -14,6 +14,7 @@ The **only** safe way to change a store element. Always release the lock in a
 ```
 //!BeanShell
 import de.espirit.firstspirit.access.store.LockException;
+import de.espirit.firstspirit.access.store.ElementDeletedException;
 
 try {
     elm.setLock(true, false);            // acquire exclusive lock
@@ -27,6 +28,8 @@ try {
     }
 } catch (LockException e) {
     context.logError("Element already locked", e);
+} catch (ElementDeletedException e) {    // setLock declares both [jar]; BeanShell has no multi-catch
+    context.logError("Element was deleted", e);
 }
 ```
 
@@ -74,8 +77,8 @@ for (elem : folder.getChildren(Page.class, true).iterator()) {
 
 ## Navigate the store via `SpecialistsBroker`
 
-Client contexts *are* a `SpecialistsBroker`, so call `requireSpecialist` on
-`context` directly:
+Every script context *is* a `SpecialistsBroker` (via `BaseContext` `[jar]`), so call
+`requireSpecialist` on `context` directly — in schedule and generation scripts too:
 
 ```
 //!BeanShell
@@ -113,12 +116,21 @@ if (element instanceof Page) {
 
 ```
 //!BeanShell
+import de.espirit.firstspirit.access.store.pagestore.DataProvider;
+
 project = context.getProject();
 lang    = project.getMasterLanguage();
 
-formData = context.getElement().getFormData();
-value    = formData.get(lang, "st_headline").get();     // FormField -> value
+element = context.getElement();                          // IDProvider, may be null
+if (element instanceof DataProvider) {                   // Page, Section, Dataset, … — not Media or folders
+    formData = element.getFormData();
+    value    = formData.get(lang, "st_headline").get();  // FormField -> value
+}
 ```
+
+`getElement()` returns an `IDProvider`; `getFormData()` exists only from `DataProvider` on
+`[jar]`. On a medium, a folder or a page reference the call fails, and a menu script without a
+selection has no element at all.
 
 ## Prompt the editor with a dialog (menu / context-menu script)
 
@@ -135,14 +147,20 @@ if (input == null) {
 name = input.get(context.getProject().getMasterLanguage(), "pt_name").get();
 ```
 
-`showForm` is a **`GuiScriptContext`** method — menu and context-menu scripts only. It does
-**not** exist in an FS_BUTTON script (`ClientScriptContext`), a workflow script, or on the
-server. For a dialog that works from **any** client context, use `RequestOperation` below.
+`showForm` is a **`GuiScriptContext`** method — available in menu, context-menu and **workflow**
+scripts (`WorkflowScriptContext extends GuiScriptContext` `[jar]`). It shows a dialog only in
+SiteArchitect; in headless workflow execution (ContentCreator / server) `showForm()` throws
+`UnsupportedOperationException` and the `showForm(boolean…)` variants return `null` `[core]`.
+It does **not** exist in an FS_BUTTON script (`ClientScriptContext`) or in server contexts.
+For a dialog that works from **any** client context, use `RequestOperation` below.
 
 ## Ask a question or show a message from any client context (`RequestOperation`)
 
-`RequestOperation` is the one dialog operation in the API (there is no `QuestionOperation`,
-`InputOperation` or `SelectOperation`). Obtain it through **`OperationAgent`** — not via
+`RequestOperation` is the operation for question / message dialogs (there is no
+`QuestionOperation`, `InputOperation` or `SelectOperation`); for an **input form** built at
+runtime use `ShowFormDialogOperation` (see the example in [real-world.md](real-world.md)), and in
+ContentCreator `SelectOptionOperation` for a simple choice list `[jar]`. Obtain them through
+**`OperationAgent`** — not via
 `requireSpecialist(<Operation>.TYPE)`; operations are not specialists — and it works wherever
 an `OperationAgent` is available, FS_BUTTON scripts included:
 
@@ -206,10 +224,12 @@ context.doTransition("release");              // by reference name
 > **specific project languages**, not only all-or-nothing — and **2026.7** adds
 > **language-dependent user permissions** (editing gated per project language). So a
 > release transition or a permission check may now carry a `Language` dimension;
-> don't assume a single global release/permission state. The API entry points
-> (e.g. `LanguageDataProvider#getFormData`, language-specific release info on
-> `IDProviderEventAgent`) are release-notes-sourced — confirm against the Javadoc
-> (see `firstspirit-api-reference`) before scripting against them.
+> don't assume a single global release/permission state. The API entry points are
+> `IDProvider.release(Language...)` and, for events, `IDProviderChange#getChangedLanguages()`
+> delivered via `IDProviderEventAgent` — both `@since 5.2.250102`, `@ApiStatus.Experimental`
+> `[jar]` (present in the 5.2.261011 jar, absent in 5.2.240208), plus `LanguageDataProvider#getFormData`.
+> `IDProviderEventAgent` itself has no language-specific API. Guard with the server version
+> before scripting against them.
 
 ## Call a script from a template (`$CMS_RENDER$`)
 
@@ -219,11 +239,14 @@ Template side (page/section/link template or format template):
 $CMS_RENDER(script:"ScriptOutput", variable:"VALUE")$
 ```
 
-Script side — generation context is `gc`, output goes through `result`:
+Script side — the `GenerationContext` is bound as `gc` (and as `context`); the script's
+**return value** is rendered into the template, `result.setValue(...)` is the legacy
+alternative `[core]`. The `$CMS_RENDER$` parameters are also bound as script variables, so
+`variable` and `gc.getVariableValue("variable")` are the same value:
 
 ```
 //!BeanShell
-result.setValue(gc.getVariableValue("variable"));
+return gc.getVariableValue("variable");
 ```
 
 Branch on generation mode inside the script:
@@ -231,10 +254,9 @@ Branch on generation mode inside the script:
 ```
 //!BeanShell
 if (gc.isPreview()) {
-    result.setValue("preview only");
-} else {
-    result.setValue(gc.toString(someObject));   // same as $CMS_VALUE(someObject)$
+    return "preview only";
 }
+return gc.toString(someObject);   // same as $CMS_VALUE(someObject)$
 ```
 
 ## Persist state between scheduled runs (schedule script)
@@ -257,15 +279,18 @@ context.sendEMail("editor@example.com,lead@example.com", "Page released", "The p
 
 ## Alternative to a script: an `Executable` class
 
-FS_BUTTON and template calls can reference a **class** instead of a script. It
-must implement `de.espirit.firstspirit.access.script.Executable`; the script
-variables arrive in the `Map`:
+An FS_BUTTON can reference a **class** instead of a script (`onClick`/`onDrop="class:…"`
+`[core]`). `$CMS_RENDER` knows only `script:` and `template:` `[core]`, so from a template a
+class is reachable only indirectly: through a script whose engine is `executable-class`
+(first line `//!executable-class`, then the class name) `[core]`. The class must implement
+`de.espirit.firstspirit.access.script.Executable`; the script variables arrive in the `Map`:
 
 ```java
 public class MyButtonAction implements Executable {
     public Object execute(Map context) {
         BaseContext ctx = (BaseContext) context.get("context");
-        // context.get("values"), context.get("isDrop"), ...
+        // context.get("element"), context.get("language"), context.get("properties"),
+        // context.get("drop"), context.get("dropdata"), plus the button's <PARAMS>
         return null;
     }
     public Object execute(Map context, Writer out, Writer err) {
@@ -290,7 +315,7 @@ dump); the right-hand column is the real approach.
 | `context.requireSpecialist(LockService.TYPE)` | **No `LockService`.** Locking is element-level: `elm.setLock(true, false)` / `setLock(false)`. |
 | `context.requireSpecialist(ReleaseAgent.TYPE).releaseStoreElement(...)` | **No `ReleaseAgent`.** Release is element-level: `elm.release()` (`IDProvider`), or through a workflow. **Not for anything in the TemplateStore** (templates, scripts, schemas): they inherit the methods but cannot be released `[observed]`; guard with `elm.isReleaseSupported()`. |
 | `connection.getService(GenerationService.class)` | **No `GenerationService`.** Generation is a scheduled task / `GenerationAgent` in `de.espirit.firstspirit.scheduling.agency`, not a directly-callable script service. |
-| `QuestionOperation` / `InputOperation` / `SelectOperation` | Only **`RequestOperation`** exists for dialogs — see [the RequestOperation pattern](#ask-a-question-or-show-a-message-from-any-client-context-requestoperation), which works from any client context (the `showForm()` pattern is `GuiScriptContext`-only). Custom input UIs need a plugin. |
+| `QuestionOperation` / `InputOperation` / `SelectOperation` | Do not exist. Questions / messages: **`RequestOperation`** — see [the RequestOperation pattern](#ask-a-question-or-show-a-message-from-any-client-context-requestoperation), which works from any client context. Input forms: **`ShowFormDialogOperation`** with a runtime GOM form (`FormsAgent.getForm(xml)`, see [real-world.md](real-world.md)) or `context.showForm()` (`GuiScriptContext` only); ContentCreator choice lists: `SelectOptionOperation`. No plugin needed for input dialogs. |
 | `store.getStoreRoot()` | The store **is** the root — iterate it directly (`store.getChildren(...)`). |
 | `folder.getChildByName("x")` | No such method — look up by UID (`getStoreElement(uid, UidType)`) or iterate `getChildren`. |
 | `context.isEnv(Env.X)` | The method is **`context.is(Env.X)`** (`BaseContext.is`); `isEnv` does not exist. See [script-contexts.md](script-contexts.md). |

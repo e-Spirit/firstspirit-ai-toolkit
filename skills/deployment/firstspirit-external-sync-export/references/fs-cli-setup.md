@@ -135,14 +135,16 @@ Two fixes:
 With jar and JRE in place, a no-connection command must run clean:
 
 ```bash
-JAVA_HOME=<jdk-or-jre-21> fs-cli/bin/fs-cli.sh --version
 JAVA_HOME=<jdk-or-jre-21> fs-cli/bin/fs-cli.sh help export
 ```
 
-Expected: version banner + `INFO Using FirstSpirit Access API version <build>`
-and no `UnsupportedClassVersionError` / `InaccessibleObjectException`. Now move
-to `connection-and-auth.md`.
+Expected: the version banner (fs-cli prints it on every call, before parsing the
+command) + `INFO Using FirstSpirit Access API version <build>` and no
+`UnsupportedClassVersionError` / `InaccessibleObjectException`. There is **no
+`--version` option** — fs-cli 4.8.9 defines none; the token is rejected as an unknown
+command and exits 1 `[core]`. Now move to `connection-and-auth.md`.
 
 ---
 *Sources: the official e-Spirit/FSDevTools GitHub releases; a verified fs-cli
-4.8.9 setup against a FirstSpirit 5.2.260815 Cloud instance (2026-08-03).*
+4.8.9 setup against a FirstSpirit 5.2.260815 Cloud instance (2026-08-03); `[core]` = read in the
+FSDevTools 4.8.9 source.*

@@ -14,15 +14,25 @@ sloppiness.
 
 ## Version and restrictions
 
-FirstSpirit embeds **BeanShell 2**, at roughly **JDK 1.5 language level**. Known
-limits to code around:
+FirstSpirit embeds **beanshell2** (`com.github.pejobo:beanshell2` `[core]`), at roughly
+**JDK 1.5 language level**. Limits, each confirmed on a live FirstSpirit 5.2.261116 server
+(scripts run over the REST `/execute` endpoint, 2026-10-09):
 
-- **Generics are limited:** no nested generics, no wildcards (`<?>`), and no casts
-  to parameterised types. Use raw types / `Object` and cast to the concrete type.
-- **A scripted class can't `implements` an interface** the Java way. To supply an
-  interface implementation (e.g. a callback), use the BeanShell idiom of a scripted
-  object coerced to the interface (`new SomeInterface() { method(args) { … } }`),
-  or move the logic into a module `Executable`.
+- **Generics: one type parameter only.** `List<String> l = new ArrayList<String>();` parses;
+  **two** type parameters (`Map<String,String>`), nested generics (`List<List<String>>`),
+  wildcards (`List<?>`) and the diamond `new ArrayList<>()` are all `bsh.ParseException`s.
+  Casts to parameterised types do not exist either. Use raw types (`Map m = new HashMap();`)
+  and cast to the concrete type.
+- **No multi-catch.** `catch (LockException | ElementDeletedException e)` is a parse error
+  (`Encountered: |`); write one `catch` block per exception.
+- **Scripted classes work, `implements` included:** `class Foo implements Runnable { public
+  void run() { … } }` ran as written. For a one-off callback the anonymous-object idiom
+  (`new SomeInterface() { method(args) { … } }`) is shorter and also works; long-lived logic
+  still belongs in a module `Executable`.
+- **No default imports.** Every class you name needs an `import` (or its fully qualified
+  name); a bare `Page` fails with `Class: Page not found in namespace` (typed declaration) or
+  `Class or variable not found: Page.UID_TYPE` (expression) — not with a
+  `ClassNotFoundException`.
 - **No compile-time help:** no code completion, no `@Deprecated`/`@ApiStatus`
   warnings, reduced syntax checking; slower than native Java.
 
@@ -80,25 +90,31 @@ print(greet("world"));
 
 ## The BeanShell console
 
-A graphical shell for running BeanShell interactively against a live project.
+A graphical shell for running BeanShell interactively against a live project. It is **not part
+of every project**: it ships as the *Developer-Scripts* package of context-menu scripts
+(`developer-scripts-public.zip`), which has to be imported into the project first `[core]`.
 
-- Open it from the context menu on **any** store node:
+- Once imported, open it from the context menu of a store node:
   *Execute Script → DeveloperScripts → BeanShellConsole*.
-- A `context` object and all convenience methods are available, exactly as in a
-  real script — ideal for exploring the API before committing to a script.
+- The console presets `context` (the script context) `[core]`, and the convenience commands
+  are available exactly as in a real script — ideal for exploring the API before committing
+  to a script.
 
 ```
 bsh % e = context.getElement();
 bsh % print(e);
 ```
 
-## Convenience methods
+## Convenience commands
 
-Available in scripts and in the console. Use them to inspect objects while
-developing; replace `print()` with proper logging in finished scripts.
+BeanShell *commands* (`print`, `show`, `javap`, …) are available in scripts and in the
+console. Use them to inspect objects while developing; replace `print()` with proper logging
+in finished scripts. `getMethods` is **not** one of them — see below.
 
 ### `print(Object)`
-String-prints any object.
+String-prints any object to the interpreter's output: the console when you are in it,
+otherwise standard out — never the FirstSpirit script log, and over REST `/execute` it does
+not appear in the response (live 2026-10-09).
 
 ```
 bsh % e = context.getElement();
@@ -115,9 +131,11 @@ bsh % show();          // auto-echo off
 bsh % e = context.getElement();   // (no output now)
 ```
 
-### `getMethods()`
-Lists all methods of a class, including inherited ones — handy when you don't know
-what an object offers:
+### `obj.getClass().getMethods()` — reflection, not a command
+There is **no `getMethods(...)` command**: `getMethods("x")` fails with
+`Command not found: getMethods(java.lang.String)` (live 2026-10-09). What works is plain Java
+reflection on the object, which lists all public methods including inherited ones — handy
+when you don't know what an object offers:
 
 ```
 bsh % print(e.getClass().getMethods());
@@ -130,7 +148,7 @@ java.lang.reflect.Method []: {
 
 ### `javap(Object)`
 Shows only the methods and fields **declared/overridden directly** on the concrete
-class (a narrower, more readable view than `getMethods()`).
+class (a narrower, more readable view than `getClass().getMethods()`).
 
 ---
 

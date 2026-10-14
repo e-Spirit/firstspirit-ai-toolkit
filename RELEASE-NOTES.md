@@ -1,5 +1,60 @@
 # Release Notes
 
+## 0.4.1 — 2026-10-12
+
+Skills in this release (each SKILL.md carries the same source commit in its `metadata:` block):
+
+- `firstspirit-api-reference` @ 2e7b7bc (beta)
+- `firstspirit-templating-reference` @ 2e7b7bc (beta)
+- `firstspirit-scripting` @ 2e7b7bc (beta)
+- `firstspirit-rest-api` @ 2e7b7bc (beta)
+- `firstspirit-external-sync-export` @ 2e7b7bc (beta)
+- `firstspirit-operations` @ 2e7b7bc (beta)
+- `firstspirit-contentcreator-extensions` @ 2e7b7bc (beta)
+- `firstspirit-template-design` @ 2e7b7bc (beta)
+- `firstspirit-cloud` @ 2e7b7bc (beta)
+- `firstspirit-headless` @ 2e7b7bc (beta)
+- `firstspirit-module-development` @ 2e7b7bc (beta)
+
+Changes since 0.4.0 — a corrections release. No new skills; six skills carry corrections from a
+source-check of the 0.4.0 texts against the product sources and from live re-tests, the other
+five are republished unchanged from the same source commit.
+
+- **`firstspirit-templating-reference`** — new `references/templates/pdf-fop.md`: PDF output
+  through a second template set and the Apache FOP module (setup, page sequences, bookmarks,
+  table of contents, format templates for lists and tables in XSL-FO). The `#list`, `#listitem`,
+  `#table` and `#cell` system objects and `listConfig` documented from the product documentation;
+  an HTML `ul` format with classes; `.toNumber()` in arithmetic. Rules: a validation's scope is
+  inherited unchanged and only the rule's inclusion scope is raised; `ONSAVE` rules never block a
+  release; the catalog action is `NEW`, not `ADD`; a null toggle keeps a field visible in
+  SiteArchitect and hides it in ContentCreator. Description shortened.
+- **`firstspirit-rest-api`** — DOM lists: a list keeps its properties only as `<p><ul style
+  start>`, a bare `<ul>` loses them and ContentCreator resets the list type on save; `<ol>` is not
+  a FirstSpirit list. Smoke probes W26/W27 for both forms and S1 extended (all run on module
+  0.0.25-beta). `POST /scripts/` ignores `location` as well as `type` and `description`; the
+  `/execute` body is the script's log records, an uncaught exception is a 500. Never rebuild a page
+  blind: revisions endpoints return metadata only; replace single sections by id; reload the
+  client store after deleting elements.
+- **`firstspirit-scripting`** — FS_BUTTON bound variables corrected (`context`, `element`,
+  `language`, `properties`, `drop`, `dropdata` plus PARAMs; `values`, `$field$` and `isDrop` never
+  existed); `gc` and `context` per context; BeanShell limits settled on a live engine (`class …
+  implements` works, one generic type parameter parses, multi-catch does not); `/execute` returns
+  the script's log records.
+- **`firstspirit-api-reference`** — `TEMPLATESTORE_SCHEMA` as the uid type of table templates
+  and queries; `getName()` deprecated in favour of `getUid()`; `LanguageDataProvider` and agent
+  surfaces corrected; `UrlRegistryAgent` is internal API and no longer recommended; templates
+  expose `getGomSource` / `getFormDefaults` / `getChannelSource` / `getMetaFormData`.
+- **`firstspirit-external-sync-export`** — fs-cli port per connection mode (HTTP 8000, SOCKET
+  1088, HTTPS 443), `-e` is a boolean flag, schemas export through `entities:`, the `GidAgent`
+  route for missing GIDs, every line re-read in the FSDevTools 4.8.9 sources; the wrapper passes
+  the password through the environment only.
+- **`firstspirit-template-design`** — build one sample in the client and read the stored form
+  back before designing format templates or imports; remove the `FORMATS` reference before
+  deleting a format template.
+- Restamped unchanged: `firstspirit-operations`, `firstspirit-contentcreator-extensions`,
+  `firstspirit-cloud`, `firstspirit-headless`, `firstspirit-module-development`.
+
+
 ## 0.4.0 — 2026-10-08
 
 Skills in this release (each SKILL.md carries the same source commit in its `metadata:` block):

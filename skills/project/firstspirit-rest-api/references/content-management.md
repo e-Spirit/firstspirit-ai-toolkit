@@ -92,6 +92,15 @@ body's section list, so an existing section is found by listing the body, not by
 curl -s -u "$FS_USERNAME:$FS_PASSWORD" -X DELETE \
   "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/pages/homepage/bodies/content/sections/hero"
 ```
+- **Never rebuild a page blind.** Deleting every section and re-creating them from a source
+  overwrites what editors changed in the client since the last import; the delete is a new
+  revision, not a loss, but `GET …/revisions/{id}` returns metadata only (`id`, `creationTime`,
+  `comment`, `editor`), so an older state cannot be read back over REST and merged `[observed]`
+  (2026-10-09). Read the page first, say what would be overwritten, and replace single sections
+  by id instead of the whole set.
+- After deleting a page, section or other element, tell the user to reload the store in the open
+  client: a SiteArchitect that still had the element open crashed on the next access `[observed]`
+  (2026-10-12).
 
 ### Rename Section
 ```bash
@@ -237,8 +246,34 @@ Content is an HTML/text string:
   is not isolated (link markup, or the link's reference attributes). Read the field back
   from an element that already holds such a link and send that shape, or leave the link to
   an editor.
-- The server **rewrites `data-list-attributes=""`** on lists `[observed]`. Send a bare
-  `<ul>` / `<ol>`; do not echo the attribute back, and do not diff on it.
+- **Lists: write `<p><ul style="N" [start="M"]>…</ul></p>`, not a bare `<ul>` and never `<ol>`**
+  `[observed]` (REST `0.0.25-beta`, FS 5.2.261116, repeated tests 2026-10-09 to 2026-10-12). The
+  clients store a list as `<ul data-list-attributes="…" style="list-style-type:…;">` where
+  `data-list-attributes` carries URL-encoded `name=value` pairs joined by `:|:` (for example
+  `start%3D4%3A%7C%3Astyle%3D2`), and `style` is the list type: `1` bullet, `2` numbered, `3` to
+  `6` alphabetical and Roman, `0`, `7`, `8` paragraph, indent only and user-defined (the
+  templating skill's `#list.style`). The server converts HTML attributes of a `<ul>` into those
+  list properties **only when the `<ul>` sits inside a `<p>`**; a `<ul>` outside a `<p>` is stored
+  plain with its attributes dropped; both clients then show a bullet list, and when an editor
+  changes its type, saving the section in ContentCreator resets it to the default again (also for
+  SiteArchitect). So write bullet lists as `<p><ul style="1">` too. `style="list-style-type:decimal"`
+  does **not** set the type; `<p><ul>` without attributes is stored with `data-list-attributes=""`.
+  The smoke test probes both forms (W26, W27). A sent `<ol>` is kept as `<ol>` but is not
+  a FirstSpirit list: ContentCreator shows it as inline formatting and format templates get an
+  empty `#list.style`.
+- **A DOM field is not round-trip safe when it holds lists with properties** `[observed]`
+  (2026-10-12). GET followed by PATCH of the same content makes the server read the stored
+  `data-list-attributes` and `style` attributes as list properties again and nest them
+  (`data-list-attributes%3D…`, `style=list-style-type:decimal;`); SiteArchitect then fails to open
+  the section with `NumberFormatException: For input string: "list-style-type:decimal;"` in
+  `domeditor.list.view.ListView.getListType`. Rebuild the field from your source in the
+  `<p><ul style="N">` form instead of echoing what you read; do not diff on the stored attributes.
+  Reported to the REST module team as a defect.
+- ContentCreator rendering of REST-written DOM `[observed]` (2026-10-12): a `<p>` inside an
+  `<li>` draws a frame per item, so write `<li>text</li>`; a `<br/>` after a list becomes an empty
+  paragraph; a list inside a `<p>` is one framed block with its type in the list properties; the
+  `start` value shows in the list properties and the preview, in the ContentCreator form only
+  after reopening (SiteArchitect shows it in the form at once).
 
 #### CMS_INPUT_COMBOBOX (single-select)
 ```json

@@ -87,8 +87,9 @@ INFO  FSHttpClient 'WebsocketFSHttpClient(wss://…)' successfully connected.
 ERROR couldn't authenticate!  (AuthenticationException)
 ```
 **Cause:** transport is fine; the **credentials** are wrong, expired, or still
-placeholder values. A tell: the config echo shows `User: <the placeholder you
-pasted>`. **Fix:** put the real login/password in the creds file; confirm the
+placeholder values. A tell: `fs-cli … test` echoes `User: <the placeholder you
+pasted>` (only the `test` command prints this line; `export` / `import` show the
+user in a DEBUG line at most `[core]`). **Fix:** put the real login/password in the creds file; confirm the
 account is valid for *this* instance's realm. → `connection-and-auth.md`.
 
 ## Export (gate 4)
@@ -132,14 +133,18 @@ includes that row fails while others sharing the same table succeed.
   successes. This gets you everything that is legitimately exportable, without
   changing the project.
 - **If the blocked rows genuinely need to be in a re-importable export, give
-  them GIDs first.** That means the entities acquire a stable id on the server
-  (re-saving them assigns one) — after which they export normally. This
-  **modifies the source project**, so confirm before doing it; it is the
-  intended remedy, not a workaround.
+  them GIDs first.** The dedicated, admin-only Access API for that is
+  `de.espirit.firstspirit.common.GidAgent` `[jar]`: `migrateSchema(schema)` if the
+  schema has no GID column yet, then `adaptGid(schema, entities, force)` — after
+  which they export normally. Whether an ordinary re-save of a dataset assigns a
+  missing GID is **not** established (`[verify]`; nothing in the source shows it),
+  so do not rely on re-saving. This **modifies the source project**, so confirm
+  before doing it; it is the intended remedy, not a workaround.
 - **Only reading the content (not round-tripping)?** Read those datasets over
-  the FirstSpirit REST API instead — it returns dataset content and does not
-  require a GID, because it isn't producing a re-importable artifact. See
-  `firstspirit-rest-api`.
+  the FirstSpirit REST API instead — the dataset *listing* returns rows without a
+  GID too, while the single-dataset endpoints address a row by its GID, so a
+  GID-less row is reachable through the listing only `[core]`. Endpoints and
+  details: `firstspirit-rest-api`.
 Do **not** silently drop the blocked sources — report exactly which data
 sources and which row id were affected, and which of the above applies.
 
@@ -151,4 +156,6 @@ identifiers (a "whole project" is an explicit list). → `export-command.md`.
 ---
 *Every message here was reproduced on fs-cli 4.8.9 against a FirstSpirit
 5.2.260815 Cloud instance (2026-08-03); the client-build-number and Java 25
-entries against a second, 5.2.261011 Cloud instance (2026-09-14).*
+entries against a second, 5.2.261011 Cloud instance (2026-09-14). `[core]` = read in the
+FSDevTools 4.8.9 source, the FirstSpirit Core repository or the REST module 0.0.25-beta;
+`[jar]` = javap on the 5.2.261011 runtime jar.*

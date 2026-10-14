@@ -18,14 +18,16 @@ the read/write pattern below is identical across all of them: `getFormData()` �
 ```
 import de.espirit.firstspirit.forms.FormData;
 
-FormData fd = section.getFormData();                 // language-independent (current store)
-FormData fd = section.getFormData(language);         // language-specific
+FormData fd = section.getFormData();                 // all languages in one container (current store)
+FormData fd = ((LanguageDataProvider) section).getFormData(language);   // LanguageDataProvider, 5.2.261011 only [jar]; differs from getFormData() only in a language-dependent release state [javadoc]
 
 FormField field = fd.get(language, "st_headline");   // by component name
 Object    value = field.get();                       // the value
 field.set(newValue);                                 // write (element must be locked)
 section.setFormData(fd);                             // write the form back before save()
-// iterate all fields: for (FormField f : fd) { f.getName(); f.getEditorValue(); }
+// iterate all fields — FormData is NOT Iterable and FormField has no getEditorValue() [jar];
+// the names come from the form definition:
+// for (String name : fd.getForm().appendEditorNames(null)) { FormField f = fd.get(language, name); Object v = f.get(); }
 ```
 
 - Component **names** are the input-component identifiers from the form (GOM) — see
@@ -56,13 +58,14 @@ to the master language is the common fallback.
 > Javadoc).** As of FirstSpirit **2026.4** the **release** state is language-aware
 > (an element can be approved/published per project language, not all-or-nothing),
 > and **2026.7** adds **language-dependent user permissions** (editing restricted
-> per project language). Release-notes-named entry points to confirm before use:
-> `LanguageDataProvider#getFormData` (2026.3), `IDProviderChange#isFirstRelease(Language…)`
-> / `hasFirstRelease()` (2026.9), and language-specific release info on
-> `IDProviderEventAgent` (2025.13). Treat the method names as pointers sourced from
-> the release notes, not confirmed signatures — grep the Javadoc before relying on
-> them; the concept (release/permissions now carry a `Language` dimension) is the
-> durable part.
+> per project language). Entry points, all on the 5.2.261011 jar and none on 5.2.240208 `[jar]`:
+> `LanguageDataProvider.getFormData(Language)` (implemented by the Page, Section and Dataset
+> runtime classes, so cast — the interfaces do not declare it `[core]`),
+> `IDProvider.release(Language...)`, `IDProviderChange.getChangedLanguages()` /
+> `isFirstRelease(Language...)` (`@ApiStatus.Experimental`). `IDProviderEventAgent` itself has
+> no language-specific API; the languages arrive on the `IDProviderChange` it delivers. Guard
+> with the server version; the concept (release/permissions carry a `Language` dimension) is
+> the durable part.
 
 ## `TemplateSet` — output channels
 
@@ -76,10 +79,11 @@ channel-specific behaviour.
 Structured records from the Content Store (`Content2`, see [stores.md](stores.md)).
 
 ```
-List<Dataset> rows = content2.getDatasets(language, false);
+List<Dataset> rows = content2.getDatasets(language, false);   // (Language, boolean) is 5.2.261011 only; 5.2.240208: getDatasets(language) [jar]
 for (Dataset ds : rows) {
     Entity e = ds.getEntity();                  // the raw record
-    FormData fd = ds.getFormData(language);     // dataset field values
+    FormData fd = ds.getFormData();             // dataset field values
+    // language-dependent release state (5.2.261011): ((LanguageDataProvider) ds).getFormData(language) [jar]
     Object v = e.getValue("attributeName");     // raw attribute access
 }
 
@@ -139,7 +143,7 @@ model reads from.
 `setToDefault()`, `validate(T)`). The typed value simply comes from **`get()`**, and
 `getType()` tells you which class to expect — e.g. `String` for CMS_INPUT_TEXT,
 `TargetReference` for FS_REFERENCE, `DomElement` for CMS_INPUT_DOM. The `…EditorValue` classes
-in `de.espirit.firstspirit.access.editor` (`DomEditorValue`, `ReferenceEditorValue`, …) are the
-editor-side value types behind those; you meet them through the template/GOM layer, not via
-`FormField`. For the mapping from input component to datatype, defer to
+in `de.espirit.firstspirit.access.editor` (`DomEditorValue`, `ReferenceEditorValue`, …) are
+**deprecated since 5.2.21** in favour of `FormField` `[jar]` `[javadoc]` — do not use them in new
+code. For the mapping from input component to datatype, defer to
 `firstspirit-templating-reference`.

@@ -16,9 +16,9 @@ the trees to their interfaces and covers the base type all nodes share.
 | **Page content** | `PAGESTORE` | `PageFolder` → `Page` → `Body` → `Section` (also `SectionReference`, `Content2Section`) |
 | **Site structure** | `SITESTORE` | `PageRefFolder` → `PageRef`, `DocumentGroup` |
 | **Media** | `MEDIASTORE` | `MediaFolder` → `Media` (Picture / File) |
-| **Data sources** | `CONTENTSTORE` | `ContentFolder` → `Content2` → (`Dataset` / `Entity` rows) |
-| **Global settings** | `GLOBALSTORE` | `GCAFolder` → `GCAPage` → `GCABody` → `GCASection` (Global Content Area) |
-| **Templates** | `TEMPLATESTORE` | `TemplateFolder` → `PageTemplate`, `SectionTemplate`, `FormatTemplate`, `LinkTemplate`; `Script`; `Schema` → `Query`, `TableTemplate`; `Workflow` |
+| **Data sources** | `CONTENTSTORE` | `ContentFolder` → `Content2` — the rows are **not** tree children: `content2.getDatasets(...)` → `Dataset`, whose `getEntity()` is a `de.espirit.or.schema.Entity` (a `Map<String,Object>`, not a store element) `[jar]` |
+| **Global settings** | `GLOBALSTORE` | `GlobalContentArea` (itself a `GCAFolder`) → `GCAFolder` → `GCAPage` → `GCABody` → `GCASection`; the root also holds `ProjectProperties` and `URLProperties` `[jar]` |
+| **Templates** | `TEMPLATESTORE` | fixed containers under the root `[jar]`: `PageTemplates` / `SectionTemplates` / `LinkTemplates` → `TemplateFolder` → `PageTemplate` / `SectionTemplate` / `LinkTemplate`; `FormatTemplates` → `FormatTemplateFolder` → `FormatTemplate` (not a `Template`, so never in a `TemplateFolder<T extends Template>`); `Scripts` → `ScriptFolder` → `Script`; `Schemes` → `SchemaFolder` → `Schema` → `Query`, `TableTemplate`; `Workflows` → `WorkflowFolder` → `Workflow` |
 
 Packages: `de.espirit.firstspirit.access.store.pagestore` / `.sitestore` /
 `.mediastore` / `.contentstore` / `.globalstore` / `.templatestore`.
@@ -34,7 +34,8 @@ long        getId();                     // internal numeric id
 boolean     hasUid();                    // call BEFORE getUid()/getUidType()
 String      getUid();                    // unique identifier (throws if !hasUid)
 UidType     getUidType();                // the namespace of the uid
-String      getName();                   // reference name
+String      getName();                   // element name — @Deprecated on Page/PageRef/Media since 4.1.10, use getUid() [javadoc]
+String      getReferenceName();          // @Nullable — the name $CMS_REF(...)$ uses; null if the element cannot be referenced [javadoc]
 String      getDisplayName(Language);    // editor-facing label
 
 // Navigation
@@ -114,8 +115,9 @@ which is the documented way to force a regeneration of that element downstream `
 
 ## `IDProvider.UidType` values
 
-The namespace a UID is unique in. Each UID-bearing element also exposes a static
-`UID_TYPE` field (e.g. `PageFolder.UID_TYPE`).
+The namespace a UID is unique in. Most UID-bearing interfaces also expose a static
+`UID_TYPE` field (e.g. `PageFolder.UID_TYPE`, `Media.UID_TYPE`); `GCAFolder`, `ContentFolder`
+and `Dataset` do not `[jar]` — use the table below for those.
 
 | UidType | Applies to |
 | --- | --- |
@@ -127,8 +129,8 @@ The namespace a UID is unique in. Each UID-bearing element also exposes a static
 | `CONTENTSTORE` | `Content2` |
 | `CONTENTSTORE_DATA` | dataset rows |
 | `GLOBALSTORE` | global-store elements |
-| `TEMPLATESTORE` | page/section templates |
-| `TEMPLATESTORE_SCHEMA` | `Schema` |
+| `TEMPLATESTORE` | `PageTemplate`, `SectionTemplate`, `MasterTemplate`, **`Schema`**, `Script`, `Workflow` `[jar]` |
+| `TEMPLATESTORE_SCHEMA` | `TableTemplate`, `Query` — **not** `Schema` (that is `TEMPLATESTORE`; `loadStoreElement(uid, TEMPLATESTORE_SCHEMA, …)` never finds a schema) `[jar]` |
 | `TEMPLATESTORE_LINKTEMPLATE` | `LinkTemplate` |
 | `TEMPLATESTORE_FORMATTEMPLATE` | `FormatTemplate` |
 | `TEMPLATESTORE_TABLEFORMATTEMPLATE` | table format template |

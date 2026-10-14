@@ -4,27 +4,27 @@ Patterns extracted from production FirstSpirit projects. Each example includes t
 
 ---
 
-## Catalog size limit -- Maximum items (ADD)
+## Catalog size limit -- Maximum items (NEW)
 
-Limits catalog entries by hiding the ADD button when the maximum is reached.
+Limits catalog entries by disabling the "New" action (`NEW`) when the maximum is reached.
 
 ```xml
 <RULE>
     <WITH>
         <LESS_THAN>
             <PROPERTY name="SIZE" source="st_cards"/>
-            <NUMBER>4</NUMBER>
+            <NUMBER>3</NUMBER>
         </LESS_THAN>
     </WITH>
     <DO>
-        <PROPERTY name="ADD" source="st_cards"/>
+        <PROPERTY name="NEW" source="st_cards"/>
     </DO>
 </RULE>
 ```
 
-Business context: Design constraint -- highlight cards limited to max 3 items for visual balance. The ADD button is only shown when SIZE < 4 (i.e., 0-3 items exist).
+Business context: Design constraint -- highlight cards limited to max 3 items for visual balance. The "New" action stays enabled while SIZE < 3 (0-2 items exist), so a third card can be added and no fourth. (`SIZE < 4` would allow four: with three cards `3 < 4` still holds.)
 
-Alternative approach using NEW (hides the "New" button instead):
+Equivalent form with an inverted condition (disables "New" once 3 items exist):
 
 ```xml
 <RULE>
@@ -42,9 +42,11 @@ Alternative approach using NEW (hides the "New" button instead):
 </RULE>
 ```
 
-Key points:
-- `ADD` controls the add/duplicate button, `NEW` controls the "new entry" button
-- Both approaches work -- choose based on what feels clearer
+Key points `[core]` (confirmed live 2026-10-09, FirstSpirit 5.2.261116, SiteArchitect and ContentCreator form preview):
+- The action properties switch an **enabled** state; the button stays visible, greyed out — nothing is hidden. With the rule above, "New" was disabled after the third card in both clients
+- `FS_CATALOG` knows the actions `NEW`, `REMOVE`, `EDIT` and `COPY` only. **`ADD` does not exist on a catalog**: a rule setting it is logged as a warning and limits nothing — in the live check "New" stayed enabled at any size (`FS_INDEX` has `ADD`, see *FS_INDEX size limit*)
+- `NEW` creates a new card (FS_CATALOG, FS_INDEX); `ADD` adds existing records via selection (FS_INDEX only); `COPY` duplicates a card (FS_CATALOG) and follows `NEW` unless set explicitly
+- For FS_CATALOG restrict `NEW`; for FS_INDEX restrict both `NEW` and `ADD`
 - `SIZE` returns the current number of entries in the catalog/index
 
 ---
@@ -137,7 +139,7 @@ Business context: Feature card with dual mode -- "product" shows a dataset picke
 
 Key points:
 - Multiple `<PROPERTY name="VISIBLE" .../>` in one `<DO>` block toggles all at once
-- Each field defaults to hidden; the rule makes it visible when the condition matches
+- There is no "hidden by default": the rule writes the boolean WITH result into VISIBLE, so each field is hidden whenever the condition is false — also while nothing is selected yet — and visible when it is true `[core]`
 
 ---
 
@@ -248,10 +250,10 @@ Permanently hides form groups from all editors in all contexts.
 </RULE>
 ```
 
-Business context: Metadata template groups defined in GOM for programmatic access (scripts, modules) but never shown to editors. WITH=FALSE means the DO block's effect is negated -- VISIBLE is actively set to "not visible".
+Business context: Metadata template groups defined in GOM for programmatic access (scripts, modules) but never shown to editors. WITH=FALSE writes `false` into VISIBLE, so the groups are hidden -- nothing is "negated"; negation happens only through `<NOT>` `[core]`.
 
 Key points:
-- `<FALSE/>` is always FALSE -> VISIBLE is negated -> fields are hidden
+- `<FALSE/>` is always FALSE -> VISIBLE is set to false -> fields are hidden
 - Useful for fields that are only accessed by scripts or FirstSpirit modules
 - Multiple fields can be hidden in one rule
 
@@ -278,7 +280,7 @@ Shows fields only when editing in the TemplateStore -- hides them from content e
 Business context: Section lifespan dates (from/to) are configured by template developers, not content editors. The group is only visible when editing the template itself.
 
 Key points:
-- `STORETYPE` values: `pagestore`, `mediastore`, `sitestore`, `templatestore`, `globalstore`
+- `STORETYPE` values: `pagestore`, `contentstore`, `mediastore`, `sitestore`, `templatestore`, `globalstore` (the store type's name in lower case `[core]`)
 - `source="#form.groupName"` targets a named `CMS_GROUP` in the GOM
 
 ---
@@ -302,9 +304,9 @@ Restricts an FS_INDEX dataset picker to exactly 1 entry.
 </RULE>
 ```
 
-Business context: Feature card allows selecting exactly one product from the database. Once a product is picked, the NEW and ADD buttons disappear.
+Business context: Feature card allows selecting exactly one product from the database. Once a product is picked, the NEW and ADD buttons are disabled (greyed out, not hidden `[core]`).
 
-Logic: SIZE < 1 (= empty) -> show buttons. SIZE >= 1 -> hide buttons.
+Logic: SIZE < 1 (= empty) -> buttons enabled. SIZE >= 1 -> buttons disabled.
 
 ---
 

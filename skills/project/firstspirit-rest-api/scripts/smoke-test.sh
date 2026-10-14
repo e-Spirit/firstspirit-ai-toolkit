@@ -63,7 +63,7 @@ skip() { SKIP=$((SKIP+1)); printf '  SKIP  %-5s %s\n            -> %s\n' "$1" "$
 warn() { WARN=$((WARN+1)); printf '  WARN  %-5s %s\n            -> %s\n' "$1" "$2" "$3"; }   # server changed, skill may be stale; not a failure
 say()  { printf '\n%s\n' "$1"; }
 
-# ---- .env: the §4.8 check happens BEFORE sourcing ----------------------------
+# ---- .env: the quoting check happens BEFORE sourcing -------------------------
 say "Environment ($ENV_FILE)"
 [ -f "$ENV_FILE" ] || { echo "no $ENV_FILE — see SKILL.md → Setup" >&2; exit 2; }
 
@@ -76,8 +76,11 @@ else
   pass E1 "no unquoted \$ in .env values"
 fi
 
+# The variables stay shell-local: nothing here is exported to child processes (git-ignore the .env file).
+set +u   # +u: a mis-quoted $ must not abort, E1 already said why
 # shellcheck disable=SC1090
-set -a; set +u; . "$ENV_FILE"; set -u; set +a   # +u: a mis-quoted $ must not abort, E1 already said why
+. "$ENV_FILE"
+set -u
 for v in FS_USERNAME FS_PASSWORD FS_REST_BASE_URL FS_PROJECT_ID; do
   [ -n "${!v:-}" ] || { echo "$v is empty after sourcing $ENV_FILE" >&2; exit 2; }
 done
@@ -100,6 +103,7 @@ N=0
 P="$FS_REST_BASE_URL/projects/$FS_PROJECT_ID"
 
 # req METHOD URL [content-type] [datafile]  -> STATUS, BODY (path of response body)
+# The credentials go to curl via -u (visible in the process list for the duration of the call).
 req() {
   local m="$1" u="$2" ct="${3:-}" data="${4:-}"
   N=$((N+1)); BODY="$OUT/$(printf '%03d' "$N").body"
@@ -458,6 +462,67 @@ if [ "$DO_WRITE" = 1 ]; then
     req POST "$P/pages/$CREATED_PAGE/actions" application/json "$OUT/release-check.json"
     if is2xx; then pass W7 "POST /actions {release, checkOnly:true} → $STATUS"
     else fail W7 "release dry-run via /actions" "HTTP $STATUS: $(head -c 160 "$BODY")"; fi
+
+    # W26/W27 — DOM lists (content-management.md → CMS_INPUT_DOM); numbered after W25 because they
+    # were added last, run here because they need the smoke page before its cleanup. No earlier
+    # probe writes to a DOM editor, so nothing of this run is overwritten. A list keeps its FirstSpirit list
+    # properties only as <p><ul style="N" [start="M"]>: the server turns the attributes into
+    # data-list-attributes (URL-encoded name=value pairs joined by ":|:") plus a style of its own.
+    # A <ul> outside a <p> is stored plain, and ContentCreator then resets an editor's type change on
+    # save. The payload is built from scratch each time — never GET→PATCH a DOM field with lists (the
+    # server nests the properties and SiteArchitect fails on the section).
+    DFBASE="$P/pages/$CREATED_PAGE/form"
+    req GET "$DFBASE"
+    DEDITOR="$(jqr '[.editors[]? | select(.type=="CMS_INPUT_DOM")][0].name // empty')"
+    if [ -z "$DEDITOR" ] && [ -n "${TBODY:-}" ] && [ -n "${TSECTION:-}" ]; then
+      req GET "$P/pages/$CREATED_PAGE/bodies/$TBODY/sections/$TSECTION/form"
+      DEDITOR="$(jqr '[.editors[]? | select(.type=="CMS_INPUT_DOM")][0].name // empty')"
+      [ -n "$DEDITOR" ] && DFBASE="$P/pages/$CREATED_PAGE/bodies/$TBODY/sections/$TSECTION/form"
+    fi
+    if [ -z "$DEDITOR" ]; then
+      skip W26 "DOM list properties survive a <p><ul style start> write" "no CMS_INPUT_DOM on the page form or the added section of $CREATED_PAGE"
+      skip W27 "a <ul> outside a <p> is stored without attributes" "no CMS_INPUT_DOM editor"
+    else
+      req GET "$DFBASE/$DEDITOR"
+      DSUFFIX=""; [ "$(jqr '.configuration.usesLanguages')" = true ] && DSUFFIX="/$MASTER"
+      jq -n --arg n "$DEDITOR" '{name:$n, type:"CMS_INPUT_DOM", content:"<p>smoke</p><p><ul style=\"2\" start=\"4\"><li>four</li><li>five</li></ul></p>"}' > "$OUT/dom-list.json"
+      req PATCH "$DFBASE/$DEDITOR$DSUFFIX" application/json "$OUT/dom-list.json"; DPS="$STATUS"
+      if ! is2xx; then
+        fail W26 "PATCH a <p><ul style start> list into $DEDITOR" "HTTP $DPS: $(head -c 160 "$BODY") — the read-back is not judged; the field still holds its previous content"
+        DCONTENT="__patch_rejected__"
+      else
+        req GET "$DFBASE/$DEDITOR$DSUFFIX"; DCONTENT="$(jqr .content)"
+      fi
+      # the two markers are checked independently: the server's attribute order is not part of the claim
+      case "$DCONTENT" in
+        __patch_rejected__) : ;;
+        *'data-list-attributes="start%3D4%3A%7C%3Astyle%3D2"'*)
+          case "$DCONTENT" in *'list-style-type:decimal'*)
+          pass W26 "<p><ul style=\"2\" start=\"4\"> stored as data-list-attributes=\"start%3D4%3A%7C%3Astyle%3D2\" + list-style-type:decimal on $DEDITOR (PATCH → $DPS)" ;;
+          *) warn W26 "list properties stored, but without the server's list-style-type style" "PATCH → $DPS, read-back: $(printf '%s' "$DCONTENT" | head -c 200)" ;; esac ;;
+        *'data-list-attributes='*)
+          warn W26 "list properties stored in a different shape" "PATCH → $DPS, read-back: $(printf '%s' "$DCONTENT" | head -c 200) — update the CMS_INPUT_DOM section if the encoding changed" ;;
+        *)
+          fail W26 "DOM list properties survive a <p><ul style start> write" "PATCH → $DPS, read-back has no data-list-attributes: $(printf '%s' "$DCONTENT" | head -c 200)" ;;
+      esac
+      jq -n --arg n "$DEDITOR" '{name:$n, type:"CMS_INPUT_DOM", content:"<p>smoke</p><ul style=\"2\" start=\"4\"><li>four</li><li>five</li></ul>"}' > "$OUT/dom-list-bare.json"
+      req PATCH "$DFBASE/$DEDITOR$DSUFFIX" application/json "$OUT/dom-list-bare.json"; DPS="$STATUS"
+      if ! is2xx; then
+        fail W27 "PATCH a bare <ul style start> list into $DEDITOR" "HTTP $DPS: $(head -c 160 "$BODY") — the read-back is not judged; the field still holds the W26 content"
+        DCONTENT="__patch_rejected__"
+      else
+        req GET "$DFBASE/$DEDITOR$DSUFFIX"; DCONTENT="$(jqr .content)"
+      fi
+      case "$DCONTENT" in
+        __patch_rejected__) : ;;
+        *'data-list-attributes='*|*'start="4"'*|*'style="2"'*)
+          warn W27 "a <ul> outside a <p> now keeps its attributes" "read-back: $(printf '%s' "$DCONTENT" | head -c 200) — the skill says they are dropped; re-check the <p> requirement" ;;
+        *'<ul>'*)
+          pass W27 "<ul style=\"2\" start=\"4\"> outside a <p> stored as plain <ul> (attributes dropped, as documented; PATCH → $DPS)" ;;
+        *)
+          fail W27 "a <ul> outside a <p> is stored without attributes" "PATCH → $DPS, read-back: $(printf '%s' "$DCONTENT" | head -c 200)" ;;
+      esac
+    fi
   fi
 
   # ---- Other throwaways (scripts/claim-coverage.md tier 2): page reference, medium, dataset,
@@ -535,8 +600,8 @@ if [ "$DO_WRITE" = 1 ]; then
     else fail W15 "GET …/data/resolution/{res} downloads a rendition" "HTTP $STATUS, $(wc -c < "$BODY" | tr -d ' ') bytes"; fi
     req GET "$P/media/$CREATED_MEDIUM/resolutions"
     if is2xx && [ "$(jqr '[.[]?.uid] | index("ORIGINAL") != null')" = true ]; then
-      pass W15b "GET …/resolutions lists the renditions ($(jqr length) incl. ORIGINAL) — not in the skill yet, worth adding"
-    else skip W15b "GET …/resolutions" "HTTP $STATUS — endpoint is in the OpenAPI spec but not documented in the skill"; fi
+      pass W15b "GET …/resolutions lists the renditions ($(jqr length) incl. ORIGINAL)"
+    else skip W15b "GET …/resolutions" "HTTP $STATUS — endpoint is in the OpenAPI spec, not probed further"; fi
     printf '{"type":"FILE"}' > "$OUT/medium-type.json"
     req PATCH "$P/media/$CREATED_MEDIUM" application/json "$OUT/medium-type.json"
     case "$STATUS" in
@@ -634,7 +699,7 @@ XML
   cleanup_all; trap - EXIT
 fi
 
-# ---- Script probes (report §4.6 / §5.5) --------------------------------------
+# ---- Script probes -----------------------------------------------------------
 if [ "$DO_SCRIPTS" = 1 ]; then
   say "Script probes  (throwaway script, deleted at the end)"
   TS="${TS:-$(date +%s)}"; TSCRIPT="smoketest_$TS"; CREATED_SCRIPT=""
@@ -660,18 +725,20 @@ if [ "$DO_SCRIPTS" = 1 ]; then
   # stored type comes back MENU regardless of what's sent, and description is dropped. This probe
   # asserts that DOCUMENTED behaviour; it fails only if the server starts honouring the DTO (good
   # news — update the skill) or does something else.
-  printf '{"name":"%s","type":"TEMPLATE","location":"/","description":"smoke description","comment":"smoke comment"}' "$TSCRIPT" > "$OUT/create-script.json"
+  # location is ignored as well (stored "/", re-tested 0.0.25-beta 2026-10-12), so a non-root
+  # location is sent and "/" expected back.
+  printf '{"name":"%s","type":"TEMPLATE","location":"/smoke_folder","description":"smoke description","comment":"smoke comment"}' "$TSCRIPT" > "$OUT/create-script.json"
   req POST "$P/scripts/" application/json "$OUT/create-script.json"
   if is2xx; then
     CREATED_SCRIPT="$TSCRIPT"
     req GET "$P/scripts/$TSCRIPT"
-    STYPE="$(jqr '.type // "?"')"; SDESC="$(jqr '.description // "null"')"
-    if [ "$STYPE" = MENU ] && [ "$SDESC" = "null" ]; then
-      pass S1 "POST /scripts/ ignores type/description as documented (stored type=MENU, description=null)"
+    STYPE="$(jqr '.type // "?"')"; SDESC="$(jqr '.description // "null"')"; SLOC="$(jqr '.location // "?"')"
+    if [ "$STYPE" = MENU ] && [ "$SDESC" = "null" ] && [ "$SLOC" = "/" ]; then
+      pass S1 "POST /scripts/ ignores type/description/location as documented (stored type=MENU, description=null, location=/)"
     elif [ "$STYPE" = TEMPLATE ] && [ "$SDESC" = "smoke description" ]; then
-      fail S1 "create-DTO handling changed (now honoured)" "stored type=$STYPE, description set — the server now honours the DTO; update SKILL.md → Scripts and this probe"
+      fail S1 "create-DTO handling changed (now honoured)" "stored type=$STYPE, description set, location=$SLOC — the server now honours the DTO; update SKILL.md → Scripts and this probe"
     else
-      fail S1 "POST /scripts/ create-DTO behaviour" "expected type=MENU/description=null (documented); got type=$STYPE, description=$SDESC"
+      fail S1 "POST /scripts/ create-DTO behaviour" "expected type=MENU/description=null/location=/ (documented); got type=$STYPE, description=$SDESC, location=$SLOC"
     fi
   else fail S1 "POST /scripts/ creates a script" "HTTP $STATUS: $(head -c 160 "$BODY")"; fi
 
@@ -680,7 +747,7 @@ if [ "$DO_SCRIPTS" = 1 ]; then
     printf '{"description":"patched"}' > "$OUT/patch-script.json"
     req PATCH "$P/scripts/$TSCRIPT" application/json "$OUT/patch-script.json"
     case "$STATUS" in
-      2??) pass S2 "PATCH /scripts/{name} exists ($STATUS) — undocumented in the skill, add it" ;;
+      2??) pass S2 "PATCH /scripts/{name} exists ($STATUS)" ;;
       405|404) pass S2 "PATCH /scripts/{name} not available ($STATUS) — consistent with the skill (no PATCH documented)" ;;
       *) skip S2 "PATCH /scripts/{name}" "HTTP $STATUS" ;;
     esac
@@ -700,7 +767,7 @@ if [ "$DO_SCRIPTS" = 1 ]; then
       if [ "${PUTS:0:1}" = 2 ] && is2xx && grep -q 42 "$BODY"; then
         fail S3 "/execute echoes the return value (behaviour changed)" "execute → $STATUS returned '42' — the empty-body behaviour documented in SKILL.md → Scripts no longer holds; update it"
       elif [ "${PUTS:0:1}" = 2 ] && is2xx; then
-        pass S3 "PUT source + POST /execute → $STATUS with empty body ($BODYSIZE bytes) — matches the documented no-echo behaviour"
+        pass S3 "PUT source + POST /execute → $STATUS with empty body ($BODYSIZE bytes) — the smoke script logs nothing, so no log records are echoed, as documented"
       else
         fail S3 "PUT …/template-sets/$TSET then POST /execute succeeds" "PUT → $PUTS, execute → $STATUS: $(head -c 120 "$BODY")"; fi
 
@@ -709,7 +776,7 @@ if [ "$DO_SCRIPTS" = 1 ]; then
       req PUT "$P/scripts/$TSCRIPT/template-sets/$TSET" text/plain "$OUT/script-bad.bsh"
       req POST "$P/scripts/$TSCRIPT/execute" application/json "$OUT/empty.json"
       if grep -qi 'parse' "$BODY"; then pass S4 "/execute surfaces BeanShell parse errors (cheap syntax probe)"
-      else fail S4 "/execute reports parse errors (§5.5)" "HTTP $STATUS: $(head -c 120 "$BODY")"; fi
+      else fail S4 "/execute reports parse errors" "HTTP $STATUS: $(head -c 120 "$BODY")"; fi
 
       # S5 — the REST execute context has no getElement()
       printf 'return context.getElement();\n' > "$OUT/script-elm.bsh"

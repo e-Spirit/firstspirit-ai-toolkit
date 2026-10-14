@@ -54,12 +54,17 @@ Logic: IF text_1 empty -> show text_2, hide text_3.
 A `CMS_INPUT_TOGGLE` has **three** states: `true`, `false` and `null` before the editor has touched
 it (ODFS: *"The initial state (no option has been selected yet) returns the value `null`. This
 should be taken into account when defining rules, especially when using the property VISIBLE."*).
-A rule whose whole condition is the toggle's bare `VALUE` therefore holds in **neither** direction
-on a fresh section, and `VISIBLE` hides the governed fields "in all other cases" — so the fields
-are invisible until the editor finds and flips a toggle they cannot see the point of.
+A rule whose whole condition is the toggle's bare `VALUE` therefore passes `null` to `VISIBLE` on
+a fresh section, and the rule does nothing useful until the editor first flips the toggle. What
+the editor sees meanwhile **differs by client** (live 2026-10-09, FirstSpirit 5.2.261116, template
+form preview): in **SiteArchitect** the gadget cannot apply `null` and keeps the field's initial
+state, so the field is **visible** `[core]`; in **ContentCreator** the field is **hidden** on the
+fresh section. Once the toggle has been flipped both clients show the field on `true` and hide it
+on `false`. The same form therefore behaves differently in the two clients until the first click —
+compare against the constant and the rule is unambiguous from the start.
 
 ```xml
-<!-- ✗ never fires on a new section -->
+<!-- ✗ passes null on a new section; the toggle has no effect until first flipped -->
 <RULE>
     <WITH><PROPERTY name="VALUE" source="st_show_cta"/></WITH>
     <DO><PROPERTY name="VISIBLE" source="st_cta_label"/></DO>
@@ -77,11 +82,14 @@ are invisible until the editor finds and flips a toggle they cannot see the poin
 </RULE>
 ```
 
-`<TRUE/>` and `<FALSE/>` are the rule constants for booleans (`<TEXT/>` and `<NUMBER/>` are the
-others); do not write `<TEXT>true</TEXT>`. `<NOT_NULL/>` answers a different question ("has any
-value") and cannot tell `true` from `false`. The same applies to every component whose value can
-be unset — `CMS_INPUT_CHECKBOX`, `CMS_INPUT_RADIOBUTTON`, `CMS_INPUT_COMBOBOX`, `CMS_INPUT_LIST`:
-compare against a constant or test `EMPTY`, never gate on the bare value. `[odfs]`
+`<TRUE/>` and `<FALSE/>` are the rule constants for booleans (`<TEXT/>`, `<NUMBER/>` and
+`<DATE/>` are the others `[core]`); do not write `<TEXT>true</TEXT>`. `<NOT_NULL/>` answers a
+different question ("has any value") and cannot tell `true` from `false`. The `null` initial
+state is documented for the toggle only `[odfs]`. For `CMS_INPUT_CHECKBOX`,
+`CMS_INPUT_RADIOBUTTON`, `CMS_INPUT_COMBOBOX` and `CMS_INPUT_LIST` the `VALUE` is an option or a
+set of options, never a boolean — a bare `VALUE` in `<WITH>` fails on its type ("is not of type
+boolean", rule evaluates to false `[core]`) and `<TRUE/>` never matches it. Gate on `EMPTY` or
+compare `ENTRY` with a `<TEXT>` key instead.
 
 ## Address a group, not each of its fields
 
@@ -189,8 +197,10 @@ components)
 
 ## Permission-based visibility (user group)
 
-`<IN_GROUP name="…"/>` tests whether the current editor belongs to a server user group — used to
-show a field only to certain editors:
+`<IN_GROUP name="…"/>` tests whether the current editor belongs to a **project** group (the
+project's groups plus the user's external groups, e.g. LDAP), and is resolved to a fixed
+true/false once, when the ruleset is parsed for the form `[core]` — used to show a field only to
+certain editors:
 
 ```xml
 <RULE>
@@ -203,21 +213,27 @@ show a field only to certain editors:
 </RULE>
 ```
 
-## Event-triggered rules (`<ON_EVENT>`, `<ON_SAVE>`, `<ON_RELEASE>`)
+## Legacy restriction-level blocks (`<ON_EVENT>`, `<ON_SAVE>`, `<ON_RELEASE>`)
 
-Besides `<RULE>`, a ruleset can carry an `<ON_EVENT>` block that fires on a form event (rather than
-continuously). It wraps the same `<WITH>`/`<DO>` and is used, for example, to toggle `VISIBLE` when
-a field changes. You will encounter it in exported rulesets alongside `<RULE>`; read it the same way
-(the `<DO>` acts when `<WITH>` holds).
+Before FirstSpirit 5.2 a rule's restriction level was expressed by its wrapping tag instead of
+`<RULE>` + `<VALIDATION scope="…">` `[odfs]` (*New in version 5.2*: the old syntax "will cease to
+be supported"). The blocks wrap the same `<IF>`/`<WITH>`/`<DO>` and run at the same time as
+`<RULE>` — the tag does **not** change *when* a rule runs, only `when="ONSAVE|ONLOCK"` does; it
+only pre-sets the scope `[core]`. `<ON_EVENT>` is therefore identical to a plain `<RULE>`. You
+will meet them in exported rulesets; read them like `<RULE>`.
 
-The rule parser accepts three such blocks directly under `<RULES>`, one per validation scope
-`[core]`: `<ON_EVENT>`, `<ON_SAVE>` and `<ON_RELEASE>`. Any other tag name at that level is a
-parsing error. A block pre-sets the scope for the `<VALIDATION>`s inside it, so a `<VALIDATION>`
-without a `scope` attribute inside `<ON_SAVE>` blocks on save, and an explicit `scope` can only
-**raise** the level (INFO → SAVE → RELEASE), never lower it below the block's. `<ON_SAVE>` and
-`<ON_RELEASE>` are not on the ODFS *rule execution time* page, which documents only
-`<RULE when="…">` `[verify]`: prefer `<RULE when="ONSAVE">` with an explicit `scope` in new
-rulesets, and read the block forms when you meet them in exports.
+The rule parser accepts exactly these three blocks directly under `<RULES>`, one per scope
+`[core]`; any other tag name at that level is a parsing error. A block pre-sets the default scope
+for the `<VALIDATION>`s inside it, so a `<VALIDATION>` without `scope` inside `<ON_SAVE>` blocks on
+save (inside `<ON_RELEASE>`: on release). An explicit `scope` on the `<VALIDATION>` always wins,
+in either direction `[core]`: `scope="INFO"` inside `<ON_SAVE>` blocks nothing, `scope="SAVE"`
+inside `<ON_RELEASE>` blocks saving. (What the block cannot do is lower the *rule's* own scope,
+which only decides whether the rule is included in a SAVE or RELEASE check run.)
+
+In new rulesets write a plain `<RULE>` with `<VALIDATION scope="SAVE">` / `scope="RELEASE">`
+instead of the blocks — and do **not** add `when="ONSAVE"` as a substitute: that changes when the
+rule runs, and ONSAVE rules are skipped by every release check, so they never block a release
+(`validation.md`, *Execution time*; confirmed live 2026-10-09).
 
 ## Section inclusion visibility
 

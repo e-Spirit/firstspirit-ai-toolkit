@@ -128,3 +128,39 @@ $CMS_VALUE(#cell.rowspan)$   $-- DOM-table cell: .rowspan / .colspan / .align / 
 
 `#content` is the format template's body placeholder; `#cell` is bound in table format templates;
 `#style` carries the applied style. See `dom-media.md` for how format templates style DOM output.
+
+Lists and tables entered in `CMS_INPUT_DOM` / `CMS_INPUT_DOMTABLE` bind three more objects `[odfs]`:
+
+```
+$-- in the format templates ul and li --$
+$CMS_VALUE(#list.style)$          $-- 0 paragraph indent · 1 bullet · 2 numbered · 3/4 letters lower/upper
+                                     · 5/6 Roman lower/upper · 7 indent only · 8 user-defined --$
+$CMS_VALUE(#list.start)$          $-- start value from listDefaultConfig; a start entered in a listConfig
+                                     dialog came back only via #list.attr("start") [observed] --$
+$CMS_VALUE(#list.count)$          $-- number of items; #list.count2 = start + count - 1 --$
+$CMS_VALUE(#list.attr("pre"))$    $-- any field defined in listConfig, as String --$
+$-- in li only --$
+$CMS_VALUE(#listitem.index)$      $-- 1-based, or from #list.start when set; .indexText, .pre --$
+$-- in the format templates table, tr, td and in the Table function --$
+$CMS_VALUE(#table.cols)$ $CMS_VALUE(#table.rows)$ $CMS_VALUE(#table.lastCol)$ $CMS_VALUE(#table.lastRow)$
+$CMS_VALUE(#cell.row)$            $-- 0-based row of the cell (.col likewise); .rowNumber / .colNumber 1-based --$
+```
+
+Two traps seen in a live FOP (PDF) template set `[observed]` (FS 5.2.261116, 2026-10-09 to 2026-10-12):
+
+- In the `table` format template `#content` is a `TableElementRenderer$TableRowPrinter`, not a
+  string: `indexOf`, `substring` and the other string methods are undefined. Detect the header row in
+  `tr` with a counter list (`CMS_SET` of a list shared by reference) or format it in `td` via
+  `#cell.row == 0`; do not parse `#content`.
+- `#list.style` is empty when the list was written as `<ol>` over the REST API; only a `<ul>` with
+  list properties is a FirstSpirit list. The REST skill's *CMS_INPUT_DOM* section says how to write one.
+- A `ul` format template that emits `list-style-type` as an inline `style` beats a stylesheet's
+  `list-style: none` and shows a second marker beside a CSS `::before` marker; put the type in a class.
+  An HTML `ul` format that does so, with `start` only for numbered types `[observed]`:
+
+  ```
+  $CMS_IF(#list.style < 2 || #list.style > 6)$<ul class="wp-list-$CMS_VALUE(#list.style)$">$CMS_VALUE(#content)$</ul>$CMS_ELSE$<ol class="wp-list-$CMS_VALUE(#list.style)$" start="$CMS_VALUE(#list.attr("start"), default:"1")$">$CMS_VALUE(#content)$</ol>$CMS_END_IF$
+  ```
+
+  Check both branches: a missing `>` in the one that did not render in your test shows up only
+  with the other list type. PDF output of the same lists is in `pdf-fop.md`.

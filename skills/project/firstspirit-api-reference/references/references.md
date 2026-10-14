@@ -40,9 +40,9 @@ not `…access.editor.reference`.
 | --- | --- | --- |
 | `getReferencedElement()` | `IDProvider` **`@Nullable`** | the target as a store element — `null` if not visible in this session, deleted, **broken**, or the target is not an `IDProvider` [javadoc] |
 | `getReferencedObject()` | `Object` **`@Nullable`** | the target as whatever it is; same `null` cases [javadoc] |
-| `getReferenceString()` | `String` | the textual reference, e.g. `media:logo` — say *what* a broken reference wanted [javadoc] |
+| `getReferenceString()` | `String` **`@Nullable`** | the textual reference, e.g. `media:logo` — say *what* a broken reference wanted; `null` if the target cannot be referenced by name [javadoc] [jar] |
 | `getDisplayText()` | `String` | editor-facing label |
-| `getStoreType()` | `Store.Type` | which store the target lives in — the usual coarse filter |
+| `getStoreType()` | `Store.Type` **`@Nullable`** | which store the element lives in — the usual coarse filter; `null` e.g. for external references [javadoc] [jar] — compare with `==`, never call `.name()` or `switch` on it unguarded |
 | `getType()` / `isType(int)` | `int` / `boolean` | typed classification via the constants below — the finer filter |
 | `isBroken()` | `boolean` | **internal** targets only: `media:logo` with no such medium is broken; an **external URL is never checked** and returns `false` even if invalid [javadoc] |
 | `isRemote()` / `getRemote()` | `boolean` / `String` | target lives in a remote project (`RemoteProjectConfiguration`) [javadoc] |
@@ -115,8 +115,12 @@ if (elm.hasIncomingReferences()) {                // the cheap check first
 ```
 
 Remote-project references (`isRemote()`) show up here when another project points at this
-element. **[verify]:** which end `getReferencedElement()` returns on an *incoming* entry — the
-Javadoc says only "the referenced node"; confirm on a live project before relying on it.
+element. On an *incoming* entry, `getReferencedElement()` / `getReferencedObject()` return the
+**referencing** element (the source, e.g. the `PageRef` pointing at this page), and `getType()`
+describes that source (`SITE_STORE_REFERENCE` for a PageRef → Page link) `[core]` — the runtime
+itself reads incoming entries this way (`Page.getPageRefs()` casts `getReferencedObject()` of
+each incoming entry to `PageRef`). The Javadoc's "the referenced node" is ambiguous; the code is
+not.
 
 ## Related
 

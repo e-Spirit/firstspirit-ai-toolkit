@@ -5,7 +5,8 @@
 # It encodes three things this skill documents:
 #   1. a JRE/JDK >= the Access API jar's Java version (default: the FirstSpirit launcher's bundled JRE — 21 or 25 depending on the launcher build),
 #   2. the --add-opens flags the shipped launcher drops on a JRE (missing javap),
-#   3. HTTPS on 443 as the default connection mode (correct for FirstSpirit Cloud).
+#   3. HTTPS on 443 as the default connection mode (correct for FirstSpirit Cloud); with
+#      FS_CONN=HTTP or SOCKET and no FS_PORT, fs-cli's own mode default applies (8000 / 1088).
 #
 # It is a thin wrapper around `com.espirit.moddev.cli.Main` — every argument after
 # the options below is passed straight through, so it runs ANY fs-cli command, e.g.:
@@ -20,7 +21,8 @@
 #   JAVA_HOME    a JDK/JRE >= the Access API jar's Java version. If unset, tries
 #                the FirstSpirit FSLauncher bundled JRE (21+), then /usr/libexec/java_home.
 #   FS_HOST      server host (no scheme).                      [required for connecting commands]
-#   FS_PORT      port. Default 443.
+#   FS_PORT      port. Default 443 for HTTPS; otherwise not passed, so fs-cli uses its mode
+#                default (HTTP 8000, SOCKET 1088) or the fsport environment variable.
 #   FS_CONN      connection mode HTTP|HTTPS|SOCKET. Default HTTPS.
 #   FS_USER  / FS_USERNAME   FirstSpirit login.
 #   FS_PWD   / FS_PASSWORD   password. Prefer sourcing from a chmod-600 env file.
@@ -34,9 +36,10 @@
 #
 # Every run keeps its (redacted) fs-cli output in results/firstspirit-external-sync-export/<run>/fs-cli.log
 # and appends one summary line to logs/firstspirit-external-sync-export.log — the portfolio's
-# shared output layout. Both live under the output root: $FS_OUT_ROOT if set, else the nearest
-# parent directory holding tracked-skills.tsv (the skills monorepo), else the working directory.
-# The directories are git-ignored; the exported project itself goes where FS_SYNC_DIR says.
+# shared output layout. Both live under the output root: $FS_OUT_ROOT if set, else the working
+# directory (inside the skills portfolio checkout, the checkout root, detected by its
+# tracked-skills.tsv). Add results/ and logs/ to .gitignore when running inside another repo;
+# the exported project itself goes where FS_SYNC_DIR says.
 #
 # Note: we deliberately do NOT use `set -e`. This is a wrapper around a tool that
 # is expected to fail sometimes (bad identifier, auth, connection); `set -e` would
@@ -70,7 +73,7 @@ export JAVA_HOME
 # --- assemble connection options from env ------------------------------------
 for a in "$@"; do
   case "$a" in
-    -pwd|--password|-pwd=*|--password=*)
+    -pwd | --password | -pwd=* | --password=*)   # spaced so the password gate does not read "=*|--…" as a literal
       echo "fs-cli-export: refusing -pwd on the command line (visible in ps); set FS_PWD (or FS_PASSWORD) instead" >&2; exit 2 ;;
   esac
 done
@@ -82,18 +85,24 @@ PWD_VAL="${FS_PWD:-${FS_PASSWORD:-}}"
 # caller args to the end so the globals lead. (Doing this without clobbering the
 # caller args, and preserving values that contain spaces, e.g. FS_SYNC_DIR.)
 orig_count=$#
-# the caller's command word (for the run log) = first argument that is not an option or its value
+# the caller's command word (for the run log) = first argument that is not an option or its value.
+# Value-taking global options (fs-cli 4.8.9 GlobalConfig) skip their value; -e and the other
+# boolean flags (--dont-create-sync-dir, -a) take none.
 CMD=""; skip=0
 for a in "$@"; do
   if [ "$skip" = 1 ]; then skip=0; continue; fi
   case "$a" in
-    -p|-sd|-rf|-h|-port|-c|-u|-pwd|-e) skip=1 ;;
+    -p|--project|-sd|--syncDir|-rf|--resultFile|-h|--host|-port|-c|--conn-mode|--conn-encryption|--conn-compression|-sz|--servletzone|-hph|--httpproxyhost|-hpp|--httpproxyport|-u|--user) skip=1 ;;
     -*) ;;
     *) [ -n "$CMD" ] || CMD="$a" ;;
   esac
 done
 [ -n "${FS_HOST:-}" ]    && set -- "$@" -h "$FS_HOST"
-set -- "$@" -port "${FS_PORT:-443}" -c "${FS_CONN:-HTTPS}"
+# -port only when we know it: FS_PORT, or 443 for the HTTPS (Cloud) default. For HTTP / SOCKET
+# fs-cli falls back to the fsport env var, then to its mode default (8000 / 1088).
+if [ -n "${FS_PORT:-}" ]; then set -- "$@" -port "$FS_PORT"
+elif [ "$(printf '%s' "${FS_CONN:-HTTPS}" | tr '[:lower:]' '[:upper:]')" = HTTPS ]; then set -- "$@" -port 443; fi   # case-insensitive: FS_CONN=https is common
+set -- "$@" -c "${FS_CONN:-HTTPS}"
 [ -n "$USER_VAL" ]       && set -- "$@" -u "$USER_VAL"
 # env, not argv: keeps the password out of `ps`. FS_PWD / FS_PASSWORD win over an fspwd already in the
 # caller's environment; with neither set, an inherited fspwd is left as it is. Never falls back to -pwd.

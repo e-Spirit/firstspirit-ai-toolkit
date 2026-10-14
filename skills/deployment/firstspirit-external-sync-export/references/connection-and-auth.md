@@ -11,8 +11,9 @@ fs-cli's global connection options (before the command word):
 | Option | Meaning | Note |
 |---|---|---|
 | `-h`, `--host` | server host | hostname only, no scheme |
-| `-port` | port | default `8000`; Cloud/HTTP(S) is `443` |
+| `-port` | port | default by mode: `8000` for HTTP and HTTPS, `1088` for SOCKET (or the `fsport` env var) `[core]`; Cloud needs an explicit `-port 443` |
 | `-c`, `--conn-mode` | `HTTP` \| `HTTPS` \| `SOCKET` | default `HTTP` |
+| `-e` | error mode: print stack traces | boolean flag, takes no value |
 | `-sz`, `--servletzone` | servlet zone | default `/` |
 | `-u`, `--user` | FirstSpirit login | |
 | `-pwd`, `--password` | password | **avoid** — visible in `ps`; use the `fspwd` env var (see below) |
@@ -20,8 +21,9 @@ fs-cli's global connection options (before the command word):
 
 ### Choosing the connection mode
 
-- **`SOCKET`** — the classic direct socket connection (historically port
-  `9000`). For self-hosted servers exposing the socket port.
+- **`SOCKET`** — the classic direct socket connection (default port `1088`, in
+  fs-cli and in the FirstSpirit server tools `[core]`). For self-hosted servers
+  exposing the socket port.
 - **`HTTP`** — builds `http://host:port`. For servers reachable over plain HTTP.
 - **`HTTPS`** — builds `https://host:port` (and `wss://` for the websocket
   channel). **Required for FirstSpirit Cloud** and any TLS-terminating
@@ -120,5 +122,6 @@ Only then run the export (`export-command.md`).
 
 ---
 *Sources: fs-cli 4.8.9 `help`; a verified HTTPS/Keycloak connection to a
-FirstSpirit 5.2.260815 Cloud instance (2026-08-03). Cloud identity specifics are
-owned by `firstspirit-cloud/references/identity-and-access.md`.*
+FirstSpirit 5.2.260815 Cloud instance (2026-08-03); `[core]` = read in the FSDevTools 4.8.9
+source (connection-type defaults, port resolution) and the FirstSpirit server tools. Cloud
+identity specifics are owned by `firstspirit-cloud/references/identity-and-access.md`.*
