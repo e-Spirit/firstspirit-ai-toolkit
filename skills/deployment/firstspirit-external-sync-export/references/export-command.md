@@ -16,9 +16,9 @@ Give one or more identifiers after `export`. The kinds:
 | Database schema | `schema:<name>[<option>=<value>\|<option2>=<value>]` | `schema:products[setExportGidMapping=true]` |
 | Entities (DB content) | `entities:<CONTENT2_UID>` | `entities:news` |
 
-Separate schema options with `|`, not with a comma: the parser splits the bracket on `|`
-and each option on `=`; a comma-separated list (`[a=b,c=d]`) is silently ignored, although
-fs-cli's own `help export` shows commas `[core]`.
+Separate schema options with `|`, not with a comma: the bracket is split on `|` and each
+option on `=`; a comma-separated list (`[a=b,c=d]`) is not applied, although fs-cli's own
+`help export` shows commas `[core]`.
 
 **Store root identifiers:** `templatestore`, `pagestore`, `contentstore`,
 `sitestore`, `mediastore`, `globalstore`.
@@ -73,8 +73,8 @@ export projectproperty:ALL templatestore pagestore sitestore mediastore \
 ```
 
 - `entities:<content2-uid>` — the rows behind one data source, **plus its schema**
-  (the identifier adds the schema to the export operation and the datasets'
-  entities to it `[core]`). One identifier per data source; they are additive.
+  (the identifier exports the schema together with the data source's
+  entities `[core]`). One identifier per data source; they are additive.
 - `schema:<name>` — the data model (tables/columns) *without* rows. Only needed
   when you want a schema and no entities, or schema options (see the identifier
   table). Schema name = the folder under `TemplateStore/Schemes/` (the non-`FS_*`
@@ -205,6 +205,5 @@ Bamboo plan, not by hand. That model — and the `features` /
 for a maintained Cloud project; use the direct command here for a one-off pull.
 
 ---
-*Sources: fs-cli 4.8.9 `help export`; a verified whole-project export
-(8,746 elements, ~498 MB) from a FirstSpirit 5.2.260815 Cloud instance
-(2026-08-03); `[core]` = read in the FSDevTools 4.8.9 source (identifier parsers).*
+*Sources: fs-cli 4.8.9 `help export`; a verified whole-project export from a
+FirstSpirit 5.2.260815 Cloud instance (2026-08-03); `[core]` = read in the FSDevTools 4.8.9 source (identifier parsers).*

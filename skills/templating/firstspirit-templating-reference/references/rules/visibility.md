@@ -57,7 +57,7 @@ should be taken into account when defining rules, especially when using the prop
 A rule whose whole condition is the toggle's bare `VALUE` therefore passes `null` to `VISIBLE` on
 a fresh section, and the rule does nothing useful until the editor first flips the toggle. What
 the editor sees meanwhile **differs by client** (live 2026-10-09, FirstSpirit 5.2.261116, template
-form preview): in **SiteArchitect** the gadget cannot apply `null` and keeps the field's initial
+form preview): in **SiteArchitect** the `null` is not applied and the field keeps its initial
 state, so the field is **visible** `[core]`; in **ContentCreator** the field is **hidden** on the
 fresh section. Once the toggle has been flipped both clients show the field on `true` and hide it
 on `false`. The same form therefore behaves differently in the two clients until the first click —
@@ -87,8 +87,8 @@ compare against the constant and the rule is unambiguous from the start.
 different question ("has any value") and cannot tell `true` from `false`. The `null` initial
 state is documented for the toggle only `[odfs]`. For `CMS_INPUT_CHECKBOX`,
 `CMS_INPUT_RADIOBUTTON`, `CMS_INPUT_COMBOBOX` and `CMS_INPUT_LIST` the `VALUE` is an option or a
-set of options, never a boolean — a bare `VALUE` in `<WITH>` fails on its type ("is not of type
-boolean", rule evaluates to false `[core]`) and `<TRUE/>` never matches it. Gate on `EMPTY` or
+set of options, never a boolean — a bare `VALUE` in `<WITH>` fails on its type (a type warning is
+logged and the rule evaluates to false `[core]`) and `<TRUE/>` never matches it. Gate on `EMPTY` or
 compare `ENTRY` with a `<TEXT>` key instead.
 
 ## Address a group, not each of its fields
@@ -198,9 +198,8 @@ components)
 ## Permission-based visibility (user group)
 
 `<IN_GROUP name="…"/>` tests whether the current editor belongs to a **project** group (the
-project's groups plus the user's external groups, e.g. LDAP), and is resolved to a fixed
-true/false once, when the ruleset is parsed for the form `[core]` — used to show a field only to
-certain editors:
+project's groups plus the user's external groups, e.g. LDAP), and is evaluated once, when the
+form is opened, not on every change `[core]` — used to show a field only to certain editors:
 
 ```xml
 <RULE>

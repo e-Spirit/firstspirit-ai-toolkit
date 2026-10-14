@@ -95,7 +95,7 @@ plans, not by hand.
   FS project** to update the branch project and validate before the PR merge.
 - Create **dependencies before dependents** (schema before table template;
   `FS_CATALOG` before its inner section template) and **delete in reverse**.
-- The doc is a known **findability ticket-driver** — link it prominently; it's
+- Link it prominently; it is the page people look for, and it is
   complete and command-level. See [documentation-map.md](documentation-map.md).
 
 ## Deployment & generation options (static delivery)
@@ -152,8 +152,8 @@ restructure it:
 - **`ci.properties`** is read by the pipeline (`fsm.project.path` = the FSM
   subproject, empty for a root-project build).
 - **All values live in `gradle.properties`** (`rootProjectName`, `groupId`,
-  `firstSpirit.version`, `java.languageLevel`, the `firstSpiritModule.*` names, publishing
-  repos `es-snapshot-local` / `es-release-local`); the build fails if required ones are blank.
+  `firstSpirit.version`, `java.languageLevel`, the `firstSpiritModule.*` names, the
+  publishing repositories named in `gradle.properties`); the build fails if required ones are blank.
   Set `firstSpirit.version` / `java.languageLevel` to the **target server's** level — read it
   from the server's About page (`https://<server>/about.jsp`, needs a FirstSpirit login) or the
   ODFS [Technical Requirements](https://docs.e-spirit.com/odfs/edocs/admi/technical-requi/index.html)
@@ -204,5 +204,5 @@ root — its template-development *technology* is owned by the template skills, 
 restated here); docs.crownpeak.com/firstspirit/first-steps;
 docs.crownpeak.com/firstspirit/cloud-vs-self-hosted/cloud-specific-processes
 (custom-module DEV/QA pipeline + PROD ticket/patch-day install); the AWS S3
-deployment module doc (generation & deploy options). See
-the skill's review log.*
+deployment module doc (generation & deploy options). Items not marked verified
+are not yet verified live.*

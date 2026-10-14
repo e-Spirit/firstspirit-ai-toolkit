@@ -139,9 +139,8 @@ $CMS_VALUE(st_category.values[0].getNodeId)$ $-- positional record + a record me
 So check the DAP: `.values.first.<field>` is the common shape, but commerce DAPs may want
 `.identifiers[n]` (the external id) or `.values[n].<method>`. Guard with `.isEmpty()`.
 
-This resolves the earlier `$CMS_VALUE` vs `$CMS_FOR` question: it is **neither** — the migration
-doc was right that bare-value rendering is unsupported, but the real access is `.values.first`, not
-a blanket loop. Verified across 16 `FS_INDEX` uses in the Connect-for-Commerce and SAP-Commerce
+Neither a bare `$CMS_VALUE` nor a blanket `$CMS_FOR` is the right access: bare-value rendering is
+unsupported, and the real access is `.values.first`. Verified across 16 `FS_INDEX` uses in the Connect-for-Commerce and SAP-Commerce
 reference projects. Note those all use **commerce/external DAPs**, not `DatasetDataAccessPlugin`.
 
 ### Imagemap — loop over areas
@@ -205,7 +204,7 @@ $CMS_END_IF$
 
 ## Sources
 
-Datatypes verified against the GOM component definitions (`Returns`) and the official datatype pages of the
+Datatypes verified against the GOM component definitions in `references/gom/` (`Returns`) and the official datatype pages of the
 template-syntax documentation. Access idioms reflect production usage where the
 source pages were thin or stale, and were cross-checked against three official e-Spirit reference
 projects (Connect for Commerce, SAP Commerce Cloud / ContentConnect, COMS Marketplace) — all

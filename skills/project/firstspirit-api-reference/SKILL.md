@@ -14,9 +14,9 @@ description: >-
   uid". Pair with firstspirit-scripting (how to run code + the script contexts)
   and firstspirit-module-development (how to package it).
 metadata:
-  source-commit: "2e7b7bc"
-  published: "2026-10-12"
-  toolkit-version: "0.4.1"
+  source-commit: "ba64160"
+  published: "2026-10-14"
+  toolkit-version: "0.5.0"
 ---
 
 > **Beta.** Early public release. Feedback welcome; behaviour and structure may change.
@@ -30,7 +30,7 @@ this skill answers *what objects exist, how they relate, and how you reach them*
 
 This is a compact orientation layer distilled from the FirstSpirit Access API: enough to
 find the right interface and the right agent, not a course. For the exhaustive 146-package
-Javadoc, defer to the FirstSpirit ODFS documentation.
+Javadoc, defer to the public Access API Javadoc.
 
 ## Public API only
 
@@ -99,7 +99,7 @@ Visual: [assets/firstspirit-object-model.md](assets/firstspirit-object-model.md)
 
 ---
 
-*Sources: FirstSpirit Access API (`fs-api/`, bundled in the FirstSpirit ODFS documentation); the object and
+*Sources: the FirstSpirit Access API Javadoc; the object and
 context maps in `assets/` are text renderings of the classic "FirstSpirit Objects" and
 "FirstSpirit Contexts" overview diagrams.*
 

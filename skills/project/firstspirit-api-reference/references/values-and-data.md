@@ -59,8 +59,9 @@ to the master language is the common fallback.
 > (an element can be approved/published per project language, not all-or-nothing),
 > and **2026.7** adds **language-dependent user permissions** (editing restricted
 > per project language). Entry points, all on the 5.2.261011 jar and none on 5.2.240208 `[jar]`:
-> `LanguageDataProvider.getFormData(Language)` (implemented by the Page, Section and Dataset
-> runtime classes, so cast — the interfaces do not declare it `[core]`),
+> `LanguageDataProvider.getFormData(Language)` (the `Page`, `Section` and `Dataset` interfaces
+> do not declare it `[jar]`; the elements the API hands you implement it, so cast to
+> `LanguageDataProvider` `[core]`),
 > `IDProvider.release(Language...)`, `IDProviderChange.getChangedLanguages()` /
 > `isFirstRelease(Language...)` (`@ApiStatus.Experimental`). `IDProviderEventAgent` itself has
 > no language-specific API; the languages arrive on the `IDProviderChange` it delivers. Guard
@@ -106,7 +107,7 @@ sit on the same table, so `entity.getEntityType().getName()` is not unique, and 
 `Content2` lookup by entity type. Do not reach for the runtime class
 `de.espirit.firstspirit.store.access.contentstore.ContentOptionFactory` (`getTable()`): it is
 `@ApiStatus.Internal` `[jar]` and `checkCompliance` rejects it. The public path goes through
-the option model (confirmed internally at FirstSpirit, 2026-09-30):
+the option model (verified 2026-09-30):
 
 ```java
 import de.espirit.firstspirit.access.editor.TableTemplateProvider;

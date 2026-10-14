@@ -43,7 +43,7 @@ the auth gate.
 
 > A quick out-of-band check of the host tells you what you're dealing with:
 > `curl -sSI https://<host>/` on a Cloud instance 302-redirects to
-> `https://sso-<stage>.e-spirit.hosting/auth/realms/<realm>/…` — i.e. it is
+> the Keycloak SSO host of the platform (`/auth/realms/<realm>/…`) — i.e. it is
 > **Keycloak-fronted**, so HTTPS mode is mandatory.
 
 ## Authentication

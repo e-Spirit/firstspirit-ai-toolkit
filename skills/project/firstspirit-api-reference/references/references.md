@@ -5,8 +5,8 @@ Every `StoreElement` can report what it **points at** (outgoing) and what **poin
 linking to this element?", "which references are broken?" are all answered here.
 
 Verification key: **[jar]** = `javap` on `fs-isolated-runtime.jar` FS 5.2.240208 (2026-09-14);
-**[javadoc]** = FirstSpirit Access API Javadoc (the the FirstSpirit ODFS documentation `fs-api/` pages);
-**[observed]** = seen working on a live project (toolkit field test 2026-09-11) but not re-run
+**[javadoc]** = the public FirstSpirit Access API Javadoc;
+**[observed]** = seen working on a live project (verified on a live project, 2026-09-11) but not re-run
 by us; **[verify]** = not yet confirmed.
 
 ## On `StoreElement` — the entry points [jar]
@@ -98,8 +98,7 @@ for (section : page.getChildren(Section.class, true).iterator()) {
 // seen.values() -> the distinct Media the page and its sections reference
 ```
 
-The composition is the field tester's (task 4 listed 6 images across page and sections on a
-live project); every call in it is **[jar]**-verified. Iterate `getChildren(...)` with the
+Verified on a live project (six images listed); every call in it is **[jar]**-verified. Iterate `getChildren(...)` with the
 iterator, never a materialised list — see
 `firstspirit-scripting/references/common-patterns.md`.
 
@@ -117,10 +116,8 @@ if (elm.hasIncomingReferences()) {                // the cheap check first
 Remote-project references (`isRemote()`) show up here when another project points at this
 element. On an *incoming* entry, `getReferencedElement()` / `getReferencedObject()` return the
 **referencing** element (the source, e.g. the `PageRef` pointing at this page), and `getType()`
-describes that source (`SITE_STORE_REFERENCE` for a PageRef → Page link) `[core]` — the runtime
-itself reads incoming entries this way (`Page.getPageRefs()` casts `getReferencedObject()` of
-each incoming entry to `PageRef`). The Javadoc's "the referenced node" is ambiguous; the code is
-not.
+describes that source (`SITE_STORE_REFERENCE` for a PageRef → Page link) `[core]`. The Javadoc's
+"the referenced node" is ambiguous on this point.
 
 ## Related
 

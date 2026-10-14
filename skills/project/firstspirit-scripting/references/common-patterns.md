@@ -324,7 +324,7 @@ dump); the right-hand column is the real approach.
 | `context.requireSpecialist(OpenElementDataFormDialogOperation.TYPE)` — as written on the ODFS "Working With Store Elements" page | **Wrong class and wrong acquisition.** The class is `OpenElementDataFormOperation` (no "Dialog"), and operations are not specialists — get them via `OperationAgent`: `context.requireSpecialist(OperationAgent.TYPE).getOperation(OpenElementDataFormOperation.TYPE)`. Verified on the API jar. And check the `perform` parameter type — see [Opening an element's form](#opening-an-elements-form--check-the-perform-parameter-type-first). |
 | `picture.getThumbnail()` | Does not exist — **`getPreviewImage()`** (`getPreview()` is deprecated since 5.0). And `Picture` has no `getResolution()`: `getPictureResolution(Resolution)` → `PictureResolution`. |
 
-> Note: a clean `bsh-validator --check-api` run does **not** guarantee these are
+> Note: a clean static API check does **not** guarantee these are
 > caught — its method check verifies the name only (not arity or argument types)
 > and skips untyped variables. The **import** check is reliable; wrong-package and
 > non-existent types (e.g. `TransactionAgent`, the `access.Group` import) are its

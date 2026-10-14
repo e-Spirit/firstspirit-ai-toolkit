@@ -124,10 +124,10 @@ jar stays a contract, not a toolbox.
 None of the surveyed production modules has a hand-written `module.xml`. The annotations are
 tied to the Gradle plugin: they exist so that the plugin can generate the descriptor and the
 build needs no hand-maintained XML. Without the plugin (a Maven or plain-jar build) they do
-nothing, and a hand-written `module.xml` is then the normal form, not a smell (confirmed internally, 2026-09-18). The assembly project
+nothing, and a hand-written `module.xml` is then the normal form, not a smell (verified 2026-09-18). The assembly project
 writes the `<module>` header from `firstSpiritModule { }`, and the plugin scans the compiled
 jars for these annotations (`com.espirit.moddev.components:annotations`, attributes checked
-against 3.3.0 `[jar]` and the annotation sources `[core]`):
+against 3.3.0 `[jar]`):
 
 | Annotation | Descriptor element | Attributes |
 | --- | --- | --- |
@@ -159,8 +159,8 @@ public class MyWebApp extends AbstractWebApp { }        // the shell; behaviour 
 ```
 
 `web.xml` and other packaged files live in `src/main/fsm-resources/` of the assembly project.
-Keep the `xmlSchemaVersion` you declare and the `version` inside `web.xml` in step; one
-surveyed module declares 6.0 and ships a 3.1 descriptor, which works only by accident.
+Keep the `xmlSchemaVersion` you declare and the `version` inside `web.xml` in step; a
+descriptor whose declared version does not match its format is accepted today but should be corrected.
 
 ---
 
@@ -169,8 +169,7 @@ surveyed module declares 6.0 and ships a 3.1 descriptor, which works only by acc
 `checkCompliance` (FSM plugin) fails the build when module code depends on FirstSpirit classes
 marked `@Internal`. Wire it into `check` so it runs on every CI build. When a legacy module
 cannot pass yet, the plugin accepts a **baseline file** of regexes matched against the ArchUnit
-violation text. The one convention worth copying, from a module that has carried such a file
-for years:
+violation text. The one convention worth copying, from an existing module:
 
 ```
 # Treat every entry as tech debt. When fixing a violation, delete its pattern.

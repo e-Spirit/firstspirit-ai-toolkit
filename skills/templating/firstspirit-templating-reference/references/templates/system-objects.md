@@ -43,8 +43,8 @@ $CMS_VALUE(#global.dataset.webeditUrl)$    $-- ContentCreator edit link --$
 $CMS_VALUE(#global.dataset.javaClientUrl)$ $-- SiteArchitect edit link --$
 ```
 
-> `javaClientUrl` targets SiteArchitect, which is being phased out in favour of ContentCreator;
-> prefer `webeditUrl` where you have the choice.
+> `javaClientUrl` targets SiteArchitect; new features focus on ContentCreator, so prefer
+> `webeditUrl` where you have the choice.
 
 ## Navigation
 
@@ -60,8 +60,7 @@ $CMS_VALUE(#nav.hasSubFolders)$  $-- has children? --$
 
 > `#nav.label` is user-entered — escape it against XSS when it reaches **HTML**
 > (`#nav.label.convert2`); see `string-operations.md` → Output escaping. When the sink is a **JSON**
-> channel (headless/CaaS), `.convert2` is not the right escaping and the reference projects emit
-> `#nav.label` unescaped into JSON. Escape for the sink, not by reflex.
+> channel (headless/CaaS), `.convert2` is the wrong escaper. Escape for the sink, not by reflex.
 
 ## Data-source rows
 
@@ -97,11 +96,9 @@ describe the entry's place in the catalog `[odfs]`:
 | `#card` | the `Card` (entry) | `getId` (UUID), `getTemplate`, `getItem` (its `FormData`), `toJSON`, `isNull`. Also the loop variable name convention in `$CMS_FOR(#card, st_catalog)$`. |
 | `#index` | position, 0-based | `#index.isNull` when not in a catalog; add 1 for display. |
 
-`#index` is not catalog-specific `[core]`: the same 0-based counter is set when a page's section
-list or a `FormDataList` renders section by section, together with `#sectionList` (the list being
-rendered, so `#sectionList.size` gives the sibling count). Inside a catalog the list object is
-`#fs_catalog` instead. `#sectionList` is not on the ODFS system-objects page `[verify]`; use it
-for reading exports and prefer `#fs_catalog` / explicit `$CMS_FOR$` counters in new templates.
+`#index` is not catalog-specific `[core]`: the same 0-based counter is also set while a page's
+sections render one by one. Inside a catalog the list object is `#fs_catalog`; prefer
+`#fs_catalog` / explicit `$CMS_FOR$` counters in new templates.
 
 Two production idioms built on them `[observed]`:
 
@@ -148,8 +145,7 @@ $CMS_VALUE(#cell.row)$            $-- 0-based row of the cell (.col likewise); .
 
 Two traps seen in a live FOP (PDF) template set `[observed]` (FS 5.2.261116, 2026-10-09 to 2026-10-12):
 
-- In the `table` format template `#content` is a `TableElementRenderer$TableRowPrinter`, not a
-  string: `indexOf`, `substring` and the other string methods are undefined. Detect the header row in
+- In the `table` format template `#content` is a renderer object, not a string: `indexOf`, `substring` and the other string methods are undefined. Detect the header row in
   `tr` with a counter list (`CMS_SET` of a list shared by reference) or format it in `td` via
   `#cell.row == 0`; do not parse `#content`.
 - `#list.style` is empty when the list was written as `<ol>` over the REST API; only a `<ul>` with

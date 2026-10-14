@@ -48,8 +48,8 @@ store roots). In a sync export it is carried by, depending on element type:
 |---|---|---|
 | GOM form-XML attribute values | no | SiteArchitect writes `yes` / `no` / `picture` lowercase by default, but enum values are case-**insensitive** — real projects mix them (`store="mediastore"` and `store="PAGESTORE"` coexist; `FILTER type=` is often written lowercase `picture`/`pageref` despite docs showing uppercase). Don't rely on the case of an attribute value. |
 | Ruleset.xml (rules) tokens | no | `scope=` and `<PROPERTY name=>` values are case-insensitive — deploying projects mix `SAVE`/`Save`/`save`, `VALID`/`valid`, `INFO`/`info`. Read them case-insensitively. |
-| `$CMS_…$` instructions, keywords, functions, variables | **yes** | Instruction names are upper-case and matched exactly (`$CMS_VALUE(`; `$cms_value(` is not recognised and is emitted as text). The same applies to `default:`, `true`/`false`/`null`, function names (`if`, `isSet`, `ref`, `json`, `dataAssociation`, `Navigation`, `Table`, …), variable names and system objects (`#global`, not `#Global`) `[core]`. `isset(…)` in lower case is a `ParsingError: unrecognized method name 'isset'` that blanks the whole template `[observed]` (5.2.261116, 2026-10-07). |
-| Java notation (method/object calls, class imports) | **yes** | `getKey`, `getLabel`, `.format`, `.isEmpty`, `.convert2`, class names must be spelled exactly (camelCase throughout the reference projects). The one tolerance is the **getter alias**: `getName()` is also reachable as `.name` and `.Name` (first letter free) `[core]` `[observed]`; `.getname()` does not resolve — it logs "Undefined method …" and prints empty, the page still renders `[observed]`. |
+| `$CMS_…$` instructions, keywords, functions, variables | **yes** | Instruction names are upper-case and matched exactly (`$CMS_VALUE(`; `$cms_value(` is not recognised and is emitted as text). The same applies to `default:`, `true`/`false`/`null`, function names (`if`, `isSet`, `ref`, `json`, `dataAssociation`, `Navigation`, `Table`, …), variable names and system objects (`#global`, not `#Global`) `[core]`. `isset(…)` in lower case is a parsing error (unrecognised method name) that blanks the whole template `[observed]` (5.2.261116, 2026-10-07). |
+| Java notation (method/object calls, class imports) | **yes** | `getKey`, `getLabel`, `.format`, `.isEmpty`, `.convert2`, class names must be spelled exactly (camelCase throughout the reference projects). The one tolerance is the **getter alias**: `getName()` is also reachable as `.name` and `.Name` (first letter free) `[core]` `[observed]`; `.getname()` does not resolve — it logs an undefined-method warning and prints empty, the page still renders `[observed]`. |
 
 See `datatypes.md` for the datatype methods these casing rules apply to, and
 `firstspirit-template-design` (principle 7) for the variable-prefix convention.
@@ -59,7 +59,7 @@ See `datatypes.md` for the datatype methods these casing rules apply to, and
 Inside the template language, `()`-omission for no-argument methods and Bean syntax (`.x` →
 `getX()` / `isX()`) apply to **every** Java object, Access-API objects included (`#global.page.id` =
 `getPage().getId()`; `#global.project.name` = `getProject().getName()` `[observed]`), because the
-evaluator resolves members by reflection over the object's public types `[core]`. What must stay
+template language resolves members the same way on every Java object `[core]`. What must stay
 exact is the casing, apart from the first letter of a getter alias. Full Java notation is required
 only outside the template language — in BeanShell scripts and Java modules. The rules:
 
@@ -99,5 +99,5 @@ are confirmed against the docs.
 
 > **Status:** this list is deliberately partial. A complete public enumeration of simplified/
 > shorthand accessors and per-function argument-optional behaviour does not appear to exist in the
-> ODFS; completing it depends on an internal source (docs or code). Extend the table as pairs are
-> confirmed — do not infer pairs into it unverified.
+> ODFS; the documentation does not enumerate every shorthand; the list grows as pairs are
+> verified — do not infer pairs into it unverified.

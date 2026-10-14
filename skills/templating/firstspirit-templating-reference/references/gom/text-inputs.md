@@ -91,8 +91,8 @@ Displays non-editable help text or instructions within a form.
 ```xml
 <CMS_LABEL bold="no" size="12">
   <LANGINFOS>
-    <LANGINFO lang="*" label="Please choose the default filesystem connector, if you do not have any connector installed."/>
-    <LANGINFO lang="DE" label="Falls kein Connector installiert ist verwenden Sie bitte den Filesystem Connector."/>
+    <LANGINFO lang="*" label="Choose the connector for this upload."/>
+    <LANGINFO lang="DE" label="Connector für diesen Upload wählen."/>
   </LANGINFOS>
 </CMS_LABEL>
 ```

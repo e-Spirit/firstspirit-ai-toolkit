@@ -46,7 +46,6 @@ Key points:
   with `BrokerAgent.getBrokerByProjectName(...)` (or `getBroker(id)`).
 - **Close the connection** in a `finally` — sessions are limited
   (`MaximumNumberOfSessionsExceededException` if leaked).
-- A proxy can be set with `ConnectionManager.setProxy(...)` (not official API).
 
 ## Create content (lock + create + save)
 

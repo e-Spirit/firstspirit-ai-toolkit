@@ -1,10 +1,8 @@
 # Components, tags and structure
 
-Look-up reference for the FirstSpirit building blocks: stores, template types, input components, CMS tags, datatypes and header functions. Source: an older FirstSpirit overview handout. For anything not here, the authoritative source is the ODFS (Online Documentation FirstSpirit).
+Look-up reference for the FirstSpirit building blocks: stores, template types, input components, CMS tags, datatypes and header functions. Source: FirstSpirit overview material; verify component details in firstspirit-templating-reference. For anything not here, the authoritative source is the ODFS (Online Documentation FirstSpirit).
 
 **Source of truth.** Within the portfolio, the firstspirit-templating-reference skill owns the component and datatype facts (its `datatypes.md` and GOM references, which track the documentation). This catalogue is the design-oriented view the principles point to; where the two differ, templating-reference wins on the facts.
-
-**Currency caveat.** This material comes from an older handout that predates headless projects and reflects the SiteArchitect, the Java fat client now being phased out. Template development in the ContentCreator differs in places. Verify headless, CaaS, ContentCreator and AI Suite specifics against current documentation.
 
 **Headless and CaaS.** In a headless project delivered through CaaS, FirstSpirit renders the JSON in a fixed setup and nests components into each other. Design templates for that consumer: keep nesting flatter and shaped around what frontend developers need (see SKILL.md, principles 4 and 7).
 

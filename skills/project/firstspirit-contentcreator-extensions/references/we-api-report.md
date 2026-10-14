@@ -26,8 +26,6 @@ the `ReportPlugin` implementation. [odfs]
 | My changes | `MyChanges` | `REPORT_MYCHANGES` |
 | Recent elements | `RecentElements` | `REPORT_RECENTELEMENTS` — Javadoc only, not in the ODFS table [javadoc] |
 
-(`REPORT_GPT` = `"GPT"` exists but is `@Internal`. [javadoc])
-
 ```javascript
 // Built-in "References" report, forced re-run
 top.WE_API.Report.show("RelatedObjects", null, true);

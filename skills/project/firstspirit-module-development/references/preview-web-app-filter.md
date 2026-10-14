@@ -66,7 +66,7 @@ public class MyPreviewWebApp extends AbstractWebApp { }     // shell; the behavi
   Mode* in [isolated-mode-and-packaging.md](isolated-mode-and-packaging.md)).
 - Log with `java.util.logging` from the filter: the FirstSpirit runtime classes are not what the web
   app sees `[verify]`. The output goes to the web container's log, not the FirstSpirit server log.
-  Never log the `login.ticket` or other session parts of the request path.
+  Never log the full request path; it can carry session parameters.
 - Where the component is installed (global or project web app) and the Cloud rules for adding a component
   to a **shared** web app (a support ticket) are in `firstspirit-cloud` (its cloud-constraints reference).
 

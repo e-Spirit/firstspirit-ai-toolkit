@@ -3,7 +3,7 @@
 `scripts/smoke-test.sh` exists so that a skill claim and the live server can be compared
 mechanically. This table is the honest inventory: one row per probe with the claim it checks
 and where that claim is stated, followed by the skill sections that have **no probe** — those
-are verified only by the 2026-09-11 field test and the 2026-09-14 multi-project run, i.e. by
+are verified only by the 2026-09-11 live test and the 2026-09-14 multi-project run, i.e. by
 hand, once. Update both halves when a probe is added or a section is rewritten.
 
 Legend: R = read-only (default run) · W = `--write` (W1–W9 page, W10–W12 page reference, W13–W17 medium, W18–W21 dataset, W22–W25 section template) · S = `--scripts` · E/O = environment/spec.

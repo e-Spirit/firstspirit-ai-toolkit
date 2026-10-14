@@ -3,8 +3,7 @@
 The calls below **compile, parse and run without error** — the parameter types are right, the
 constants are valid — and then do nothing useful in ContentCreator. Neither a BeanShell parse
 check nor a `javap` signature check can catch them; only this list can. Source: the toolkit
-field test of 2026-09-11 on an internal FirstSpirit Cloud instance (ContentCreator; instance
-and project are recorded in the skill's working docs, not here) unless tagged otherwise.
+live test of 2026-09-11 on a test installation (ContentCreator) unless tagged otherwise.
 Everything **[observed]** is a single-session observation — reproduce before treating it as law.
 
 | Call | Looks right because | What actually happens | Do instead |

@@ -1,7 +1,7 @@
 # Real-world scripting patterns
 
 End-to-end getting-started examples, drawn from a set of small example scripts and the
-analysed SE/Core project scripts. Where
+analysed scripts of an internal documentation project. Where
 [common-patterns.md](common-patterns.md) gives the atomic snippets (lock/save,
 iteration, store navigation), this file shows fuller, task-shaped scenarios. They are
 deliberately minimal: a starting shape for each task, not a complete treatment of the
@@ -14,9 +14,8 @@ Access API.
 > "IDE-to-script workflow" below.
 >
 > Provenance/verification: distilled from small example sources; the same
-> expert-verification caveat as the rest of this skill applies. The advanced SE/Core
-> patterns (script-as-library, JS bridge, AI Suite) are catalogued in the skill's
-> development notes and are not yet distilled into this reference.
+> expert-verification caveat as the rest of this skill applies. The advanced
+> patterns (script-as-library, JS bridge, AI Suite) are not yet distilled into this reference.
 
 ---
 
@@ -202,7 +201,7 @@ if (input == null) return;                        // cancelled
 name = input.get(context.getProject().getMasterLanguage(), "pt_name").get();
 ```
 
-## Trigger a schedule from a script (SE/Core `publish_documentation`)
+## Trigger a schedule from a script (`publish_documentation`)
 
 ```java
 //!BeanShell
@@ -219,11 +218,10 @@ control.awaitTermination();
 ok = (control.getState().getState() == RunState.SUCCESS);
 ```
 
-## More advanced SE/Core patterns
+## More advanced patterns
 
-The `docu-design-master-project` scripts show further real patterns — a
+The documentation project's scripts show further real patterns — a
 **script-as-library** include (`eval(getScriptByName(...).getChannelSource(...))`),
 a **BeanShell ⇄ ContentCreator JavaScript** bridge, the **`prm_` render-parameter**
 convention for FS_BUTTON / `$CMS_RENDER$` field-fill scripts, and **AI-Suite**
-integration. These are catalogued, with open questions for an expert, in the skill's
-development notes; they are not yet distilled into this reference.
+integration. They are not yet distilled into this reference.

@@ -121,7 +121,7 @@ $CMS_END_IF$
 The inline `if(cond, a, b)` (as in `$CMS_SET(x, if(!element.isNull, element, ""))$`)
 evaluates the condition and then **only the branch it selects**; the other expression is never
 run `[core]` `[observed]` (a list `.add` placed in the unused branch left the list empty, FirstSpirit
-5.2.261116, 2026-10-07 — this corrects an earlier observation that both branches ran). The
+5.2.261116, 2026-10-07). The
 condition therefore does protect a null access in the branch. What does fail is a condition that is
 `null` or not a boolean: `if()` throws instead of choosing. With two arguments and a false condition
 the result is the empty string `""`, not `null` (`isNull` false, `isEmpty` true) `[observed]`.
@@ -239,7 +239,7 @@ best, but be consistent in one project; the API documentation lists only the Jav
 
 Two traps that follow from the rule:
 
-- **`.empty` on an object that has no `isEmpty()` silently yields `false`** `[core]`. There is no
+- **`.empty` on an object that has no `isEmpty()` yields `false` without an error** `[core]`. There is no
   error, so `$CMS_IF(!x.empty)$` always enters the branch. Check the object's type first; `.isNull`
   is the safe test for "is there a value at all".
 - A parameterless `set…` short name is never what you want in a template; if a bare name

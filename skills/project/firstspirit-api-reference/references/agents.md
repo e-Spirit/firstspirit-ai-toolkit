@@ -83,11 +83,11 @@ The agents you reach for most (all via `requireSpecialist(X.TYPE)`):
 | `FileSystemsAgent` | File systems for I/O from scripts and modules: `getOSFileSystem(path)`, `getMemoryFileSystem()`, `getRelativeFileSystem(handle)`. Package `de.espirit.firstspirit.io` |
 | `ProcessAgent` | Start an OS process on the server: `getBuilder()` returns a `ProcessAgent.ProcessBuilder` |
 | `FeatureToggleAgent` | Server feature toggles: `isAvailable(name)`, `isEnabled(name)`, `isEnabled(name, default)`; `enable` / `disable`. On 5.2.261011, not on 5.2.240208 `[jar]` |
-| `UrlRegistryAgent` | **Internal API — do not use.** Annotated `@ApiStatus.Internal` on both jars `[jar]` and declared in the runtime, not the Access API `[core]`; `checkCompliance` rejects it. (It was listed here as a public agent after an external contribution; the javap check at the time only confirmed the methods existed.) |
+| `UrlRegistryAgent` | **Internal API — do not use.** Annotated `@ApiStatus.Internal` on both jars `[jar]`; `checkCompliance` rejects it. |
 | `EventBusAgent` | Generic publish/subscribe between components: `post`, `register`, `unregister` with a `BusIdentifier<T>` (`T` must be `Serializable`) |
 
 > Not the full set — the `de.espirit.firstspirit.agency` package has more (see
-> the FirstSpirit ODFS documentation). These cover the vast majority of script/module needs.
+> the Access API Javadoc). These cover the vast majority of script/module needs.
 
 ## Cross-context tip: getting a project broker on the server
 

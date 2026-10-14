@@ -70,9 +70,9 @@ Top-level fields documented on a content document:
 - `route` — URL from the configured URL factory (present on **PageRef** and
   **Dataset** documents)
 
-### Page → body → section nesting (confirmed via `fsxa-api`)
-A **PageRef** document nests as follows (confirmed against the official
-`fsxa-api` mapper, `CaaSMapper.mapPageRef` — see [Reading it](#reading-it-the-official-client)):
+### Page → body → section nesting
+A **PageRef** document nests as follows (the official `fsxa-api` mapper,
+`CaaSMapper.mapPageRef`, reads the same structure — see [Reading it](#reading-it-the-official-client)):
 
 ```
 pageRef.identifier            # the PageRef's own GID
@@ -161,10 +161,9 @@ tag ("Transmitted resolutions"). Media cache headers on S3: preview is always
 taken from the module's cache-control configuration (the documented defaults are 300
 and 900 seconds) `[core]`.
 
-> The FirstSpirit PWA reference implementation (JavaScript Content API)'s rule holds: an `FS_REFERENCE` media value points
-> at a media *document*, not an image — fetch it, read `resolutionsMetaData`,
-> pick a rendition. Never hand-build binary URLs. That consumer-side detail lives
-> in the FirstSpirit PWA reference implementation (JavaScript Content API).
+> An `FS_REFERENCE` media value points at a media *document*, not an image —
+> fetch it, read `resolutionsMetaData`, pick a rendition. Never hand-build binary
+> URLs.
 
 ---
 
@@ -188,15 +187,14 @@ implementation** for parsing CaaS + Navigation Service output:
 <https://github.com/e-Spirit/javascript-content-api-library>.
 
 - Its **`CaaSMapper`** is the canonical map from raw CaaS JSON to a friendly
-  model (the source of the nesting and the input-component table above).
+  model.
 - Its **`XMLParser`** shows how `CMS_INPUT_DOM` FS-XML is turned into rich-text
   nodes.
 - The raw CaaS document (what this file describes) is what you get *before* the
   mapper runs — the README notes you can fetch it directly with the API key to
   discover the exact key names to filter on.
 
-For querying/auth/streams see [caas-platform.md](caas-platform.md); for building a
-Next.js frontend on top, the FirstSpirit PWA reference implementation (JavaScript Content API).
+For querying/auth/streams see [caas-platform.md](caas-platform.md).
 
 ---
 
@@ -209,13 +207,13 @@ extra attributes (`route`, `routes[]`, `url` on references, `brokenReference`,
 `projectConfiguration.masterLocale`), the predefined indexes, the default `crud`
 change stream, and the per-state consumer API keys.
 
-Facts read in the module source `[core]`, useful when filtering or sizing:
+Further facts `[core]`, useful when filtering or sizing:
 
-- **Predefined indexes** on each `*.content` collection: `identifier` +
-  `locale.language`/`locale.country`; `identifier` + `locale.identifier`; `entityType`,
-  `fsType` and `fsType` + `template.uid` / `page.template.uid` / `mediaType`, each with
-  language and country; `route`; `routes.route`; `changeInfo.lastSynced`. Filter on these
-  fields and the 408 timeout stays away.
+- **Fields to filter on** in a `*.content` collection: `identifier` with
+  `locale.language`/`locale.country` or `locale.identifier`; `entityType`; `fsType`, alone or
+  with `template.uid` / `page.template.uid` / `mediaType`, plus language and country; `route`;
+  `routes.route`; `changeInfo.lastSynced`. Filters on these fields stay fast on large
+  collections; filters on other fields are the usual cause of the 408 timeout.
 - **Six generated API keys per project**, named "Project `<id>` …": Read (Preview),
   Read/Write (Preview), Read, Read/Write, GraphQL (Preview), GraphQL. Read keys carry
   `GET`/`HEAD`/`OPTIONS` on the project's content *and* files collection.
@@ -223,5 +221,5 @@ Facts read in the module source `[core]`, useful when filtering or sizing:
   document path.
 
 Module install, service configuration (`caasConnect.json`, master API key, tenant
-id, S3 config), project activation, and requirements are parked →
-[for-later-configuration-and-install.md](for-later-configuration-and-install.md).
+id, S3 config), project activation, and requirements →
+[configuration-and-install.md](configuration-and-install.md).

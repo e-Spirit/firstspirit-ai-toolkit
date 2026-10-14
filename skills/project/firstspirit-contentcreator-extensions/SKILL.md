@@ -3,23 +3,24 @@ name: firstspirit-contentcreator-extensions
 description: >-
   Lookup reference for extending the FirstSpirit ContentCreator. Browser side: the WE_API JavaScript API (top.WE_API.Common / Dialog / Preview / Report, FSID, jumpTo, execute, showMessage, createDialog, preview reload / rescan / repaint, report shortcodes), the server→browser bridges ClientScriptOperation (sync vs async, callback-must-fire) and ClientResourceOperation, a "does not work in ContentCreator" list, MPP_API / JC_API (SiteArchitect). Java side: the ContentCreator plug-in interfaces a module implements (toolbar, inline edit, status notes, element status, timeline, translation) and the @WebAppComponent they need. Use whenever JavaScript in a ContentCreator preview or action must talk to the client, a BeanShell script or Executable must run JavaScript in the editor's browser, or a module adds ContentCreator UI — e.g. "reload only this section after my script ran", "open a report with a preset filter", "why does my ClientScriptOperation never return", "add a button to the ContentCreator toolbar".
 metadata:
-  source-commit: "2e7b7bc"
-  published: "2026-10-12"
-  toolkit-version: "0.4.1"
+  source-commit: "ba64160"
+  published: "2026-10-14"
+  toolkit-version: "0.5.0"
 ---
 
 > **Beta.** Early public release. Feedback welcome; behaviour and structure may change.
 
 # ContentCreator extensions (`WE_API` + `ClientScriptOperation`)
 
-> **First pass (2026-09-14) — SME review pending.** Every `WE_API` member is tagged
+> **Beta.** `WE_API` members come from the documentation and Javadoc; behaviours marked
+> `[verify]` are not yet confirmed live. Every `WE_API` member is tagged
 > **[javadoc]** (FirstSpirit Access API Javadoc, package
 > `de.espirit.firstspirit.webedit.client.api`) or **[odfs]** (the ODFS "JavaScript APIs ›
 > ContentCreator" pages, FirstSpirit 2026.9). The `WE_API` interfaces are GWT client classes and
 > are **not in `fs-isolated-runtime.jar`**, so they could not be `javap`-checked; only
 > `ClientScriptOperation.perform(String, boolean)`, `MPPWebControl` (`top.MPP_API`) and
 > `JavaClientApi` (`top.JC_API`) are **[jar]**-verified (FS 5.2.240208).
-> **[observed]** = toolkit field test 2026-09-11 (one session, one project) — strong evidence,
+> **[observed]** = live test 2026-09-11 (one session, one project) — strong evidence,
 > not yet reproduced. Other behaviour notes are **[verify]**.
 
 ContentCreator exposes a JavaScript object, **`top.WE_API`**, that lets code running in the
@@ -72,7 +73,7 @@ on the ContentCreator top window. [odfs]
 | ODFS Preview page | MPP getters/setters on `top.WE_API.Preview` | **Deprecated since 5.2** — use `top.MPP_API`, same method names: `references/mpp-api.md`. [odfs] [javadoc] |
 | ODFS MPP_API page | five functions | `MPPWebControl` also has `addParameterizedListener`, `addParameterListener`, `addTimeParameterListener` (ContentCreator only) — on the jar, not on the page. [jar] [javadoc] |
 | ODFS JC_API page | `execute(String, Map, String callback)` | The Java interface has `execute(String)` (sync, returns the result) and `execute(String, Map)`; the callback is a trailing argument consumed by the JavaScript proxy. Also accepts `class:<name of a public Executable>`. [jar] [javadoc] |
-| `firstspirit-operations` field-test note | async `perform(script, true)` "returns the callback value" | Consistent with the Javadoc: the async example returns `"methodReturnValue"` from `perform(script, true)`. The `@returns null` applies only when there is no value. [javadoc] [verify] |
+| `firstspirit-operations` live-test note | async `perform(script, true)` "returns the callback value" | Consistent with the Javadoc: the async example returns `"methodReturnValue"` from `perform(script, true)`. The `@returns null` applies only when there is no value. [javadoc] [verify] |
 
 ## Does not work in ContentCreator — read before the first click
 

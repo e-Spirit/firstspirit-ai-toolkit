@@ -3,9 +3,9 @@ name: firstspirit-template-design
 description: >-
   Design principles and review guidance for FirstSpirit template development. Use whenever creating, generating, reviewing or auditing FirstSpirit templates: page, section, format and link templates, input components and forms (GOM), CMS tags and output, headless and CaaS projects, content modelling and datasets, naming and coding conventions, reuse, editorial usability, localisation and multi-language handling, and documenting a created template set. Trigger it for any FirstSpirit template task (ContentCreator, SiteArchitect, ODFS, CaaS, AI Suite), even when the request does not say "design principles" — e.g. "build a section template", "review this FirstSpirit template", "which input component should I use", "document the templates you generate", "check our templates against our conventions". Component, tag, datatype and naming reference in references/. Write precisely and in FirstSpirit vocabulary when the deliverable is written content (a report or documentation).
 metadata:
-  source-commit: "2e7b7bc"
-  published: "2026-10-12"
-  toolkit-version: "0.4.1"
+  source-commit: "ba64160"
+  published: "2026-10-14"
+  toolkit-version: "0.5.0"
 ---
 
 > **Beta.** Early public release. Feedback welcome; behaviour and structure may change.
@@ -26,7 +26,7 @@ A template can be technically correct and still be a poor design. These principl
 Several principles below change depending on two things. Settle both before applying the rest.
 
 - **Output mode.** Classic projects generate HTML or similar files. Headless projects deliver JSON, usually through CaaS, where FirstSpirit renders the JSON in a fixed setup and nests components into each other. The output mode changes naming (principle 7) and template structure (principle 4).
-- **Client.** Much of the older material this skill draws on uses the SiteArchitect, the Java fat client, which is being phased out. Templates can also be built in the ContentCreator, where the setup differs. Treat SiteArchitect-specific steps with that in mind.
+- **Client.** Much of the older material this skill draws on uses the SiteArchitect, the Java client. New features focus on the ContentCreator (the AI Suite, for example, is fully available only there), and templates can be built there too with a different setup. Treat SiteArchitect-specific steps with that in mind.
 - **What the client stores.** Before you build a format template or an import for an editor's content (lists, tables, links in a DOM field), create one sample by hand in the client and read the stored form back (over REST or an export). Design against that form, not against the HTML you would write yourself: a list in FirstSpirit is a `<ul>` with list properties, not an `<ol>`, and a home-made format template or counter for the "missing" element is a detour that has to be removed later. When a format template is dropped from a GOM's `FORMATS`, remove the reference first and the template second, or the reference dangles.
 
 ## Principles

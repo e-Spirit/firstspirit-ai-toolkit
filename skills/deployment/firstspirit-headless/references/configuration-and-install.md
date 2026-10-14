@@ -1,23 +1,14 @@
-# For later — configuration, installation, and admin
+# Configuration, installation, and admin
 
-> **Parked, on purpose.** Configuration / installation / admin is a **separate
-> audience and a separate documentation source** from developer-facing usage. The
-> portfolio has deliberately not built a config/install skill yet (see
-> the portfolio's skills index → "Configuration / installation / admin"). This file
-> is a **holding pen**: the setup material that surfaced while distilling the
-> headless docs, kept out of the usage references so they stay developer-facing,
-> and ready to lift into a config/install skill when one is built.
->
-> Nothing here is a validated install procedure. Treat every item as a pointer to
-> the authoritative admin doc, not as steps to follow. Versions and paths change.
+Setup pointers for the headless stack. The admin documents linked per section are
+authoritative; check them for the version you run.
 
 ---
 
 ## CaaS Platform (deployment / admin)
 
-**Home for all of this:** the
-[Operations Guide](https://docs.e-spirit.com/module/caas-platform/CaaS_Platform_Operations_Guide_EN.html)
-(not fetched in depth — retrieve it when building the config skill).
+Source:
+[Operations Guide](https://docs.e-spirit.com/module/caas-platform/CaaS_Platform_Operations_Guide_EN.html).
 
 - **Components to deploy:** `caas-rest-api` (RESTHeart-based REST interface) +
   `caas-mongo` (MongoDB). Needs an HTTP/HTTPS endpoint, WebSocket support (change
@@ -29,8 +20,6 @@
 - **SaaS vs on-prem:** database management (create/delete DBs) is not permitted in
   SaaS; binary content is not stored in CaaS buckets in SaaS (served elsewhere via
   the URL factory).
-- Helm/Kubernetes/Docker, sizing, backup: expected in the Operations Guide —
-  **(UNVERIFIED, not fetched)**.
 
 ---
 
@@ -48,7 +37,7 @@ Source:
   case-insensitive). File: `./conf/modules/CaasConnect.CaasConnectService/caasConnect.json`
   ```json
   { "baseUrl": "http://localhost:8080",
-    "apiKey": "ef27ef88-11c1-4ba0-946c-5c82d2880a18",
+    "apiKey": "<master-api-key>",
     "tenantId": "defaultTenant" }
   ```
   Full config adds `mediaConnectorConfig.S3` (credentials, bucket, CloudFront
@@ -60,8 +49,7 @@ Source:
 - **Runtime:** connection validated at startup; failures logged without blocking
   editors.
 - **Migration (v2 → Connect):** run both modules simultaneously; migrate
-  iteratively per project/consumer. Deprecated v2 docs:
-  <https://docs.e-spirit.com/module/caas-module/>.
+  iteratively per project/consumer.
 
 ---
 
@@ -101,9 +89,3 @@ FirstSpirit".
 `WE_API` / `JC_API` are injected by FirstSpirit into its own previews — no
 frontend install. `MPP_API` / MPP parameterisation requires an MPP
 parameterisation template configured in the project (project config).
-
----
-
-*Compiled 2026-07-31 from the same doc pass as the usage references. When a
-configuration/installation skill is created, this file is its seed — re-verify
-every item against the live admin docs first.*

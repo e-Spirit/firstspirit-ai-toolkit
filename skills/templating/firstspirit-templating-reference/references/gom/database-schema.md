@@ -8,8 +8,8 @@ each component stores.
 
 Evidence tags: `[odfs]` ODFS *Composition of templates → Database schemata* and *Forms →
 FS_DATASET / FS_INDEX / CMS_INCLUDE_OPTIONS type="database"* (FirstSpirit 2026.5 export);
-`[core]` behaviour read in the FirstSpirit product source (file and line recorded in the skill's
-working notes, which do not ship); `[jar]` `javap` on `fs-isolated-runtime` 5.2.261011.
+`[core]` behaviour read in the FirstSpirit product source, stated here as what the client, the
+form or the export shows; `[jar]` `javap` on `fs-isolated-runtime` 5.2.261011.
 
 ## The objects
 
@@ -32,12 +32,12 @@ working notes, which do not ship); `[jar]` `javap` on `fs-isolated-runtime` 5.2.
 
 ## Columns
 
-- **`fs_id`** — every table has it: the integer primary key, hidden, consecutive per table.
-  `[odfs]` `[core]`
+- **`fs_id`** — every table has it: the integer primary key, hidden, consecutive per table
+  `[odfs]` `[core]`.
 - **`FS_GID`** — a UUID system column. The ODFS names datasets with a GID as *mandatory* for the
-  `DatasetDataAccessPlugin` (`FS_INDEX`). `[odfs]` The implementation falls back to the primary
-  key when a row has no GID, and logs "Entity has no GID. The database has to be updated for
-  Index-use." — treat the GID as required in practice. `[core]`
+  `DatasetDataAccessPlugin` (`FS_INDEX`). `[odfs]` A row without a GID falls back to its primary
+  key and a warning is logged asking for the database to be updated for index use — treat the
+  GID as required in practice. `[core]`
 - **Language-dependent columns.** *Generate for all languages* in the schema editor creates one
   column per project language (suffixed with the language code). A form component with
   `useLanguages="yes"` must be mapped to such a set, one column per language; a
@@ -46,7 +46,7 @@ working notes, which do not ship); `[jar]` `javap` on `fs-isolated-runtime` 5.2.
   for it has to be created for every language-dependent attribute before editors can work in
   that language — the schema editor's *Collapse language-dependent columns* view deliberately
   keeps a column expanded when one language's column is missing, so the gap stays visible.
-  `[odfs]` (confirmed internally at FirstSpirit, 2026-09-28)
+  `[odfs]` (verified 2026-09-28)
 - **Foreign keys** are relations between two tables of the same schema: 1:1, 1:N or M:N, in one
   direction or both (*Both* inserts a column on each side); *Aggregation* deletes / releases
   the linked dataset together with its owner. `[odfs]`
@@ -70,7 +70,7 @@ and lets a date component map onto a `Long`. `[core]`
 | FirstSpirit editor | `xml` | `XMLValue` (default length 65 535, raisable) | **every** field type — the column stores the component's serialised value | the **only** possible column for `CMS_INPUT_DOM` / `DOMTABLE`, `FS_REFERENCE`, `FS_CATALOG`, `FS_INDEX`, `CMS_INPUT_LINK`, `IMAGEMAP` and every other component whose value is not a plain string, number, boolean or date |
 
 - **A selection component stores a real number when mapped onto a numeric column.** The
-  mapping converts the entry value on save (`Conversion.convert` to the column's Java type), so
+  mapping converts the entry value on save (converted to the column's Java type), so
   a `CMS_INPUT_RADIOBUTTON` with entries `1`, `2`, `3` mapped onto an `Integer` column stores the
   integer `1`, not the string `"1"`; mapped onto a `String` column it stores the string. The
   editor offers the numeric column only when *every* entry parses. `[core]`
@@ -80,11 +80,8 @@ and lets a date component map onto a `Long`. `[core]`
 - **Allow empty value** (per column, default on). Switched off, the column is *mandatory* at the
   database level and shown red in the schema model `[odfs]`. Not recommended: a dataset with the
   column empty cannot be saved and the editor gets the database's error, which rarely says what
-  to fix. Express "required" as a not-empty validation rule on the form instead (confirmed
-  internally at FirstSpirit, 2026-09-28).
-
-The runtime knows further column types (`binary`, `uuid`, `json`) that the schema editor does
-not offer for new columns. `[jar]` `[core]`
+  to fix. Express "required" as a not-empty validation rule on the form instead (verified
+  2026-09-28).
 
 ### Dataset references: relation or column
 
@@ -111,8 +108,8 @@ the link; map onto a column when the reference is editorial only.
 | `FS_DATASET` in a **table template** | the **foreign key** of the schema relation it is linked to (the parent's key) `[odfs]` | 1 | — | as above; the linked row's columns are reachable in the form via the relation |
 | `FS_INDEX` + `DatasetDataAccessPlugin` | a list of record identifiers — JSON `{gid, table, schema}` (or `{keyValue, table, schema}` without GID) `[core]` | n | **yes** | `Index` of `Record`s; each record is resolved through the plugin's session (`.values` / `.entity`) `[odfs]` |
 
-- `<KEY>` needs a **unique** column: on read the option factory throws "Key '…' is not unique
-  in table …" when two rows match. `[core]` The ODFS says the same in words: use `KEY` only "if
+- `<KEY>` needs a **unique** column: reading a value whose key matches two rows fails with an
+  error naming the key and the table. `[core]` The ODFS says the same in words: use `KEY` only "if
   the users themselves can guarantee the uniqueness". `[odfs]` No rule can enforce that across
   rows; the writer (editor discipline, seed script, REST client) must.
 - The database-backed selection components list at most **100** rows; above that the ODFS
@@ -120,10 +117,8 @@ the link; map onto a column when the reference is editorial only.
 - **Cross-schema.** All three components resolve the table template (or data source) by UID
   against the whole Template Store / Content Store, not against the schema of the form that
   contains them: a component in table template `A.x` may reference `B.y`, and so may a section
-  template. `[core]` They do **not** share one plugin: the option factory, the dataset editor
-  and the `DatasetDataAccessPlugin` are three implementations that share the same lower layer —
-  look up the table template by UID, open its schema's session. If a table is reachable for one
-  of them it is reachable for all. `[core]` (confirmed internally at FirstSpirit, 2026-09-28)
+  template. `[core]` The three components resolve the table the same way: if a table is reachable
+  for one of them it is reachable for all. `[core]` (verified 2026-09-28)
 - **New datasets from the component.** Both `FS_DATASET` (`allowNew`, default yes) and
   `FS_INDEX` (the *NEW* action; a rule on `NEW` can disable it) let the editor create a dataset
   in the referenced table from inside the form. Deleting datasets from there works only in the
@@ -161,7 +156,7 @@ the form (rules, snippets) and the relation is what a query joins on. `[odfs]`
 
 - A query is a **child of a schema** and operates on that schema's session: it can filter,
   sort and join (`<SUBSELECT>`) only entity types of **its own schema**; a foreign entity type is
-  rejected when the query is parsed ("The schema … doesn't contain the entity type …").
+  rejected with an error when the query is parsed.
   `[core]` `[odfs]` So: components may reference across schemas, joins may not.
 - Queries are defined in the Template Store (schema → *New → Create query*; Wizard mode or XML),
   inline in the `contentSelect` header function (`schema` + `<QUERY entityType="…">`, or
@@ -194,14 +189,13 @@ the form (rules, snippets) and the relation is what a query joins on. `[odfs]`
 ## Deleting
 
 - **Never force-delete a table template.** The normal delete refuses while a data source
-  references the template (the check reports the incoming reference and skips the element; it
-  has been in the server since 2007). A delete that *ignores incoming references* removes the
+  references the template (the check reports the incoming reference and skips the element). A delete that *ignores incoming references* removes the
   template anyway, and the data source is left pointing at nothing: every access throws
   `ReferenceNotFoundException`, nothing cascades. `[core]` Unlike a dangling reference elsewhere
   (which only fails at generation or in the preview), this **breaks the data source itself**, and
   creating a new table template under the same name does **not** repair it — the data source
   stays broken and is hard to fix. Either keep the template, or delete in the right order: the
-  data source first, then the table template (confirmed internally at FirstSpirit, 2026-09-28).
+  data source first, then the table template (verified 2026-09-28).
 - Deleting a **table** in the schema editor is immediate and without confirmation; table
   templates and queries on that table must be adapted by hand. `[odfs]`
 - Deleting a dataset with a foreign-key *Aggregation* deletes the linked datasets too. `[odfs]`

@@ -14,8 +14,7 @@ sloppiness.
 
 ## Version and restrictions
 
-FirstSpirit embeds **beanshell2** (`com.github.pejobo:beanshell2` `[core]`), at roughly
-**JDK 1.5 language level**. Limits, each confirmed on a live FirstSpirit 5.2.261116 server
+FirstSpirit embeds **BeanShell** at roughly **JDK 1.5 language level**. Limits, each confirmed on a live FirstSpirit 5.2.261116 server
 (scripts run over the REST `/execute` endpoint, 2026-10-09):
 
 - **Generics: one type parameter only.** `List<String> l = new ArrayList<String>();` parses;
@@ -91,8 +90,8 @@ print(greet("world"));
 ## The BeanShell console
 
 A graphical shell for running BeanShell interactively against a live project. It is **not part
-of every project**: it ships as the *Developer-Scripts* package of context-menu scripts
-(`developer-scripts-public.zip`), which has to be imported into the project first `[core]`.
+of every project**: it comes as the separate *Developer-Scripts* package of context-menu
+scripts, which has to be imported into the project first `[core]`.
 
 - Once imported, open it from the context menu of a store node:
   *Execute Script → DeveloperScripts → BeanShellConsole*.

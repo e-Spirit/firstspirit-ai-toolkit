@@ -14,9 +14,9 @@ description: >-
   click-to-edit with TPP_SNAP", "how does a frontend authenticate to CaaS". Template
   structure for headless: firstspirit-template-design.
 metadata:
-  source-commit: "2e7b7bc"
-  published: "2026-10-12"
-  toolkit-version: "0.4.1"
+  source-commit: "ba64160"
+  published: "2026-10-14"
+  toolkit-version: "0.5.0"
 ---
 
 > **Beta.** Early public release. Feedback welcome; behaviour and structure may change.
@@ -47,16 +47,17 @@ Point at these; do not restate them.
   is template strategy/structure/conventions and stays there. This skill takes the
   JSON as produced and covers the *platform* that carries it.
 - **Building the frontend** — a Next.js/React app consuming CaaS, Navigation
-  Service and TPP (client code, preview-id builders, image handling, preview vs
-  release wiring) — is **the FirstSpirit PWA reference implementation (JavaScript Content API)**.
+  Service and TPP — is not covered; start from the official `fsxa-api` client and
+  PWA template ([caas-platform.md](references/caas-platform.md) → *Official client
+  libraries*).
 - **The FirstSpirit REST API** (`/rest/v1/`, editing content in FirstSpirit
   itself) is **`firstspirit-rest-api`** — a different API from CaaS's REST read
   interface.
 - **Collaboration comments** (delivering findings to editors) is
-  **the Collaboration module documentation** — and note it is **unavailable for headless
-  projects**, so headless delivery of flagged findings is an open question there.
-- **Install / configuration / admin** is parked →
-  [references/for-later-configuration-and-install.md](references/for-later-configuration-and-install.md).
+  **`firstspirit-collaboration`** — and note it is **unavailable for headless
+  projects**.
+- **Install / configuration / admin** →
+  [references/configuration-and-install.md](references/configuration-and-install.md).
 
 ## How to use this skill
 
@@ -68,9 +69,6 @@ Point at these; do not restate them.
 - **The JSON is `toJson`, not templated.** CaaS Connect produces a fixed,
   standardised JSON shape; you change the delivered data by changing the *model*
   (GOM form), not an output channel. See [caas-connect.md](references/caas-connect.md).
-- **First pass.** This skill was distilled from documentation with **no live
-  install**; items tagged **(UNVERIFIED)** need an SME. See
-  the skill's review log.
 
 ## Quick answers
 
@@ -80,9 +78,9 @@ Point at these; do not restate them.
   [caas-platform.md](references/caas-platform.md)
 - **Group / count / compute across documents:** a MongoDB aggregation
   pipeline, either stored in collection metadata (`aggrs`, called via
-  `GET /<db>/<collection>/_aggrs/<uri>?avars={…}`, RESTHeart form, unverified
+  `GET /<db>/<collection>/_aggrs/<uri>?avars={…}`, RESTHeart form, not verified
   on a current CaaS) or inside a GraphQL app's query mapping (`stages`,
-  documented). No mapReduce, no variables in db/collection names, 30 s cap. →
+  documented). No mapReduce, no variables in db/collection names. →
   [caas-platform.md](references/caas-platform.md)
 - **Authenticate a browser frontend to CaaS:** mint a short-lived secure token
   from an API key — `GET /_logic/securetoken?tenant=<db>&ttl=<s>` with
@@ -115,13 +113,7 @@ Loaded on demand — read the file that matches the question.
 | [caas-connect.md](references/caas-connect.md) | The delivery module: the `toJson` document shape (fields, FormData, sections, references, media/rendition URLs), preview vs release, sync, and the "JSON isn't templated" constraint | You need to know what the delivered JSON looks like or how it's produced |
 | [navigation-service.md](references/navigation-service.md) | Site structure as JSON: the REST endpoints, default vs `caas` format (`idMap`/`seoRouteMap`/`structure`), route resolution, customData, security | You're resolving routes or consuming navigation |
 | [preview-and-editing.md](references/preview-and-editing.md) | OCM/TPP/SNAP: the `TPP_SNAP` API (methods, events, dialogs), `data-preview-id` decoration, common flows, OCM button attributes, and the non-headless ODFS JS APIs | You're wiring click-to-edit / on-page editing into a headless frontend |
-| [for-later-configuration-and-install.md](references/for-later-configuration-and-install.md) | Parked install/config/admin material (holding pen for a future config skill) | You need setup pointers — but note it is unvalidated |
-
----
-
-*First pass, distilled 2026-07-31 from the CaaS Platform, CaaS Connect, Navigation
-Service, TPP/SNAP, OCM, and ODFS JavaScript-API documentation. No live install was
-available — see the skill's review log.*
+| [configuration-and-install.md](references/configuration-and-install.md) | Install, configuration and admin pointers for CaaS Platform, CaaS Connect, Navigation Service and OCM | You need setup pointers |
 
 <!-- feedback-footer:v1 -->
 

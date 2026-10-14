@@ -154,4 +154,4 @@ sensitivity, default groups, User-Manager/password-user rules, group/user
 create-delete rules, federations, OIDC/SAML IdP setup, MFA-via-own-IdP);
 docs.crownpeak.com/firstspirit/cloud-vs-self-hosted/cloud-specific-processes
 (Project-Admin-only, no Server Admin). Verified against the User Management doc
-2026-07-31; version-dependent — see the skill's review log.*
+2026-07-31; version-dependent, other items not yet verified live.*

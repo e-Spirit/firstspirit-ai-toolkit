@@ -149,8 +149,8 @@ CI (Bamboo → Artifactory), not an FSM you install — see
 
 - **Kotlin DSL** — `build.gradle.kts` + `settings.gradle.kts` (not Groovy).
 - Plugins: `java-library`, `maven-publish`, `de.espirit.firstspirit-module`,
-  `net.researchgate.release`. Release publishes to Artifactory
-  `es-snapshot-local` / `es-release-local` (SNAPSHOT vs release), `requireBranch = main|master`.
+  `net.researchgate.release`. Release publishes to Artifactory, to
+  the snapshot and release repositories named in your archetype (SNAPSHOT vs release), `requireBranch = main|master`.
 - **`ci.properties`** — read by the pipeline; `fsm.project.path` locates the FSM
   subproject (empty = built by the root project).
 - **All config lives in `gradle.properties`** — `rootProjectName`, `groupId`,

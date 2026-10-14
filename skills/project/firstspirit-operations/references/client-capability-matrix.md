@@ -2,7 +2,7 @@
 
 One table for "does this work in the client my script runs in". Verification key:
 **[jar]** package/signature on `fs-isolated-runtime.jar` FS 5.2.240208 · **[javadoc]** Access
-API Javadoc · **[odfs]** ODFS page · **[observed]** toolkit field test 2026-09-11, single
+API Javadoc · **[odfs]** ODFS page · **[observed]** live test 2026-09-11, single
 session — reproduce before relying on it · **[verify]** inferred, not yet checked.
 
 Which client you are in: `context.is(Env.WEBEDIT)` / `Env.PREVIEW`

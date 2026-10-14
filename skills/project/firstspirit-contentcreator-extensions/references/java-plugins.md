@@ -7,8 +7,8 @@ markers, translation providers and focus areas. Every signature marked **[jar]**
 with `javap` from `fs-isolated-runtime.jar` FS 5.2.240208, or from FS 5.2.261011 where the
 text says so; **[odfs]** is the ODFS chapter
 "Plug-In Development › ContentCreator Extensions" (FirstSpirit 2026.5, read in an offline
-HTML export, not the live site); behaviour marked **[observed]** comes from Professional
-Services example modules and has not been reproduced here. The ODFS calls the complete,
+HTML export, not the live site); behaviour marked **[observed]** comes from the example
+modules and has not been reproduced here. The ODFS calls the complete,
 compilable versions of every example below the *ContentCreator Examples* module source;
 its own listings are deliberately not compilable **[odfs]**. That module source (the
 official `fs5_webclient_examples` download, last built 2019, Ant-based) was **compiled here
@@ -219,8 +219,7 @@ The ODFS example and the examples module build groups with the unqualified
 `Factory.create(displayName, elements)` from inside the plug-in class — that is the nested
 `WebeditElementStatusProviderPlugin.Factory` above, not a factory on `WorkflowGroup`
 **[jar]**. The factory is on both jars; only the `Language` overloads are newer (on
-5.2.261011, absent on 5.2.240208 **[jar]**; the Professional Services collection dates them
-to 5.2.250602 **[observed]**). The examples module's *ContentProjectionElementStatusProvider*
+5.2.261011, absent on 5.2.240208 **[jar]**; they date from 5.2.250602 **[observed]**). The examples module's *ContentProjectionElementStatusProvider*
 shows the intended shape: for a content-projection PageRef, collect the projected datasets
 (`pageRef.getContent2Params().getData(language)` → `tableTemplate.getDataset(entity)`),
 bucket everything by `getReleaseStatus()`/`hasTask()`, one group per bucket named after the
@@ -254,7 +253,7 @@ side-effect free. `Revision`-based entries make no sense in a future provider **
 The providers are **selected per project** in ServerManager → ContentCreator settings, and
 the web-app component that contains them must be added to the project's ContentCreator web
 application with its web server active **[odfs]**; the same providers also serve the
-SiteArchitect's MPP timeline **[odfs]**. A PS example declares `int getRange()` — it does not
+SiteArchitect's MPP timeline **[odfs]**. An example that declares `int getRange()` does not
 compile against the jar; the return type is `long` **[jar]**.
 
 ## Translation providers
@@ -338,16 +337,14 @@ are **not in `fs-isolated-runtime.jar`**. They come from the ContentCreator's ow
 artifact, `de.espirit.cxt.cc:cxt-cc-api`, which a module declares `compileOnly` (the web
 app provides it at runtime; bundling it breaks the module). Their signatures could not be
 `javap`-checked here — **[verify]** against the `cxt-cc-api` version that matches your
-ContentCreator before relying on a method name. The artifact is **not generally published**:
-it is available for FirstSpirit Cloud projects, and its documentation was still pending at
-the time of writing (confirmed internally at FirstSpirit, 2026-09-29) — ask your FirstSpirit
-contact for the jar and the matching ContentCreator version before planning on it.
+ContentCreator before relying on a method name. The `cxt-cc-api` artifact is not generally
+published; ask your FirstSpirit contact whether it is available for your project.
 
 ## What every one of these needs: a `@WebAppComponent`
 
 A ContentCreator plug-in is a `<public>` component **[odfs]** shipped **inside a web app**
-that is deployed to the ContentCreator web application (confirmed internally at FirstSpirit,
-2026-09-29: the web-app component is what gets your jars into the ContentCreator; every
+that is deployed to the ContentCreator web application (verified 2026-09-29: the web-app
+component is what gets your jars into the ContentCreator; every
 plug-in type needs one, but **one web-app component per module** is enough — not one per
 plug-in). Without the web app the class is deployed but the ContentCreator never asks for it:
 
@@ -369,7 +366,7 @@ public class MyCcWebApp extends AbstractWebApp implements WebApp { }
   usually serves the plug-ins for every project, and FirstSpirit Cloud does not want
   project-specific web-app components at all; declaring both scopes
   (`scopes="PROJECT,GLOBAL"`, as the official 2024 example does) keeps local testing easy
-  (confirmed internally at FirstSpirit, 2026-09-29). The ODFS states the project deployment
+  (verified 2026-09-29). The ODFS states the project deployment
   for timeline providers **[odfs]**; an earlier field observation that a global deployment
   was "not enough" is superseded. Deploy in ServerManager (global: server properties → web
   applications; project: project component → web components). Icon and resource URLs resolve

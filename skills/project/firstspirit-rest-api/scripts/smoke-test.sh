@@ -63,7 +63,7 @@ skip() { SKIP=$((SKIP+1)); printf '  SKIP  %-5s %s\n            -> %s\n' "$1" "$
 warn() { WARN=$((WARN+1)); printf '  WARN  %-5s %s\n            -> %s\n' "$1" "$2" "$3"; }   # server changed, skill may be stale; not a failure
 say()  { printf '\n%s\n' "$1"; }
 
-# ---- .env: the §4.8 check happens BEFORE sourcing ----------------------------
+# ---- .env: the quoting check happens BEFORE sourcing -------------------------
 say "Environment ($ENV_FILE)"
 [ -f "$ENV_FILE" ] || { echo "no $ENV_FILE — see SKILL.md → Setup" >&2; exit 2; }
 
@@ -76,8 +76,9 @@ else
   pass E1 "no unquoted \$ in .env values"
 fi
 
+# The variables stay shell-local: nothing here is exported to child processes (git-ignore the .env file).
 # shellcheck disable=SC1090
-set -a; set +u; . "$ENV_FILE"; set -u; set +a   # +u: a mis-quoted $ must not abort, E1 already said why
+set +u; . "$ENV_FILE"; set -u   # +u: a mis-quoted $ must not abort, E1 already said why
 for v in FS_USERNAME FS_PASSWORD FS_REST_BASE_URL FS_PROJECT_ID; do
   [ -n "${!v:-}" ] || { echo "$v is empty after sourcing $ENV_FILE" >&2; exit 2; }
 done
@@ -100,6 +101,7 @@ N=0
 P="$FS_REST_BASE_URL/projects/$FS_PROJECT_ID"
 
 # req METHOD URL [content-type] [datafile]  -> STATUS, BODY (path of response body)
+# The credentials go to curl via -u (visible in the process list for the duration of the call).
 req() {
   local m="$1" u="$2" ct="${3:-}" data="${4:-}"
   N=$((N+1)); BODY="$OUT/$(printf '%03d' "$N").body"
@@ -579,8 +581,8 @@ if [ "$DO_WRITE" = 1 ]; then
     else fail W15 "GET …/data/resolution/{res} downloads a rendition" "HTTP $STATUS, $(wc -c < "$BODY" | tr -d ' ') bytes"; fi
     req GET "$P/media/$CREATED_MEDIUM/resolutions"
     if is2xx && [ "$(jqr '[.[]?.uid] | index("ORIGINAL") != null')" = true ]; then
-      pass W15b "GET …/resolutions lists the renditions ($(jqr length) incl. ORIGINAL) — not in the skill yet, worth adding"
-    else skip W15b "GET …/resolutions" "HTTP $STATUS — endpoint is in the OpenAPI spec but not documented in the skill"; fi
+      pass W15b "GET …/resolutions lists the renditions ($(jqr length) incl. ORIGINAL)"
+    else skip W15b "GET …/resolutions" "HTTP $STATUS — endpoint is in the OpenAPI spec, not probed further"; fi
     printf '{"type":"FILE"}' > "$OUT/medium-type.json"
     req PATCH "$P/media/$CREATED_MEDIUM" application/json "$OUT/medium-type.json"
     case "$STATUS" in
@@ -678,7 +680,7 @@ XML
   cleanup_all; trap - EXIT
 fi
 
-# ---- Script probes (report §4.6 / §5.5) --------------------------------------
+# ---- Script probes -----------------------------------------------------------
 if [ "$DO_SCRIPTS" = 1 ]; then
   say "Script probes  (throwaway script, deleted at the end)"
   TS="${TS:-$(date +%s)}"; TSCRIPT="smoketest_$TS"; CREATED_SCRIPT=""
@@ -726,7 +728,7 @@ if [ "$DO_SCRIPTS" = 1 ]; then
     printf '{"description":"patched"}' > "$OUT/patch-script.json"
     req PATCH "$P/scripts/$TSCRIPT" application/json "$OUT/patch-script.json"
     case "$STATUS" in
-      2??) pass S2 "PATCH /scripts/{name} exists ($STATUS) — undocumented in the skill, add it" ;;
+      2??) pass S2 "PATCH /scripts/{name} exists ($STATUS)" ;;
       405|404) pass S2 "PATCH /scripts/{name} not available ($STATUS) — consistent with the skill (no PATCH documented)" ;;
       *) skip S2 "PATCH /scripts/{name}" "HTTP $STATUS" ;;
     esac
@@ -755,7 +757,7 @@ if [ "$DO_SCRIPTS" = 1 ]; then
       req PUT "$P/scripts/$TSCRIPT/template-sets/$TSET" text/plain "$OUT/script-bad.bsh"
       req POST "$P/scripts/$TSCRIPT/execute" application/json "$OUT/empty.json"
       if grep -qi 'parse' "$BODY"; then pass S4 "/execute surfaces BeanShell parse errors (cheap syntax probe)"
-      else fail S4 "/execute reports parse errors (§5.5)" "HTTP $STATUS: $(head -c 120 "$BODY")"; fi
+      else fail S4 "/execute reports parse errors" "HTTP $STATUS: $(head -c 120 "$BODY")"; fi
 
       # S5 — the REST execute context has no getElement()
       printf 'return context.getElement();\n' > "$OUT/script-elm.bsh"

@@ -112,6 +112,5 @@ value has **two** sinks in a row, and `.toJSON` handles only the first:
    $-- JSON-escape the values, then HTML-escape the string for the attribute (needs an HTML conversion rule on the template set, e.g. "Convert HTML"); the browser decodes the entities before JSON.parse --$
 ```
 
-Seen four times in one production site with a single-quoted attribute and editor-controlled
-strings inside the map `[observed]`. The rule generalises: escape for the **innermost** format
+The rule generalises `[observed]`: escape for the **innermost** format
 first, then for the container.

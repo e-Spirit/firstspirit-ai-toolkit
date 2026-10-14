@@ -70,7 +70,7 @@ from the FS 5.2 source (`BaseContext.java`, confirmed 2026-09-03), has **11 valu
 | `WEBEDIT` | in **ContentCreator** |
 | `PREVIEW` | in **preview** |
 | `GENERATION` | during **generation** |
-| `ARCHITECT` | in SiteArchitect **report / homepage** contexts only `[core]` — **not** set for menu, context-menu, workflow or Content2 scripts, whose context starts with an empty `Env` set, so `context.is(Env.ARCHITECT)` is `false` there |
+| `ARCHITECT` | in SiteArchitect **report / homepage** contexts only `[core]` — **not** set for menu, context-menu, workflow or Content2 scripts, so `context.is(Env.ARCHITECT)` is `false` there |
 | `WEB` | in a generic **web environment** on an application server `[javadoc]` (ContentCreator sets it together with `WEBEDIT` `[verify]`) |
 | `MANAGER` | in **ServerManager** |
 | `FS_BUTTON` | triggered by an **FS_BUTTON** in a template |
@@ -79,14 +79,10 @@ from the FS 5.2 source (`BaseContext.java`, confirmed 2026-09-03), has **11 valu
 | `FORM` | in a **form** context |
 | `REPORT` | in a **report** context |
 
-> **Correction (2026-09-03).** An earlier version of this table listed `AUTH_CLIENT` and
-> `WEBSTART_CONFIG_CLIENT` — **neither exists** in `BaseContext.Env`. They came from the
-> AI-sibling doc's Env list, "salvaged" as verified; that was wrong. The extracted `fs-api/`
-> list and the FS 5.2.261001 `api-methods.txt` dump do **not** capture enum constants, so
-> neither could confirm or deny them — the set must be read from `BaseContext.java` source
-> (thanks to the PS source-checkout validation). `ARCHITECT` and `WEB` are now source-checked
-> (above); the glosses for `MANAGER`/`FORM`/`REPORT` are still name-inferred — confirm the exact
-> trigger against source if you branch on them.
+> The eleven values above are the complete set of `BaseContext.Env` constants on 5.2.261011
+> (`WEB` is absent on 5.2.240208) `[jar]`; there is no `AUTH_CLIENT` or `WEBSTART_CONFIG_CLIENT`. The glosses for
+> `MANAGER`/`FORM`/`REPORT` are name-inferred — confirm the exact trigger against source if you
+> branch on them.
 
 > `context.is(Env.WEBEDIT)` replaces the deprecated `isWebClient` property.
 >
@@ -95,7 +91,7 @@ from the FS 5.2 source (`BaseContext.java`, confirmed 2026-09-03), has **11 valu
 > **"Common properties"** note, states: *"isWebClient … has been deprecated with 5.0.12, use
 > `#isEnv(Env.WEBEDIT)` instead."* **That method name is wrong** — the real inherited method is
 > `is(BaseContext.Env)`; there is no `isEnv`. This stale comment is the likely origin of the
-> `isEnv` error (ours and the AI-sibling doc's). Do **not** copy the method name from that comment;
+> `isEnv` error. Do **not** copy the method name from that comment;
 > the method-summary/inherited-methods section of the same page correctly shows `is(BaseContext.Env)`.
 >
 > To branch between the clients test **`context.is(Env.WEBEDIT)`** (`true` = ContentCreator,
@@ -192,7 +188,7 @@ context.getElement();                    // the Content2 or the Dataset the scri
 ## FS_BUTTON scripts — extra bound variables
 
 An `FS_BUTTON` (`onClick="script:UID"` / `onDrop="script:UID"`) runs with these variables
-`[core]` (SiteArchitect form gadget and SiteArchitect preview bind the same keys):
+`[core]` (SiteArchitect form and SiteArchitect preview bind the same variables):
 
 | Variable | Meaning |
 | --- | --- |
@@ -205,8 +201,7 @@ An `FS_BUTTON` (`onClick="script:UID"` / `onDrop="script:UID"`) runs with these 
 | *PARAM name* | every `<PARAM name="x">` of the FS_BUTTON as variable `x`; a value `#field.NAME` yields the `FormField` of input component NAME |
 
 There is **no** `values`, `$field$` or `isDrop` variable — scripts using them fail with
-"variable not found" or always take the `false` branch. (An earlier version of this table
-listed them; they were taken from a third-party summary, not from the source.)
+"variable not found" or always take the `false` branch.
 
 If you reference a **class** instead of a script (`onClick="class:…"`), it must
 implement `de.espirit.firstspirit.access.script.Executable`; the same variables

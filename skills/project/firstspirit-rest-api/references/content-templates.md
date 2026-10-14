@@ -31,8 +31,8 @@ curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
 The `bodies` array defines the content areas the page template provides. Each entry is a
 `TemplateBodyDTO {name, allowedTemplates}` (the OpenAPI document), not a bare string.
 
-> **Two things about `bodies` that the API document does not say** *(observed live by the PS
-> website-migration tool, 2026-08-07/08 — one project each):*
+> **Two things about `bodies` that the API document does not say** *(observed live,
+> 2026-08-07/08 — one project each):*
 > - **`allowedTemplates` is optional to read and required to write.** A body sent as
 >   `{"name":"chrome"}` answered `500 … Instantiation of [TemplateBodyDTO] value failed`. Send
 >   the key always, `[]` for a body that allows nothing. The section templates it names must
@@ -129,8 +129,7 @@ curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
 
 > **The write answers an empty `200`, and that is success.** `PUT …/gom` (and `PUT …/rules`)
 > return an **empty body** — do not read it as a failed write. Send `Accept: */*`; a JSON-only
-> `Accept` can `500` here. GOM and rules go as **raw XML**. *(Confirmed live against a real
-> project — source: PS website-migration tool, `knowledge/fs-facts.md` §1.)*
+> `Accept` can `500` here. GOM and rules go as **raw XML**. *(Verified live, 2026-08-07.)*
 >
 > **A GOM the parser rejects leaves the template CREATED WITH NO FORM.** The `PUT` answers
 > `400 Parsing error: Unsupported Tag '<tag>'! (at line N, column M)` naming the offending element,
@@ -138,8 +137,7 @@ curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
 > trips this in practice: `<LINKEDITORS>` takes `<LINKEDITOR name="…"/>` children, while
 > `<FORMATS>` takes `<TEMPLATE name="…"/>` — a `<TEMPLATE>` inside `<LINKEDITORS>` is the 400.
 > Re-`PUT` the corrected GOM; nothing else needs undoing. *(Observed twice on two projects,
-> 2026-08-27 — PS website-migration tool.)* Three more shapes the parser rejects the same way,
-> read in the GOM parser and the editor classes [core]: a bare `<LANGINFO>` directly inside an
+> 2026-08-27.)* Three more shapes are rejected the same way `[core]`: a bare `<LANGINFO>` directly inside an
 > `<ENTRY>` of COMBOBOX / CHECKBOX / RADIOBUTTON / LIST (`<ENTRY>` takes only a `<LANGINFOS>` block);
 > `hFill` on `FS_CATALOG` (fixed value, "Unsupported attribute"); `<TEMPLATES>` on `CMS_INPUT_LINK`
 > (link editors are allow-listed with `<LINKEDITORS>`). An `FS_CATALOG` `<TEMPLATES>` without
@@ -328,7 +326,7 @@ curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
 ```
 
 ### Important: Rules XML must follow the FirstSpirit Rules schema exactly.
-Consult the `/the FirstSpirit ODFS documentation` skill for Rules syntax — never construct Rules from memory.
+Consult the FirstSpirit ODFS documentation (or `firstspirit-templating-reference`) for Rules syntax — never construct Rules from memory.
 
 ---
 
@@ -370,8 +368,8 @@ curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
   "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/templates/section-templates/hero_teaser/channel-sources/html"
 ```
 
-**The loop that keeps REST-driven template work reviewable** (a marketing-site rebrush ran
-53 templates through it `[observed]`):
+**The loop that keeps REST-driven template work reviewable** (a site rebuild ran
+about fifty templates through it `[observed]`):
 
 1. **GET and keep** the current source in a git-tracked directory before every PUT. The PUT
    replaces the whole channel; there is no server-side history you can diff against.

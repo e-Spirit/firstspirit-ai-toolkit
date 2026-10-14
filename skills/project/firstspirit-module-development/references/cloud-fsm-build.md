@@ -23,7 +23,7 @@ A Cloud module is **built by the pipeline, not installed as a black-box `.fsm`**
 | `gradle.properties` | every value of the module (table below) | The build fails when a required key is blank. |
 | `ci.properties` | `fsm.project.path` for the pipeline | Empty when the root project builds the FSM; the subproject path with a trailing slash otherwise. |
 | `gradle/wrapper`, `gradlew` | the pinned Gradle version | Commit them. A new Windows checkout needs `git update-index --chmod=+x gradlew`. |
-| `~/.gradle/gradle.properties` | `artifactory_hosting_username`, `artifactory_hosting_password` | **User-level, never in the repository.** Access differs for staff, partners and customers. |
+| `~/.gradle/gradle.properties` | `artifactory_hosting_username`, `artifactory_hosting_password` | **User-level, never in the repository.** |
 
 ## A single-project build
 
@@ -94,7 +94,7 @@ module). The release plugin is configured with `requireBranch = "main|master"` a
 | `firstSpirit.version` | the `fs-isolated-runtime` to compile against | the target server's level; `compileOnly`, never bundled |
 | `firstSpiritModule.moduleName` | technical module id | load-bearing, see below |
 | `firstSpiritModule.displayName`, `.description`, `.vendor` | descriptor header | shown in ServerManager |
-| `publishing.snapshotRepository`, `publishing.releaseRepository` | Artifactory repositories | the Cloud defaults are the `es-*-local` pair `[observed]` |
+| `publishing.snapshotRepository`, `publishing.releaseRepository` | Artifactory repositories | the Cloud defaults are the snapshot and release repositories named in your archetype `[observed]` |
 
 **Choose the module name and the Maven coordinates before the first push.** Once the pipeline and the
 installed module exist they are the installed identity; changing `moduleName` installs a second
