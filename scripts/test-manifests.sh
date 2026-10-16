@@ -109,6 +109,8 @@ check_hook_command() {
 
 check_hook_command "claude hook" \
   "$(jq -r '.hooks.SessionStart[0].hooks[0].command' "$REPO_ROOT/hooks/hooks.json")"
+check_hook_command "claude session-end hook" \
+  "$(jq -r '.hooks.SessionEnd[0].hooks[0].command' "$REPO_ROOT/hooks/hooks.json")"
 check_hook_command "cursor hook" \
   "$(jq -r '.hooks.sessionStart[0].command' "$REPO_ROOT/hooks/hooks-cursor.json")"
 check_hook_command "copilot hook" \
@@ -130,6 +132,18 @@ for spec in "hooks/hooks.json#.hooks.SessionStart[0].hooks[0].powershell" \
 done
 if [ -f "$REPO_ROOT/hooks/session-start.ps1" ]; then pass "hooks/session-start.ps1 exists"; else fail "hooks/session-start.ps1 exists" "missing"; fi
 
+echo "== the session-end hook has a bash command, a PowerShell twin, and a short timeout =="
+ps="$(jq -r '.hooks.SessionEnd[0].hooks[0].powershell // empty' "$REPO_ROOT/hooks/hooks.json")"
+case "$ps" in
+  *'-ExecutionPolicy Bypass -File'*'/hooks/session-end.ps1'*) pass "hooks/hooks.json SessionEnd has a PowerShell variant" ;;
+  *) fail "hooks/hooks.json SessionEnd has a PowerShell variant" "got: ${ps:-<none>}" ;;
+esac
+check_hook_command "SessionEnd powershell key" "$ps"
+if [ -f "$REPO_ROOT/hooks/session-end.ps1" ]; then pass "hooks/session-end.ps1 exists"; else fail "hooks/session-end.ps1 exists" "missing"; fi
+assert_json_field "session-end hook has a timeout of at most 10 seconds" \
+  "$REPO_ROOT/hooks/hooks.json" \
+  '.hooks.SessionEnd[0].hooks[0].timeout | if . != null and . <= 10 then "yes" else "no" end' "yes"
+
 echo "== PowerShell scripts are pure ASCII =="
 # Windows PowerShell 5.1 reads a BOM-less .ps1 in the ANSI code page. A UTF-8 em dash
 # then ends in 0x94, a curly quote that closes the string early (issue #15).
@@ -140,7 +154,7 @@ for ps1 in "$REPO_ROOT"/hooks/*.ps1; do
 done
 
 echo "== the hook entry points are executable =="
-for h in hooks/run-hook.cmd hooks/session-start; do
+for h in hooks/run-hook.cmd hooks/session-start hooks/session-end scripts/submit-feedback.sh; do
   if [ -x "$REPO_ROOT/$h" ]; then
     pass "$h is executable"
   else

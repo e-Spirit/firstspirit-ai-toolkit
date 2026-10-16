@@ -56,6 +56,10 @@ When the task involves FirstSpirit, check whether one of the skills below fits b
 - **firstspirit-headless** _(beta)_ — Use when the question is about the FirstSpirit headless delivery stack itself — reading or querying CaaS, what a delivered JSON document looks like, how CaaS Connect pushes content, resolving routes with the Navigation Service, or wiring click-to-edit (OCM / TPP / SNAP) into a headless frontend.
   Covers: CaaS Platform REST and GraphQL (filter, pagination, sort and projection, reference resolution, aggregations, change streams, API keys and secure tokens, limits), CaaS Connect document shape (fields, sections, references, media and rendition URLs, preview vs release collections), Navigation Service endpoints and the `caas` format (`idMap`, `seoRouteMap`, route resolution, customData), the `TPP_SNAP` API and `data-preview-id` decoration.
 
+## Feedback
+
+If the person wants to report a problem with a toolkit skill, or asks you to hand in a feedback note from `.firstspirit-feedback/`, follow the note's own "For an AI assistant" section: fill the note in the person's words without project content, customer names, addresses or credentials; run `scripts/submit-feedback.sh <note>` without `--yes` and show the person the preview; post with `--yes` only after the person says yes. Issues on the toolkit's GitHub repository are public. If the GitHub CLI is missing or not signed in, give the manual route and never ask for a token. Do not raise feedback unprompted.
+
 ## Platform Tool Mappings
 
 If you are running on a harness listed below, read the corresponding reference for how abstract operations map to that harness's real tool names:
