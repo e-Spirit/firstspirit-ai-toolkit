@@ -52,8 +52,10 @@ trap 'rm -rf "$TMP"' EXIT
 BODY="$TMP/body.md"
 
 # The report is everything above the end-of-report marker (the whole file if absent).
-if grep -q 'end of report' "$NOTE"; then
-  sed '/end of report/,$d' "$NOTE" > "$BODY"
+# Only the marker line the hook writes counts, so the words in the person's own text cannot cut it.
+MARKER='^<!-- end of report'
+if grep -q "$MARKER" "$NOTE"; then
+  sed "/$MARKER/,\$d" "$NOTE" > "$BODY"
 else
   cp "$NOTE" "$BODY"
 fi

@@ -215,6 +215,10 @@ PTH="$(filled_note sub4 "The file /Users/someone/project/x.xml was rejected.")"
 out="$(run_submit "$PTH" --yes)"; rc=$?
 assert_eq "local path exits 2" "2" "$rc"
 assert_contains "path refusal is explained" "$out" "local file path"
+EOR="$(filled_note sub5 "The text says end of report in the middle of a sentence. This part must survive.")"
+out="$("$SUBMIT" "$EOR" 2>&1)"; rc=$?
+assert_eq "words 'end of report' in the person's text exit 0" "0" "$rc"
+assert_contains "text after those words is kept" "$out" "This part must survive."
 assert_eq "gh never called for refused notes" "" "$(cat "$TMPROOT/gh.log")"
 
 out="$(run_submit "$TMPROOT/does-not-exist.md")"; rc=$?
