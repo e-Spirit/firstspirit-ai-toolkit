@@ -127,6 +127,8 @@ ships these (the `skills/` tree is the authoritative list):
 | `firstspirit-ai-suite` | `project/` | The FirstSpirit AI Suite in ContentCreator: the assistants and their limits, connecting a model, activating assistants per server and project, prompt configuration, the AI API from scripts and modules, plugin points |
 | `firstspirit-smartsearch` | `project/` | SmartSearch: Prepared Searches, data generators and indexing, the search API and autocomplete, smartsearch.js, the SmartSearch Connect module, operations |
 | `firstspirit-collaboration` | `project/` | The Collaboration Java API (experimental): comment threads on editors from code — agents, DTOs, anchoring a conversation to an element |
+| `firstspirit-technical-product-knowledge` | `project/` | Product knowledge for project decisions: hosting (Cloud or self-hosted), static push vs. headless, reference architectures, which module or extension a requirement needs, what needs a licence, and where the official documentation lives |
+| `firstspirit-technical-tone-of-voice` | `project/` | Tone of voice and terminology for technical FirstSpirit texts: naming rules, developer-facing wording and rewriting existing text |
 | `firstspirit-headless` | `deployment/` | Headless delivery: CaaS Platform (REST and GraphQL), CaaS Connect, preview vs release, custom JSON output |
 | `firstspirit-cloud` | `deployment/` | FirstSpirit Cloud (the managed SaaS): what the platform does differently or does not allow, and how to build and run a project on it |
 | `firstspirit-external-sync-export` | `deployment/` | Running FS-CLI / FSDevTools to export and import a project as an external-sync tree on disk, for git-based workflows |
