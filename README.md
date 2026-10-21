@@ -195,7 +195,7 @@ Wrong, unclear or missing guidance in a skill is useful to us. There are two way
 export FIRSTSPIRIT_FEEDBACK=1
 ```
 
-The hook runs on Claude Code (and on other harnesses that support a session-end hook; PowerShell on Windows is covered by a twin script that has not been tested there yet). When a session touched a toolkit skill, it writes `.firstspirit-feedback/firstspirit-feedback-<date>-<time>.md` in the working directory. The folder ignores itself, so git never picks it up.
+The hook is registered for Claude Code and Cursor (the Cursor entry has not been tried in Cursor yet). PowerShell on Windows is covered by a twin script that has not been tested there yet. When a session touched a toolkit skill, it writes `.firstspirit-feedback/firstspirit-feedback-<date>-<time>.md` in the working directory. The folder ignores itself, so git never picks it up.
 
 What the note holds: the toolkit version, the assistant, the date, the names of the toolkit skills and reference files the session used, and empty sections for you to describe what went wrong. What it never holds: prompts, answers, file contents, project names or paths. The skill names come from a fixed pattern over the session record, so nothing else can reach the note. Nothing is sent anywhere.
 

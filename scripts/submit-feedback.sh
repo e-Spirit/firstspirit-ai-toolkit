@@ -52,10 +52,11 @@ trap 'rm -rf "$TMP"' EXIT
 BODY="$TMP/body.md"
 
 # The report is everything above the end-of-report marker (the whole file if absent).
-# Only the marker line the hook writes counts, so the words in the person's own text cannot cut it.
-MARKER='^<!-- end of report'
-if grep -q "$MARKER" "$NOTE"; then
-  sed "/$MARKER/,\$d" "$NOTE" > "$BODY"
+# Only a marker line counts, and the last one wins: the hook writes its marker below everything
+# the person types, so a marker-like line in the person's own text cannot cut the report short.
+MARKER_LINE="$(grep -n '^<!-- end of report' "$NOTE" | tail -1 | cut -d: -f1)"
+if [ -n "$MARKER_LINE" ]; then
+  head -n "$((MARKER_LINE - 1))" "$NOTE" > "$BODY"
 else
   cp "$NOTE" "$BODY"
 fi
@@ -67,7 +68,7 @@ fi
 
 # A public issue must not carry credentials or local paths. Report line numbers, never the text.
 SECRET_RE='-----BEGIN [A-Z ]*PRIVATE KEY|ghp_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|gho_[A-Za-z0-9]{20,}|AKIA[0-9A-Z]{16}|xox[baprs]-[A-Za-z0-9-]{10,}|authorization:[[:space:]]*(bearer|basic)|(password|passwd|secret|api[_-]?key|token)[[:space:]]*[=:][[:space:]]*[^[:space:]]{6,}'
-PATH_RE='/Users/[A-Za-z0-9._-]+|/home/[A-Za-z0-9._-]+|[A-Za-z]:\\Users\\'
+PATH_RE='/Users/[A-Za-z0-9._-]+|/home/[A-Za-z0-9._-]+|/(var|opt|srv|mnt|private|tmp|root)/[A-Za-z0-9._-]+|[A-Za-z]:\\[A-Za-z0-9._ -]+'
 
 hits="$(grep -nEi -e "$SECRET_RE" "$BODY" | cut -d: -f1 | tr '\n' ' ')"
 if [ -n "$hits" ]; then
@@ -92,7 +93,7 @@ manual_route() {
   echo "Manual route: open an issue at https://github.com/$REPO/issues and paste the report." >&2
   if [ -n "$report" ]; then
     echo "The report text alone is in $report" >&2
-    echo "With gh: gh issue create --repo $REPO --title \"$TITLE\" --body-file $report" >&2
+    echo "With gh: gh issue create --repo $REPO --title \"$TITLE\" --body-file \"$report\"" >&2
   fi
 }
 

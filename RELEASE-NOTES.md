@@ -42,7 +42,7 @@ updates to nine existing skills.
   wording mapped to FirstSpirit terms, cutting a page into templates, output conventions
   (`editorId`, inline vs. form), snippets and the template preview image; corrections after
   the DevCon run. New reference on global content areas: the global content area's template
-  renders everything it covers, and the page template only places it with .
+  renders everything it covers, and the page template only places it with `$CMS_VALUE(#global.gca("REFERENCE_NAME"))$`.
 - **`firstspirit-templating-reference`** — availability matrix for GOM parameters, new entries
   for `CMS_INPUT_SECTIONLIST` and `CMS_INPUT_PERMISSION`, snippets, label/extract/thumbnail and
   the preview image; `CMS_INPUT_LIST` is not legacy; a section on global content

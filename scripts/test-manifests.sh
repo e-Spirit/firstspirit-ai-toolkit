@@ -132,7 +132,7 @@ for spec in "hooks/hooks.json#.hooks.SessionStart[0].hooks[0].powershell" \
 done
 if [ -f "$REPO_ROOT/hooks/session-start.ps1" ]; then pass "hooks/session-start.ps1 exists"; else fail "hooks/session-start.ps1 exists" "missing"; fi
 
-echo "== the session-end hook has a bash command, a PowerShell twin, and no shared timeout =="
+echo "== the session-end hook has a bash command, a PowerShell twin, and a short timeout =="
 ps="$(jq -r '.hooks.SessionEnd[0].hooks[0].powershell // empty' "$REPO_ROOT/hooks/hooks.json")"
 case "$ps" in
   *'-ExecutionPolicy Bypass -File'*'/hooks/session-end.ps1'*) pass "hooks/hooks.json SessionEnd has a PowerShell variant" ;;
@@ -140,10 +140,12 @@ case "$ps" in
 esac
 check_hook_command "SessionEnd powershell key" "$ps"
 if [ -f "$REPO_ROOT/hooks/session-end.ps1" ]; then pass "hooks/session-end.ps1 exists"; else fail "hooks/session-end.ps1 exists" "missing"; fi
-# Gemini reads "timeout" as milliseconds, so the shared file carries none; the hook itself
-# makes one pass over the transcript and Cursor's own file carries a timeout in seconds.
-assert_json_field "session-end hook carries no shared timeout" \
-  "$REPO_ROOT/hooks/hooks.json" '.hooks.SessionEnd[0].hooks[0] | has("timeout") | tostring' "false"
+# Claude Code gives a SessionEnd hook only a short default, so the entry sets 10 seconds.
+# Gemini reads the same value as milliseconds; the feedback note is opt-in and not
+# supported there. Cursor's own file carries its timeout too.
+assert_json_field "session-end hook sets a timeout of 1 to 10" \
+  "$REPO_ROOT/hooks/hooks.json" \
+  '.hooks.SessionEnd[0].hooks[0].timeout | if . != null and . >= 1 and . <= 10 then "yes" else "no" end' "yes"
 check_hook_command "cursor sessionEnd" \
   "$(jq -r '.hooks.sessionEnd[0].command' "$REPO_ROOT/hooks/hooks-cursor.json")"
 

@@ -118,16 +118,16 @@ Severity: blocker, major, minor
 Read the text above once before it goes anywhere. Issues on the toolkit's GitHub repository are public.
 
 - Open an issue at https://github.com/e-Spirit/firstspirit-ai-toolkit/issues and paste the report: the text above the line "end of report", not this section.
-- With the GitHub CLI installed and signed in, you can also run: gh issue create --repo e-Spirit/firstspirit-ai-toolkit --title "Skill feedback"  (it opens an editor; paste the report there).
+- With the GitHub CLI installed and signed in, an assistant can open the issue for you if you ask it to and say yes to the preview: "$pluginRoot/scripts/submit-feedback.sh" "$out"
 
 ## For an AI assistant
 
 Only when the person asks you to hand this feedback in:
 
 1. Fill the sections above from this conversation, in the person's own words, and tell the person what you wrote. Leave out project content, customer names, addresses and credentials.
-2. Show the person the exact text you would post, and say it will be public on the toolkit's GitHub repository.
-3. Post it with gh issue create only if the person then says yes. Never post on your own initiative.
-4. If the GitHub CLI is missing or not signed in, give the person the manual route above. Do not ask for tokens.
+2. Run the script above without --yes. It prints the exact text that would be posted, or why it cannot be.
+3. Show the person that preview. Post only if the person then says yes, by running the script again with --yes. Never post on your own initiative.
+4. If the script says the GitHub CLI is missing or not signed in, give the person the manual route instead. Do not ask for tokens.
 "@
 [System.IO.File]::WriteAllText($out, $text, $utf8)
 [Console]::Error.WriteLine("FirstSpirit AI Toolkit: feedback note written to $out")

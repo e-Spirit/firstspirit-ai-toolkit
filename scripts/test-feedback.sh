@@ -148,7 +148,7 @@ GH
 chmod +x "$FAKEGH/gh"
 BASEBIN="$TMPROOT/base-bin"
 mkdir -p "$BASEBIN"
-for t in bash cat dirname grep sed head tr cut mktemp rm cp; do
+for t in bash cat dirname grep sed head tail tr cut mktemp rm cp; do
   ln -sf "$(command -v "$t")" "$BASEBIN/$t" 2>/dev/null || true
 done
 
@@ -226,6 +226,19 @@ out="$("$SUBMIT" "$EOR" 2>&1)"; rc=$?
 assert_eq "words 'end of report' in the person's text exit 0" "0" "$rc"
 assert_contains "text after those words is kept" "$out" "This part must survive."
 assert_eq "gh never called for refused notes" "" "$(cat "$TMPROOT/gh.log")"
+
+LM="$(filled_note sub6 "$(printf 'Line one.\n<!-- end of report: typed by the person -->\nThis part must survive too.')")"
+out="$("$SUBMIT" "$LM" 2>&1)"; rc=$?
+assert_eq "a marker-like line in the person's text exits 0" "0" "$rc"
+assert_contains "text after a typed marker line is kept" "$out" "This part must survive too."
+assert_not_contains "the hand-in section is still cut" "$out" "For an AI assistant"
+
+VP="$(filled_note sub7 "The file /var/www/site/x.xml was rejected.")"
+out="$(run_submit "$VP" --yes)"; rc=$?
+assert_eq "a /var path exits 2" "2" "$rc"
+DP="$(filled_note sub8 'The file D:\work\site\x.xml was rejected.')"
+out="$(run_submit "$DP" --yes)"; rc=$?
+assert_eq "a drive path exits 2" "2" "$rc"
 
 out="$(run_submit "$TMPROOT/does-not-exist.md")"; rc=$?
 assert_eq "missing note exits 2" "2" "$rc"
