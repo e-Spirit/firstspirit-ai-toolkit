@@ -69,5 +69,6 @@ To find version strings elsewhere in the repo that the manifests don't declare:
 ./scripts/bump-version.sh --check # check version consistency
 ./scripts/test-manifests.sh       # validate the platform manifests
 ./scripts/test-hooks.sh           # test session-start gating and per-harness output
-shellcheck --severity=warning hooks/session-start hooks/run-hook.cmd scripts/*.sh scripts/lib/*.sh
+./scripts/test-feedback.sh        # test the session-end feedback note and the hand-in script
+shellcheck --severity=warning hooks/session-start hooks/session-end hooks/run-hook.cmd scripts/*.sh scripts/lib/*.sh skills/*/*/scripts/*.sh
 ```

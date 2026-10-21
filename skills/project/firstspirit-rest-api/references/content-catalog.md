@@ -90,6 +90,21 @@ echo "$UPDATED" | curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
   "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/pages/{pageUid}/bodies/{body}/sections/{section}/form/st_cards/EN"
 ```
 
+### First card of an empty catalog
+
+An empty catalog gives nothing to clone. Build the card by hand once; this shape worked `[observed]` (`0.0.25-beta`, 2026-10-14):
+
+```json
+{"name":"st_cards","type":"FS_CATALOG","content":[
+  {"id":"<uuid from uuidgen>","templateUid":"card_template",
+   "item":{"editors":[
+     {"name":"st_headline","type":"CMS_INPUT_TEXT","content":"Title"},
+     {"name":"st_image","type":"FS_REFERENCE","content":{"uid":"my_image","uidType":"MEDIASTORE_LEAF"}},
+     {"name":"st_layout","type":"CMS_INPUT_RADIOBUTTON","content":{"key":"left","value":"left"}}]}}]}
+```
+
+`id` must be a UUID (a short id such as `c1` answers `400`). Option editors take `{"key","value"}`.
+
 ### Remove a card
 
 ```bash

@@ -298,27 +298,11 @@ resolution, preview vs release, TPP wiring):
 
 - **JavaScript Content API Library — `fsxa-api`** (Apache-2.0) —
   <https://github.com/e-Spirit/javascript-content-api-library>
-- **Crownpeak PWA template** (example app) —
+- **FirstSpirit PWA template** (example app) —
   <https://github.com/e-Spirit/crownpeak-pwa-template>
 
-Worth knowing about `fsxa-api` (v11.2.2) even if you don't adopt it:
-
-- **Two classes: `FSXARemoteApi` (server) and `FSXAProxyApi` (frontend).** The
-  remote API holds the CaaS API key and calls CaaS/Nav directly; the proxy API
-  calls a small middleware that the remote API backs, so **secrets never reach the
-  browser**. This is the recommended way to keep the key server-side (an
-  alternative to the secure-token flow above).
-- **Methods:** `fetchNavigation({ locale, initialPath })`,
-  `fetchElement({ id, locale })`, `fetchByFilter({ filters, locale, page,
-  pagesize, sort, additionalParams })`, `fetchProjectProperties({ locale })`
-  (**needs CaaS Connect v3+**), plus `getAvailableLocales(...)`.
-- **URL builders show the endpoint forms:** `buildCaaSUrl` →
-  `${caasURL}/${tenantID}/${projectId}.${contentMode}.content`;
-  `buildNavigationServiceUrl` → `${navigationServiceURL}/${contentMode}.${projectID}`
-  (the configured `navigationServiceURL` ends in `/navigation`).
-- **Auth header:** `{ authorization: 'Bearer <apikey>' }`.
-- **`enableEventStream`** toggles consuming the CaaS change stream; **`remotes`**
-  configures cross-project (remote) media.
+The classes, configuration, methods and remote-project rules of `fsxa-api` are in
+[fsxa-api.md](fsxa-api.md).
 
 ---
 

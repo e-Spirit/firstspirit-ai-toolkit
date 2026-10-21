@@ -1,5 +1,67 @@
 # Release Notes
 
+## 0.6.0 — 2026-10-20
+
+Skills in this release (each SKILL.md carries the same source commit in its `metadata:` block):
+
+- `firstspirit-api-reference` @ 1c55549 (beta)
+- `firstspirit-templating-reference` @ 1c55549 (beta)
+- `firstspirit-scripting` @ 1c55549 (beta)
+- `firstspirit-rest-api` @ 1c55549 (beta)
+- `firstspirit-external-sync-export` @ 1c55549 (beta)
+- `firstspirit-operations` @ 1c55549 (beta)
+- `firstspirit-contentcreator-extensions` @ 1c55549 (beta)
+- `firstspirit-template-design` @ 1c55549 (beta)
+- `firstspirit-cloud` @ 1c55549 (beta)
+- `firstspirit-headless` @ 1c55549 (beta)
+- `firstspirit-module-development` @ 1c55549 (beta)
+- `firstspirit-ai-suite` @ 1c55549 (beta)
+- `firstspirit-smartsearch` @ 1c55549 (beta)
+- `firstspirit-collaboration` @ 1c55549 (beta)
+- `firstspirit-technical-product-knowledge` @ 1c55549 (beta)
+- `firstspirit-technical-tone-of-voice` @ 1c55549 (beta)
+
+Changes since 0.5.0 — two new orientation skills, a session-end feedback hook, and content
+updates to nine existing skills.
+
+- **New: `firstspirit-technical-product-knowledge`** — product knowledge for project decisions:
+  what FirstSpirit is and is not, Cloud vs. self-hosted, static push vs. headless pull via CaaS
+  vs. hybrid, the documented reference architectures, which module or extension a requirement
+  needs, what needs a licence, and where the official documentation lives. Statements are tied
+  to public documentation; where the documentation is silent, the skill says so and points to
+  the CSM, Sales or Support.
+- **New: `firstspirit-technical-tone-of-voice`** — tone of voice and terminology for technical
+  FirstSpirit texts: product and feature names, developer-facing wording, and rewriting
+  existing text to match.
+- **New: session-end feedback hook** — an opt-in note at the end of a session and a hand-in of
+  feedback as a GitHub issue (`hooks/session-end`, `scripts/submit-feedback.sh`). Nothing is
+  sent without your confirmation. The README says how to turn it on (`FIRSTSPIRIT_FEEDBACK=1`). It is
+  registered for Claude Code and Cursor; the transcript is read in one pass, and the version
+  without `jq` reads escaped paths.
+- **`firstspirit-template-design`** — choosing an input component from an editor's need, common
+  wording mapped to FirstSpirit terms, cutting a page into templates, output conventions
+  (`editorId`, inline vs. form), snippets and the template preview image; corrections after
+  the DevCon run. New reference on global content areas: the global content area's template
+  renders everything it covers, and the page template only places it with `$CMS_VALUE(#global.gca("REFERENCE_NAME"))$`.
+- **`firstspirit-templating-reference`** — availability matrix for GOM parameters, new entries
+  for `CMS_INPUT_SECTIONLIST` and `CMS_INPUT_PERMISSION`, snippets, label/extract/thumbnail and
+  the preview image; `CMS_INPUT_LIST` is not legacy; a section on global content
+  areas (`#global.gca`, nested contexts, variable visibility).
+- **`firstspirit-headless`** — new `fsxa-api` reference and a pointer to the public example
+  repository for the frontend section.
+- **`firstspirit-rest-api`** — the REST module's acquisition path (support ticket, Download
+  Portal for on-premise) and SaaS availability (DEV and QA only), plus corrections from the
+  DevCon tour and a review of the crash and exception wording. The smoke test's S4 and S5 now
+  check the PUT status before judging `/execute`.
+- **`firstspirit-cloud`** — one Support-ticket bullet for the REST module. **Correction:**
+  earlier versions said CaaS is not backed up. CaaS data in the SaaS environment is backed up
+  periodically; the text now says so and points to your CSM or Support for scope, frequency and
+  restore (a CaaS you operate yourself still needs your own backup).
+- **`firstspirit-api-reference`** — snippets in reports and the API.
+- Wording: "FirstSpirit" instead of "Crownpeak" in prose; no team names in shipped text.
+- CI shellchecks the skills' scripts as well.
+
+
 ## 0.5.0 — 2026-10-14
 
 Skills in this release (each SKILL.md carries the same source commit in its `metadata:` block):

@@ -99,8 +99,7 @@ curl -s -u "$FS_USERNAME:$FS_PASSWORD" -X DELETE \
   (2026-10-09). Read the page first, say what would be overwritten, and replace single sections
   by id instead of the whole set.
 - After deleting a page, section or other element, tell the user to reload the store in the open
-  client: a SiteArchitect that still had the element open crashed on the next access `[observed]`
-  (2026-10-12).
+  client; a client that still has the element open works on stale state.
 
 ### Rename Section
 ```bash
@@ -182,7 +181,7 @@ curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
 
 For language-specific editors: append `/{lang}` to URL (UPPERCASE: `DE`, `EN`).
 
-**A 200 is not proof of a write.** Two traps seen on production projects:
+**A 200 is not proof of a write.** Two traps:
 - PATCHing a language path (`…/form/{editor}/DE`) on an editor whose GOM says
   `useLanguages="no"` answered **200 and changed nothing** `[observed]` on an FS_CATALOG. Check
   the GOM before choosing the language-scoped URL.
@@ -262,11 +261,9 @@ Content is an HTML/text string:
 - **A DOM field is not round-trip safe when it holds lists with properties** `[observed]`
   (2026-10-12). GET followed by PATCH of the same content makes the server read the stored
   `data-list-attributes` and `style` attributes as list properties again and nest them
-  (`data-list-attributes%3D…`, `style=list-style-type:decimal;`); SiteArchitect then fails to open
-  the section with `NumberFormatException: For input string: "list-style-type:decimal;"`.
-  Rebuild the field from your source in the
+  (`data-list-attributes%3D…`, `style=list-style-type:decimal;`), and the stored list properties no
+  longer match what you sent. Rebuild the field from your source in the
   `<p><ul style="N">` form instead of echoing what you read; do not diff on the stored attributes.
-  A defect report exists.
 - ContentCreator rendering of REST-written DOM `[observed]` (2026-10-12): a `<p>` inside an
   `<li>` draws a frame per item, so write `<li>text</li>`; a `<br/>` after a list becomes an empty
   paragraph; a list inside a `<p>` is one framed block with its type in the list properties; the
@@ -330,7 +327,7 @@ Content is a `TargetReferenceDTO`:
 }
 ```
 
-Valid `uidType` values: `PAGESTORE`, `SITESTORE`, `MEDIASTORE`, `TEMPLATESTORE`, `GLOBALSTORE`, `CONTENTSTORE`.
+For a reference that points at one medium (a picture or file) use `MEDIASTORE_LEAF`; `MEDIASTORE` answered `400` there `[observed]` (`0.0.25-beta`, 2026-10-14). Valid `uidType` values: `PAGESTORE`, `SITESTORE`, `MEDIASTORE`, `MEDIASTORE_LEAF`, `TEMPLATESTORE`, `GLOBALSTORE`, `CONTENTSTORE`.
 
 To clear a reference:
 ```json
@@ -557,11 +554,11 @@ curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
   -X POST \
   "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/data-sources/products/"
 ```
-**Not working yet in the beta module** (known limitation of the beta module, verified 2026-10-07). The empty
+**Did not work on `0.0.25-beta`** (verified 2026-10-07). The empty
 dataset is saved on creation, so a table template whose rules require a field on save rejects it:
 the `POST` answers `500` with a `ValidationError … MultiFormValidationReport` body that names the
 field and the message, and nothing is created. `[observed]` on `0.0.25-beta` on every data source of
-the test project. Read datasets; do not build a write flow on this until a module release fixes it.
+the test project. Read datasets; do not build a write flow on this without re-testing on your module version.
 
 ### Read Entity (read-only)
 ```bash

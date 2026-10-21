@@ -194,7 +194,7 @@ implementation** for parsing CaaS + Navigation Service output:
   mapper runs — the README notes you can fetch it directly with the API key to
   discover the exact key names to filter on.
 
-For querying/auth/streams see [caas-platform.md](caas-platform.md).
+For querying/auth/streams see [caas-platform.md](caas-platform.md). The client's methods and the value each input component maps to: [fsxa-api.md](fsxa-api.md).
 
 ---
 

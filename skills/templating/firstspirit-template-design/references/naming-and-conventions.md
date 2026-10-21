@@ -1,6 +1,6 @@
 # Naming and coding conventions
 
-Look-up reference for FirstSpirit naming and coding conventions. The principles in SKILL.md explain why these matter; this file holds the detail. Source: the FirstSpirit coding-conventions documents and FirstSpirit overview material; verify component details in firstspirit-templating-reference.
+Look-up reference for FirstSpirit naming and coding conventions. The principles in SKILL.md explain why these matter; this file holds the detail. Verify component details in firstspirit-templating-reference.
 
 ## Reference names versus display names and descriptions
 
@@ -21,6 +21,23 @@ Applies to folders and objects in the content store, site store, template store 
 Examples: `news`, `product_categories`, `press_archive`, `whoiswho_changed_1`, `whoiswho_changed_2`.
 
 A template's own reference name follows these rules too — no type prefix. The prefix tables under *Variable naming and prefixes* below govern **variables**, grouped by the template type the variable is defined in. (Many projects do prefix template uids by type, `pt_`/`st_`/…; that is a project convention, not part of this standard.)
+
+## Organising templates: folders and semantic names
+
+- **Put templates in folders** by role or use case, not loose at the root of a template-store folder. A
+  folder also keeps related templates together when they are moved as a set: adding the folder is enough,
+  not each template one by one `[verify]` (check the packaging or transport mechanism the project uses).
+- **A folder name says what its templates are for**, in the same style as other reference names (lower
+  case, English, underscores): for example `cards`, `entries`, `formats`, `render`.
+- **Add a naming pattern when there are many templates for specific use cases** that the name alone does not
+  reveal. A shared prefix or suffix groups them in the list and tells a reader the purpose before opening
+  the template. Where a pattern is in use, new templates follow it; where none exists and the set is small,
+  do not invent one.
+- **Semantic prefixes are a project convention**, separate from the variable prefixes below. A common one is
+  `render_` for format templates that exist only to be called with `$CMS_RENDER$` (render templates), and
+  the same idea may apply to scripts called from templates `[verify]`. They state purpose, not template
+  type, so they do not conflict with the rule that a template's reference name carries no type prefix.
+- Write the pattern down once (in the project's conventions) so the next template follows it without asking.
 
 Site store: every folder should have a proper display name, visible in the site map, whether or not the site map is already in use.
 

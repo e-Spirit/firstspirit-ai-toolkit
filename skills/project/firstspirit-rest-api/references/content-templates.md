@@ -143,6 +143,11 @@ curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
 > (link editors are allow-listed with `<LINKEDITORS>`). An `FS_CATALOG` `<TEMPLATES>` without
 > `type="section"` or `type="link"` fails verification instead ("Must define the type of templates.").
 
+**Further traps when writing a GOM** `[observed]` (`0.0.25-beta`, 2026-10-14):
+- The root is `<CMS_MODULE>` with the editors as direct children. Wrapping them in `<FORM>` answers `400 Form elements must be named!`.
+- A link template that an `FS_CATALOG` (`<TEMPLATES type="link">`) or a link editor names must exist before the `PUT`; otherwise the write answers `500`. Create order: link templates, section templates, page templates, then the whitelist of a content area.
+- Creating a template is `POST` (create), then `PUT …/gom`, then `PUT …/channel-sources/html`.
+
 ### Read Parsed Form Summary (read-only)
 Returns JSON list of editors with name, type, description — no content values:
 ```bash

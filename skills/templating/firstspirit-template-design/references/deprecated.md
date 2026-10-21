@@ -2,7 +2,7 @@
 
 Reference list of FirstSpirit input components that should no longer be used in new templates, with the replacement for each. This backs principle 12 in SKILL.md. Source: the ODFS deprecated list (FirstSpirit Access-API) and the FS_LIST migration guide. Verify against the current ODFS on each release, since deprecation and removal status can change.
 
-**Source of truth.** Within the portfolio, the firstspirit-templating-reference skill's `deprecated.md` owns the deprecated→current mappings (tracked against the documentation). This list is the design-facing view backing principle 12; where the two differ, templating-reference wins on the facts.
+**Source of truth.** The firstspirit-templating-reference skill's `deprecated.md` owns the deprecated→current mappings (tracked against the documentation). This list is the design-facing view backing principle 12; where the two differ, templating-reference wins on the facts.
 
 The key point: a deprecated component stays in the ODFS and usually keeps working, so a documentation search will surface it as if it were a live option. Existing in the docs is not the same as being current. Always check this list, and the ODFS deprecated list, before adopting a component you have not used recently.
 
@@ -10,7 +10,7 @@ The key point: a deprecated component stays in the ODFS and usually keeps workin
 
 The job of this file is to keep deprecated and removed components out of new templates and projects. That is principle 12's check, and it is fully in scope.
 
-Migrating existing removed components is out of scope for this skill. It is specialist work: a multi-step migration across several server versions, which is not possible in cloud services and needs a dedicated, experienced FirstSpirit expert. Depending on the component it can mean content loss or losing the ability to edit and save. When a review finds a removed component in an existing project, flag it and hand it to a FirstSpirit expert. Do not plan or attempt the migration here.
+Migrating existing removed components is out of scope for this skill. It is specialist work: a multi-step migration across several server versions that needs a dedicated, experienced FirstSpirit expert. On FirstSpirit Cloud, where every server runs the current version, a removed component cannot be migrated at all, because it no longer exists in that version; the removal of a component is announced ahead and migrated over several releases, with migration guides and dedicated communication, which is possible there. Once a component is removed, forms that contain it can no longer be edited and the expected output is no longer generated, and the change cannot be undone, not even by a server downgrade `[odfs]` (FS_LIST migration guide, FirstSpirit 2026.11). Do not rely on a chat answer that a removed component can still be used or migrated by a quick edit; check the ODFS and ask Technical Support. When a review finds a removed component in an existing project, flag it and hand it to a FirstSpirit expert. Do not plan or attempt the migration here.
 
 In practice this is rarely a live concern. These components are very old. FS_LIST was the last one that genuinely needed attention, and that was at least five years ago. The list is kept complete for reference, but it should not affect new projects.
 

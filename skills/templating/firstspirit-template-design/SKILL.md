@@ -1,11 +1,11 @@
 ---
 name: firstspirit-template-design
 description: >-
-  Design principles and review guidance for FirstSpirit template development. Use whenever creating, generating, reviewing or auditing FirstSpirit templates: page, section, format and link templates, input components and forms (GOM), CMS tags and output, headless and CaaS projects, content modelling and datasets, naming and coding conventions, reuse, editorial usability, localisation and multi-language handling, and documenting a created template set. Trigger it for any FirstSpirit template task (ContentCreator, SiteArchitect, ODFS, CaaS, AI Suite), even when the request does not say "design principles" — e.g. "build a section template", "review this FirstSpirit template", "which input component should I use", "document the templates you generate", "check our templates against our conventions". Component, tag, datatype and naming reference in references/. Write precisely and in FirstSpirit vocabulary when the deliverable is written content (a report or documentation).
+  Design principles and review guidance for FirstSpirit template development. Use whenever creating, generating, reviewing or auditing FirstSpirit templates: page, section, format and link templates, input components and forms (GOM), CMS tags and output, headless and CaaS projects, content modelling and datasets, naming and coding conventions, reuse, editorial usability, localisation, documenting a created template set, and cutting an HTML example, wireframe or design into templates. Trigger it for any FirstSpirit template task (ContentCreator, SiteArchitect, ODFS, CaaS, AI Suite), even without "design principles" — e.g. "build a section template", "review this FirstSpirit template", "which input component should I use", "turn this HTML page into FirstSpirit templates", "what do customers mean by component". References: components, tags, naming, common wording to FirstSpirit terms, cutting an artifact. Pair with firstspirit-technical-tone-of-voice for written deliverables.
 metadata:
-  source-commit: "ba64160"
-  published: "2026-10-14"
-  toolkit-version: "0.5.0"
+  source-commit: "92709aa"
+  published: "2026-10-21"
+  toolkit-version: "0.6.0"
 ---
 
 > **Beta.** Early public release. Feedback welcome; behaviour and structure may change.
@@ -26,7 +26,7 @@ A template can be technically correct and still be a poor design. These principl
 Several principles below change depending on two things. Settle both before applying the rest.
 
 - **Output mode.** Classic projects generate HTML or similar files. Headless projects deliver JSON, usually through CaaS, where FirstSpirit renders the JSON in a fixed setup and nests components into each other. The output mode changes naming (principle 7) and template structure (principle 4).
-- **Client.** Much of the older material this skill draws on uses the SiteArchitect, the Java client. New features focus on the ContentCreator (the AI Suite, for example, is fully available only there), and templates can be built there too with a different setup. Treat SiteArchitect-specific steps with that in mind.
+- **Client.** Much of the established template material uses the SiteArchitect, the Java client. Templates can also be built in the ContentCreator, with a different setup. Treat SiteArchitect-specific steps with that in mind.
 - **What the client stores.** Before you build a format template or an import for an editor's content (lists, tables, links in a DOM field), create one sample by hand in the client and read the stored form back (over REST or an export). Design against that form, not against the HTML you would write yourself: a list in FirstSpirit is a `<ul>` with list properties, not an `<ol>`, and a home-made format template or counter for the "missing" element is a detour that has to be removed later. When a format template is dropped from a GOM's `FORMATS`, remove the reference first and the template second, or the reference dangles.
 
 ## Principles
@@ -59,7 +59,7 @@ Good looks like: in headless projects, component nesting is shallow and predicta
 
 Start from how the editor thinks about the field and what makes their job clear and safe, then pick the component whose behaviour and resulting datatype fit. Toggle, combo box, radio buttons and a checkbox can all express a choice; they are not interchangeable for the editor or for the dependency they create. Filter selectable objects (for example with the `FILTER` tag on `FS_REFERENCE`) so only valid options appear.
 
-Good looks like: the component matches the editorial intent, yields the right datatype and dependency, and offers only valid choices. See `references/components-and-tags.md` for the catalogue and the datatype mapping.
+Good looks like: the component matches the editorial intent, yields the right datatype and dependency, and offers only valid choices. See `references/choosing-an-input-component.md` for the editor need to component table, and `references/components-and-tags.md` for the catalogue and the datatype mapping.
 
 ### 6. Make the form clear, guiding and safe for the editor
 
@@ -85,7 +85,7 @@ Good looks like: in classic projects, variables carry the correct prefix and ref
 
 ### 8. Reuse instead of repeat
 
-Factor recurring template code into a format template. Prefer template code over a script. Use the global content area for content shared across pages, and read shared values rather than copying them.
+Factor recurring template code into a format template. Prefer template code over a script. Use the global content area for content shared across pages, and read shared values rather than copying them. A global content area renders itself: its template holds the output for everything it covers, and the page template only places it with `$CMS_VALUE(#global.gca("REFERENCE_NAME"))$`, never by looping through its form data (`references/global-content-areas.md`) `[odfs]`.
 
 Good looks like: no copy-pasted template logic, shared code lives in a format template, and cross-page content comes from the global content area rather than being duplicated.
 
@@ -109,7 +109,7 @@ Model the relations deliberately. A parent that owns an ordered list of children
 
 Structured content nests, and the nested pieces have dependencies: a component that points at another object needs that object to exist first. An `FS_CATALOG` restricted to a section template cannot be saved until that template exists. A person building the template in the client is guided to create the inner object as they go, so this stays invisible, but it bites on programmatic writes through the API or REST, where nothing stops a broken reference being saved. There the order must be deliberate: create dependencies before the things that point to them, delete in the reverse order, and confirm a destructive or side-effectful write before running it. The write mechanics live in the firstspirit-rest-api skill; the dependency thinking lives here.
 
-For database content the chain is: schema, then its table templates (with foreign keys between them), then one data source per table template, then rows. Rows of a vocabulary table come before the rows that reference them; when the child holds the `FS_DATASET`, the parent row exists first; when the parent holds the `FS_INDEX`, the child rows exist first. Delete in reverse, and for a table template that means the data source first, then the template. A table template cannot be deleted while its data source exists (the delete reports the incoming reference and skips it). Never force the delete past that check: it leaves the data source pointing at nothing, the data source itself is broken from then on, and re-creating a template with the same name does not repair it. Where a dangling reference elsewhere only fails at generation or in the preview, this one is hard to fix at all. A foreign key marked *Aggregation* deletes and releases the linked datasets with their owner. In code, a row has two faces: the `Entity` is the raw record, the `Dataset` is the Content Store element that wraps it with its table template, form data and per-language release state. Change values through the dataset's form data and save the dataset; writing the entity directly bypasses the form mapping.
+For database content the chain is: schema, then its table templates (with foreign keys between them), then one data source per table template, then rows. Rows of a vocabulary table come before the rows that reference them; when the child holds the `FS_DATASET`, the parent row exists first; when the parent holds the `FS_INDEX`, the child rows exist first. Delete in reverse, and for a table template that means the data source first, then the template. A table template cannot be deleted while its data source exists (the delete reports the incoming reference and skips it). Delete the data source first, then the template. A foreign key marked *Aggregation* deletes and releases the linked datasets with their owner. In code, a row has two faces: the `Entity` is the raw record, the `Dataset` is the Content Store element that wraps it with its table template, form data and per-language release state. Change values through the dataset's form data and save the dataset; writing the entity directly bypasses the form mapping.
 
 Good looks like: structured or reusable content is modelled once in the content store and projected where needed; and every reference resolves to an object that already exists, created inner-first and removed outer-first, with destructive API or REST writes confirmed.
 
@@ -143,19 +143,39 @@ Editor-facing text can be given per project language, with a default (fallback) 
 
 For content, decide `useLanguages` per component. Link templates are never translated (`useLanguages="no"`). Format templates are language-neutral, unless one is used as a render template whose output branches on `#global.language`. For input components the rule of thumb is to assume the content is translated unless the context makes clear it is not — dates, names, visual settings (image position, colour, theme) and access flags are the common language-neutral cases. It is a pattern, not a hard rule.
 
-Catalog and index are the subtle case. The rule is at most one language-dependent level per nesting chain: `useLanguages="yes"` stores deviating values per language, and you may set it at a single level of a nested catalog only. Where you set it decides what varies — a language-dependent *field* inside a language-neutral catalog gives the same entries with translated values (the common setup), whereas a language-dependent *catalog* gives each language its own independent set of entries. Two or more language-dependent levels is the polyglot hierarchy FirstSpirit no longer honours: `forbidPolyglotDataHierarchy="yes"` (default since 5.2R5) silently flattens the inner level to language-independent, so it collapses rather than erroring. Turning that setting on in a legacy project that already has nested language-dependent content can lose data, which is an expert migration, not new-template design (principle 12).
+Catalog and index are the subtle case. The rule is at most one language-dependent level per nesting chain: `useLanguages="yes"` stores deviating values per language, and you may set it at a single level of a nested catalog only. Where you set it decides what varies — a language-dependent *field* inside a language-neutral catalog gives the same entries with translated values (the common setup), whereas a language-dependent *catalog* gives each language its own independent set of entries. Two or more language-dependent levels is the polyglot hierarchy FirstSpirit no longer honours: `forbidPolyglotDataHierarchy="yes"` (default since 5.2R5) interprets the inner level as language-independent; no error is raised. Turning that setting on in a legacy project that already has nested language-dependent content can lose data `[odfs]`, which is an expert migration, not new-template design (principle 12).
 
 Good looks like: editor-facing languages and content language-dependence are decided separately; every translatable field is `useLanguages="yes"` and every clearly language-neutral field is `"no"`; links and format templates are language-neutral except for explicit `#global.language` render logic; and each catalog carries a single language-dependent level, placed to give either a translated shared list or a per-language list as intended, never nested language dependence. See `references/localisation.md`.
+
+### 15. Make HTML output testable, editable and readable by default
+
+Give every output of a variable that can be empty a default (`$CMS_VALUE(var, default:"")$`) unless an `$CMS_IF$` around it handles the empty case. Set `editorId` on every HTML output channel unless the project says otherwise: on the outer element of each section, on text fields with the component variable (inline editing), and on every picture reference with its resolution; where no element exists, leave a comment that says so, and let the developer decide between a preview-only element and no inline editing. Other component types are edited inline only when the developer specifies it. Render with line breaks and indentation; remove unwanted blank lines with `$CMS_TRIM$`, not by collapsing the output (practice, `[verify]`; details in `references/output-conventions.md`).
+
+Good looks like: no bare `$CMS_VALUE$` on a nullable field outside a condition, an `editorId` on each section, text field and picture or a comment saying why it is missing, a deliberate choice for any other inline editing, and output that is readable in the preview.
+
+### 16. Give every editor-facing template a snippet
+
+The snippet (label, extract, thumbnail) is what the editor sees for each individual section or page in lists, search results and selection dialogs; it is built from the content (a catalog of cards without snippets cannot be told apart). Define it with the form: the label is the field that names the object, the extract adds meaning, the thumbnail is set only where the form has an image field. Guard optional inputs and escape the result. A section, page or table template an editor opens, an `FS_CATALOG` item template and a link template without a snippet is unfinished; a hidden technical template is not (`references/snippets.md`). Snippets cannot be created over REST: write the expressions down and hand them over.
+
+Good looks like: each editor-facing template has a label that identifies the object, an extract where one adds meaning, and a thumbnail only where an image field exists.
 
 ## References
 
 - `references/naming-and-conventions.md`: reference and display names, variable prefixes and when they apply, database schema naming, reuse do's.
 - `references/components-and-tags.md`: stores, page and section templates, input component catalogue, datatype mapping, CMS tags, header functions.
+- `references/choosing-an-input-component.md`: the editor's need mapped to the input component, what it returns, alternatives and cases to avoid, plus required fields, language dependence and layout.
 - `references/deprecated.md`: deprecated and removed input components and their replacements, with the deprecation or removal version where known.
 - `references/template-documentation.md`: the fill-in pattern for documenting a created template set — originating instruction, templates by store type, per-component table, build order.
+- `references/common-language-to-fs-terms.md`: how customers and briefs word things ("component", "block", "header", "publish") and which FirstSpirit term each usually means, with the questions to ask when a word is ambiguous.
+- `references/cutting-an-artifact.md`: turning an HTML example, wireframes, a design system or a description into templates: the default map from parts of the artifact to template kinds, the question tree when there is no artifact, and the decisions taken once for the whole project.
+- `references/global-content-areas.md`: a global content area owns its output and the page template only places it; contexts and variables when the two meet.
+- `references/snippets.md`: the snippet of a template (label, extract, thumbnail): which templates need one, what to put in each part, building and reviewing it.
+- `references/preview-image.md`: the preview image of a template, shown when the template is chosen to create content: when it matters, what to show, style of the reference projects. Not the snippet.
+- `references/preview-image.md`: the preview image of a template, shown when the template is chosen to create content: when it matters, what to show, style of the reference projects. Not the snippet.
+- `references/output-conventions.md`: defaults for variables without a condition, `editorId` on sections, text fields and pictures (with a comment when no element exists), inline editing versus the whole form, indentation and trimming.
 - `references/localisation.md`: the two language dimensions (editor-facing vs `useLanguages`), language-dependence by template and component type, and the catalog/index shared-structure behaviour.
 
-For anything not covered here or in the references, the authoritative source is the ODFS (Online Documentation FirstSpirit). The reference detail is drawn from older material that predates headless projects and reflects the SiteArchitect, so verify headless, CaaS, ContentCreator and AI Suite specifics against current documentation. This skill is a design reference, not a replacement for the FirstSpirit developer courses.
+For anything not covered here or in the references, the authoritative source is the ODFS (Online Documentation FirstSpirit). Some reference detail reflects the SiteArchitect and predates headless projects, so verify headless, CaaS, ContentCreator and AI Suite specifics against current documentation. This skill is a design reference, not a replacement for the FirstSpirit developer courses.
 
 <!-- feedback-footer:v1 -->
 

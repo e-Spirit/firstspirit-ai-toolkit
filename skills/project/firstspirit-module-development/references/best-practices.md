@@ -1,7 +1,7 @@
 # Module development — best practices
 
 Distilled from a set of small example modules and their comments, and cross-checked
-in 2026 against three Crownpeak connector modules that have been in production for years.
+in 2026 against three FirstSpirit connector modules that have been in production for years.
 These are the judgement calls that keep a module maintainable and free of classloader grief.
 
 ---
@@ -88,7 +88,7 @@ as an anti-pattern, with the replacement:
 | `de.espirit.or.*` (`Session`, `Select`, `Equal`, `EntityList`) | Raw ORM layer | `QueryAgent` (`firstspirit-api-reference`, querying) |
 | `de.espirit.firstspirit.agency.LegacyModuleAgent` | Legacy (verified 2026-09-18) | `ModuleAdminAgent` `[jar]` for configuration and usages; `de.espirit.firstspirit.access.ModuleAgent` `[jar]` (`getComponents(Class)`, `getClassLoader()`) is *not* deprecated and is how the official examples discover other modules' components |
 | `de.espirit.firstspirit.store.access.contentstore.ContentOptionFactory` (`getTable()`) *to find the table template behind a database-backed combobox / radiobutton / checkbox* | `@ApiStatus.Internal` `[jar]`; `checkCompliance` fails on it | `gomSelect.getEntries().getIncludeConfiguration()` → `GomIncludeOptions.getOptionFactory().getOptionModel(broker, language, release)` → `instanceof TableTemplateProvider` → `getTableTemplate()` — all Access API `[jar]`; worked example in `firstspirit-api-reference` (values and data). The `Entity` alone is not enough: several table templates can share one table (verified 2026-09-30) |
-| `com.espirit.moddev.fcaf.*`, `com.espirit.ps.psci.*` | Internal Crownpeak frameworks, not FirstSpirit API | Only if you own them |
+| `com.espirit.moddev.fcaf.*`, `com.espirit.ps.psci.*` | Internal frameworks, not FirstSpirit API | Only if you own them |
 
 Not in this table on purpose: **`de.espirit.common.base.Logging`** (`logInfo(String, Class)`,
 `logWarning`, `logError`, …) *is* part of the documented Access API `[javadoc]` and the

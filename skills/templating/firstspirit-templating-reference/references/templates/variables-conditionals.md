@@ -19,6 +19,10 @@ $CMS_VALUE(st_headline)$
 $CMS_VALUE(st_headline, default:"Untitled")$
 ```
 
+Use `default:""` for a variable that can be empty or null when no `$CMS_IF$` around the block handles it. A field
+with `preset="COPY"` counts as filled (`.isEmpty` is false), so a guard on emptiness does not catch it (practice,
+`[verify]`). The design view is in the `firstspirit-template-design` skill (its `output-conventions.md`).
+
 ### Null check before output
 
 ```

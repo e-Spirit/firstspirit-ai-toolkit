@@ -1,0 +1,177 @@
+#!/usr/bin/env bash
+#
+# SessionEnd hook: write a local feedback note when a session used the toolkit.
+#
+# Off by default. Turn it on with FIRSTSPIRIT_FEEDBACK=1 (also true/yes).
+#
+# What it writes: .firstspirit-feedback/firstspirit-feedback-<date>-<time>.md in the
+# session's working directory, with the toolkit version, the assistant, the names of
+# the toolkit skills and reference files the session touched, and empty sections for
+# the person to fill in. What it never writes: prompts, answers, file contents,
+# project names or paths of the project. The skill names come from a fixed pattern
+# over the session transcript (skills/<category>/firstspirit-*), so nothing else in
+# the transcript can reach the note.
+#
+# Nothing is sent anywhere. The note says how to hand it in; scripts/submit-feedback.sh
+# can open a GitHub issue from it, but only when asked to and only with --yes.
+#
+# The folder is called .firstspirit-feedback, not .firstspirit: a .firstspirit marker
+# switches on the session-start detection of a FirstSpirit project.
+#
+# The hook must never break a session: every failure path exits 0.
+#
+set -uo pipefail
+
+case "${FIRSTSPIRIT_FEEDBACK:-}" in
+  1|true|TRUE|yes|YES) ;;
+  *) exit 0 ;;
+esac
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PLUGIN_ROOT="$(dirname "$SCRIPT_DIR")"
+
+INPUT=""
+if [ ! -t 0 ]; then
+  INPUT="$(cat 2>/dev/null || true)"
+fi
+
+# The host passes a small JSON object on stdin (transcript_path, cwd, reason).
+json_field() {
+  if command -v jq >/dev/null 2>&1; then
+    printf '%s' "$INPUT" | jq -r --arg k "$1" '.[$k] // empty' 2>/dev/null
+  else
+    # Without jq: take the string value up to the first unescaped quote, then undo the
+    # JSON escapes that occur in paths (\\ and \" and \/).
+    printf '%s' "$INPUT" \
+      | sed -En 's/.*"'"$1"'"[[:space:]]*:[[:space:]]*"(([^"\\]|\\.)*)".*/\1/p' | head -1 \
+      | sed -e 's#\\/#/#g' -e 's#\\"#"#g' -e 's#\\\\#\\#g'
+  fi
+}
+
+TRANSCRIPT="$(json_field transcript_path)"
+WORKDIR="$(json_field cwd)"
+REASON="$(json_field reason | tr -c 'a-z_\n' '?' | head -c 40)"
+
+[ -n "$TRANSCRIPT" ] && [ -f "$TRANSCRIPT" ] || exit 0
+if [ -z "$WORKDIR" ] || [ ! -d "$WORKDIR" ]; then
+  WORKDIR="${CLAUDE_PROJECT_DIR:-$PWD}"
+fi
+[ -d "$WORKDIR" ] || exit 0
+
+# --- What the session touched ------------------------------------------------
+# Only Read and Skill tool calls count, and only toolkit paths and names match.
+
+# One pass over the transcript: only the Read and Skill tool-call lines are kept, and
+# everything below works on those lines. A long session has a large transcript, and the
+# hook runs under a short timeout.
+CALLS="$(grep -E '"name": ?"(Read|Skill)"' "$TRANSCRIPT" 2>/dev/null || true)"
+
+SKILL_NAMES="$(
+  {
+    # A Read counts by the file path it opened, not by any text on the line.
+    printf '%s\n' "$CALLS" | grep -E '"name": ?"Read"' \
+      | grep -oE '"file_path": ?"[^"]*skills/(templating|project|deployment)/firstspirit-[a-z0-9-]+' \
+      | sed 's#.*/##'
+    printf '%s\n' "$CALLS" | grep -E '"name": ?"Skill"' \
+      | grep -oE '"skill": ?"(firstspirit-ai-toolkit:)?firstspirit-[a-z0-9-]+"' \
+      | sed -e 's/^"skill": *"//' -e 's/"$//' -e 's/^firstspirit-ai-toolkit://'
+  } | sort -u
+)"
+
+FILES_READ="$(
+  printf '%s\n' "$CALLS" | grep -E '"name": ?"Read"' \
+    | grep -oE '"file_path": ?"[^"]*skills/(templating|project|deployment)/firstspirit-[a-z0-9-]+/(SKILL\.md|references/[A-Za-z0-9._/-]+\.md)' \
+    | sed -E 's#^"file_path": ?"[^"]*(skills/)#\1#' | sort -u | head -40
+)"
+
+# A session that never touched a toolkit skill leaves no note.
+[ -n "$SKILL_NAMES" ] || exit 0
+
+# --- Facts for the header -----------------------------------------------------
+
+VERSION="$(sed -n 's/.*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$PLUGIN_ROOT/package.json" 2>/dev/null | head -1)"
+[ -n "$VERSION" ] || VERSION="unknown"
+
+if [ -n "${CURSOR_PLUGIN_ROOT:-}" ]; then
+  HARNESS="Cursor"
+elif [ -n "${COPILOT_PLUGIN_ROOT:-}${COPILOT_AGENT_SESSION_ID:-}" ]; then
+  HARNESS="GitHub Copilot"
+elif [ -n "${CLAUDE_PLUGIN_ROOT:-}" ]; then
+  HARNESS="Claude Code"
+else
+  HARNESS="unknown"
+fi
+
+STAMP="$(date '+%Y-%m-%d-%H%M%S' 2>/dev/null || echo undated)"
+DAY="${STAMP%-*}"
+SKILL_LIST="$(printf '%s\n' "$SKILL_NAMES" | sed 's/^/- /')"
+if [ -n "$FILES_READ" ]; then
+  FILE_LIST="$(printf '%s\n' "$FILES_READ" | sed 's/^/- /')"
+else
+  FILE_LIST="- (none read by name)"
+fi
+
+# --- Write the note -----------------------------------------------------------
+
+DIR="$WORKDIR/.firstspirit-feedback"
+mkdir -p "$DIR" 2>/dev/null || exit 0
+# The folder ignores itself, so a note is never committed by accident.
+[ -f "$DIR/.gitignore" ] || printf '*\n' > "$DIR/.gitignore" 2>/dev/null || true
+
+OUT="$DIR/firstspirit-feedback-$STAMP-$$.md"
+
+cat > "$OUT" 2>/dev/null <<EOF || exit 0
+# FirstSpirit AI Toolkit: feedback note
+
+Written on your machine by the toolkit's session-end hook. Nothing has been sent anywhere.
+It holds no prompts, no answers, no file contents and no project names.
+
+| | |
+|---|---|
+| Toolkit version | $VERSION |
+| Assistant | $HARNESS |
+| Date | $DAY |
+| Session ended | ${REASON:-unknown} |
+
+## Skills this session used
+
+$SKILL_LIST
+
+Reference files read (names only):
+
+$FILE_LIST
+
+## What happened
+
+_(Write here what was wrong, unclear or missing, in your own words. One sentence is enough. Do not paste project content, customer names, addresses or credentials.)_
+
+## What you expected
+
+_(Write here what you expected instead.)_
+
+## Category and severity (optional)
+
+Category: wrong, unclear, missing, skill did not trigger, other
+Severity: blocker, major, minor
+
+<!-- end of report: everything below stays on your machine -->
+
+## Handing it in
+
+Read the text above once before it goes anywhere. Issues on the toolkit's GitHub repository are public.
+
+- Open an issue at https://github.com/e-Spirit/firstspirit-ai-toolkit/issues and paste the report: the text above the line "end of report", not this section.
+- With the GitHub CLI installed and signed in, an assistant can open the issue for you if you ask it to and say yes to the preview: "$PLUGIN_ROOT/scripts/submit-feedback.sh" "$OUT"
+
+## For an AI assistant
+
+Only when the person asks you to hand this feedback in:
+
+1. Fill the sections above from this conversation, in the person's own words, and tell the person what you wrote. Leave out project content, customer names, addresses and credentials.
+2. Run the script above without --yes. It prints the exact text that would be posted, or why it cannot be.
+3. Show the person that preview. Post only if the person then says yes, by running the script again with --yes. Never post on your own initiative.
+4. If the script says the GitHub CLI is missing or not signed in, give the person the manual route instead. Do not ask for tokens.
+EOF
+
+echo "FirstSpirit AI Toolkit: feedback note written to $OUT" >&2
+exit 0

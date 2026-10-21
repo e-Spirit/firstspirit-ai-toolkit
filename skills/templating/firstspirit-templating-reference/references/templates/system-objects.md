@@ -30,10 +30,32 @@ $CMS_VALUE(#global.node)$                   $-- current page ref --$
 $CMS_VALUE(#global.language.abbreviation)$  $-- "DE", "EN" etc. --$
 $CMS_VALUE(#global.isPreview())$            $-- true in preview (method) --$
 $CMS_VALUE(#global.canonicalUrl)$           $-- canonical URL --$
-$CMS_VALUE(#global.gca("gca_page"))$        $-- render a Global Content Area page's channel [odfs] --$
+$CMS_VALUE(#global.gca("gca_page"))$        $-- insert a Global Content Area page's output [odfs] --$
 $CMS_SET(void, #global.logError("message"))$ $-- write to the generation log --$
 $CMS_SET(void, #global.stopGenerate)$       $-- stop page generation (fail-fast guard) --$
 ```
+
+## Global content area (GCA)
+
+```
+$CMS_VALUE(#global.gca("gca_page"))$        $-- type GCAPage; the argument is the reference name of the GCA page [odfs] --$
+$CMS_VALUE(#global.page.body("content"))$   $-- type Body: a content area of the page [odfs] --$
+```
+
+`#global.gca("…")` `[odfs]` can be called from any template. The GCA page's template content is inserted at the place of the
+call and that page's context starts there, so contexts nest `[odfs]`. **Design rule:** the template of the GCA holds
+the output for everything it covers; the calling page template only places it. Do not loop over the GCA's form data
+from the page template (the global content areas reference of the `firstspirit-template-design` skill).
+
+Contexts and variables inside and around a GCA `[odfs]`:
+
+| What | Behaviour |
+|---|---|
+| `#global.context("section")` | the **innermost** section: the GCA's section, not the section of the page it is placed on, because both contexts are named `section` |
+| `#global.page.id`, `.name`, `.uid`; `#global.section.id`, `.name` | read the IDs and reference names of the current (innermost) page or section |
+| variables set in a page or section template | visible in that element and everything inside it, by default not outside |
+| `#global.context("PAGE")` | the way to make a variable visible to the elements outside |
+| same identifier in page and GCA templates | the current element's variable wins; use unique identifiers across templates that can meet on one page |
 
 ## Dataset info (content projection / multiple pages)
 

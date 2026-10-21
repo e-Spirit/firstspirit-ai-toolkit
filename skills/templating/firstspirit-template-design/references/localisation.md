@@ -61,7 +61,7 @@ same one:
 | no  | no  | **yes** | Same entries in every language; the field **values** translate. The common setup for teaser-like lists. |
 | no  | **yes** | no | The inner catalog holds a **different set of entries** per language. |
 | **yes** | no | no | The **whole catalog** differs per language — different number, order and content of entries. |
-| \>1 "yes" | | | Not honoured — the inner language dependence is silently ignored (see below). |
+| \>1 "yes" | | | Not honoured — the inner language dependence is interpreted as language-independent (see below). |
 
 So to translate the *same* list — three teasers in every language, their text translated — set
 the catalog `useLanguages="no"` and make the translatable **fields** language-dependent. Do
@@ -72,14 +72,16 @@ genuinely need different lists.
 **The modern default enforces the rule by flattening, not by erroring.** With
 `forbidPolyglotDataHierarchy="yes"` (the default in new projects since 5.2R5), a
 language-dependent input component nested inside a language-dependent catalog is interpreted as
-language-independent automatically — its own `useLanguages="yes"` is ignored, silently. A
-two-level configuration does not fail to save; it quietly collapses to one level. So design for a
+language-independent automatically — its own `useLanguages="yes"` is ignored. A
+two-level configuration does not fail to save; no error is raised and it is treated as one level. So design for a
 single level on purpose rather than leaning on the flatten. The old behaviour
 (`forbidPolyglotDataHierarchy="no"`) did honour multiple levels, and that is exactly the polyglot
 hierarchy, which produced inconsistent translations and hard-to-edit content.
 
-**Migration is out of scope, and can lose data.** Turning `forbidPolyglotDataHierarchy` on in a
-legacy project that already holds nested language-dependent content can cause data loss. That is
+**Migration is out of scope, and can lose data.** The ODFS warns that using
+`forbidPolyglotDataHierarchy="yes"` in an existing project without checks and backups can cause data
+loss: once the component is saved, existing content is stored for one language and the content in
+the other languages is discarded `[odfs]` (catalog page, language dependency; FirstSpirit 2026.11). That is
 a versioned migration for a FirstSpirit expert, not new-template design — the same scope line as
 deprecated-component migration (principle 12). For new templates, design for the modern default:
 one language-dependent level, placed where the content actually needs to vary.

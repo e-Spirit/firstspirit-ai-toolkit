@@ -14,9 +14,9 @@ description: >-
   firstspirit-api-reference (broker, IDProvider) and firstspirit-scripting or
   firstspirit-module-development (running the code).
 metadata:
-  source-commit: "ba64160"
-  published: "2026-10-14"
-  toolkit-version: "0.5.0"
+  source-commit: "92709aa"
+  published: "2026-10-21"
+  toolkit-version: "0.6.0"
 ---
 
 > **Beta.** Early public release. Feedback welcome; behaviour and structure may change.
@@ -120,7 +120,7 @@ the FS version you built against and re-check after upgrades.
 
 *Sources: the FirstSpirit Collaboration API Javadoc
 (`com.crownpeak.firstspirit.modules.collaboration`; the class catalogue in
-`references/api-model.md` is transcribed from it), and the Crownpeak
+`references/api-model.md` is transcribed from it), and the FirstSpirit
 Collaboration documentation —
 [installation guide](https://docs.crownpeak.com/firstspirit/collaboration/installation-guide/),
 [API guide](https://docs.crownpeak.com/firstspirit/collaboration/collaboration-api-guide/index-2.html),

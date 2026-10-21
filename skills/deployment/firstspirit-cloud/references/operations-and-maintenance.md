@@ -46,9 +46,9 @@ Scope the support tier against the customer's availability requirements — a
   commitment (or route to the Governance Center if it's an SLA term).
 - **Archiving is automatic (~weekly)**, but **archives are not directly
   accessible** — retrieving one is a **Support** request.
-- **CaaS is *not* backed up.** If you deliver headless, a **separate CaaS backup
-  strategy is your responsibility** (see [cloud-constraints.md](cloud-constraints.md)
-  and `firstspirit-headless`).
+- **CaaS in the SaaS environment is backed up periodically**, but the reference
+  architectures describe a backup strategy for the FirstSpirit server only. Confirm scope, frequency and restore options with your CSM or Support; a CaaS you operate yourself needs your own backup. (See
+  [cloud-constraints.md](cloud-constraints.md) and `firstspirit-headless`.)
 - **Static (S3/CloudFront) output** is regenerable from FirstSpirit — a full
   generation reproduces it; **deployed files aren't directly accessible** anyway,
   so treat S3 as derived, not a system of record.
@@ -106,8 +106,8 @@ A consolidated launch checklist for a Cloud project (static delivery):
 - [ ] **Access** ready — Keycloak groups mapped (exact names), `template-
   distribution` granted, **SSO/IdP** connected if required (Support-driven; start
   early), MFA plan if required.
-- [ ] **Backup plan** confirmed — FirstSpirit covered; **CaaS backup** owned if
-  headless.
+- [ ] **Backup plan** confirmed — FirstSpirit covered; **CaaS backup** scope and restore
+  confirmed if headless.
 - [ ] **Logging & monitoring** wired — Cloud logging + **status page** in the
   runbook; notifications subscribed.
 - [ ] **Patch calendar** respected — launch **not** inside 07:00–09:00 CET or a

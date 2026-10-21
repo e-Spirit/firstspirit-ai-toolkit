@@ -112,7 +112,9 @@ Returns: `Set<Option>` for template iteration.
 </CMS_INPUT_LIST>
 ```
 
-Note: Display limited to 100 entries (browser limitation). `sortOrder` only affects display, NOT output order.
+`CMS_INPUT_LIST` is the multi-select as a list box. It stores the same `Set<Option>` as `CMS_INPUT_CHECKBOX`, so the two exchange; pick the checkbox for few options that should all be visible, the list for longer ones. `CMS_INCLUDE_OPTIONS` works with both and with the other option components `[odfs]`.
+
+Note: Display limited to 100 entries (browser limitation). `sortOrder` only affects display, NOT output order. If a data source with more than 100 data sets is referenced, the form shows a truncation message and rules apply only to the entries shown; use `FS_INDEX` (with a DataAccessPlugin implementation) for such sizes `[odfs]`. `FS_CATALOG` is not the alternative: it holds repeating cards, not a choice from a list.
 
 ## CMS_INCLUDE_OPTIONS -- Dynamic Dropdown Sources
 
@@ -139,7 +141,7 @@ Note: Display limited to 100 entries (browser limitation). `sortOrder` only affe
     <LABELS>
       <LABEL lang="*">#item.name</LABEL>
     </LABELS>
-    <TABLE>smartliving.tag</TABLE>
+    <TABLE>myschema.tag</TABLE>
     <KEY>code</KEY>          <!-- optional: store this column's value instead of the row's GID -->
   </CMS_INCLUDE_OPTIONS>
   <LANGINFOS>

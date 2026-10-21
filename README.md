@@ -127,6 +127,8 @@ ships these (the `skills/` tree is the authoritative list):
 | `firstspirit-ai-suite` | `project/` | The FirstSpirit AI Suite in ContentCreator: the assistants and their limits, connecting a model, activating assistants per server and project, prompt configuration, the AI API from scripts and modules, plugin points |
 | `firstspirit-smartsearch` | `project/` | SmartSearch: Prepared Searches, data generators and indexing, the search API and autocomplete, smartsearch.js, the SmartSearch Connect module, operations |
 | `firstspirit-collaboration` | `project/` | The Collaboration Java API (experimental): comment threads on editors from code — agents, DTOs, anchoring a conversation to an element |
+| `firstspirit-technical-product-knowledge` | `project/` | Product knowledge for project decisions: hosting (Cloud or self-hosted), static push vs. headless, reference architectures, which module or extension a requirement needs, what needs a licence, and where the official documentation lives |
+| `firstspirit-technical-tone-of-voice` | `project/` | Tone of voice and terminology for technical FirstSpirit texts: naming rules, developer-facing wording and rewriting existing text |
 | `firstspirit-headless` | `deployment/` | Headless delivery: CaaS Platform (REST and GraphQL), CaaS Connect, preview vs release, custom JSON output |
 | `firstspirit-cloud` | `deployment/` | FirstSpirit Cloud (the managed SaaS): what the platform does differently or does not allow, and how to build and run a project on it |
 | `firstspirit-external-sync-export` | `deployment/` | Running FS-CLI / FSDevTools to export and import a project as an external-sync tree on disk, for git-based workflows |
@@ -180,6 +182,31 @@ on. Override either way with the `FIRSTSPIRIT_PROJECT` environment variable:
 discovery reminder with a short line saying the toolkit is disabled for the
 session and must not be mentioned. Both settings also accept `true`/`false`,
 `yes`/`no`.
+
+## Give feedback
+
+Wrong, unclear or missing guidance in a skill is useful to us. There are two ways to tell us.
+
+**Open an issue** at [github.com/e-Spirit/firstspirit-ai-toolkit/issues](https://github.com/e-Spirit/firstspirit-ai-toolkit/issues). Name the skill, what you asked, what the skill said and what was wrong. Do not paste project content, customer names or credentials: issues are public.
+
+**Let the toolkit prepare a note.** A session-end hook can write a short Markdown note when a session used the toolkit. It is off by default. Turn it on with an environment variable before you start your assistant:
+
+```bash
+export FIRSTSPIRIT_FEEDBACK=1
+```
+
+The hook is registered for Claude Code and Cursor (the Cursor entry has not been tried in Cursor yet). PowerShell on Windows is covered by a twin script that has not been tested there yet. When a session touched a toolkit skill, it writes `.firstspirit-feedback/firstspirit-feedback-<date>-<time>.md` in the working directory. The folder ignores itself, so git never picks it up.
+
+What the note holds: the toolkit version, the assistant, the date, the names of the toolkit skills and reference files the session used, and empty sections for you to describe what went wrong. What it never holds: prompts, answers, file contents, project names or paths. The skill names come from a fixed pattern over the session record, so nothing else can reach the note. Nothing is sent anywhere.
+
+To hand a note in, read it, fill in the empty sections in your own words, and paste the text above the line "end of report" into an issue. If you have the [GitHub CLI](https://cli.github.com/) installed and signed in, you can ask your assistant to do it:
+
+```bash
+scripts/submit-feedback.sh .firstspirit-feedback/<note>.md          # preview only, nothing is sent
+scripts/submit-feedback.sh .firstspirit-feedback/<note>.md --yes    # post it as an issue
+```
+
+The assistant shows you the exact text first and posts only after you say yes. The script refuses a note that still has its placeholders, or that looks like it holds a credential or a local path. It never asks for a token; sign in to `gh` yourself.
 
 ## Requirements
 

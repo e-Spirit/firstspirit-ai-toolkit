@@ -101,3 +101,44 @@ $CMS_END_IF$
 ```
 
 See `datatypes.md` → FS_INDEX for the full idiom. (Verified against 16 real `FS_INDEX` uses.)
+
+## CMS_INPUT_SECTIONLIST -- list of the page's own sections
+
+Builds a list of all sections on the page. The editor chooses which sections to include and gives each
+one a display text; a template reads the result to build in-page navigation (anchor links). `[odfs]`
+*Forms → Input components → CMS_INPUT_SECTIONLIST* (FirstSpirit 2026.11).
+
+```xml
+<CMS_INPUT_SECTIONLIST name="pt_sectionlist">
+  <LANGINFOS>
+    <LANGINFO lang="*" label="Quick navigation" description="Choose the sections to link"/>
+  </LANGINFOS>
+</CMS_INPUT_SECTIONLIST>
+```
+
+Key attributes: `name` (mandatory), `hidden`, `preset` (`DEFAULT` / `COPY`), `searchRelevancy`
+(`NONE` / `DEFAULT` / `HIGH`; changing it re-weights existing elements only after a re-index, which is
+resource-intensive: plan it for a maintenance period) `[odfs]`. Mark it required with a rule, not
+`allowEmpty` (see `firstspirit-template-design`, principle 6). There are no child tags beyond
+`LANGINFOS`; unlike `FS_CATALOG` it has no `<TEMPLATES>` and creates no new sections, it points at
+existing ones.
+
+### Output access
+
+The value is a `List<SectionListEntry>`; loop it. Each entry has `anchorName`, `text` (the display text
+the editor assigned) and `sectionName`. `[odfs]` `[jar]` `de.espirit.firstspirit.access.editor.value.SectionListEntry`
+has `getAnchorName()`, `getText()` and `getSectionName()` (5.2.261011 and 5.2.240208).
+
+```
+<ul>
+  $CMS_FOR(section, pt_sectionlist)$
+    <li><a href="#$CMS_VALUE(section.anchorName)$">$CMS_VALUE(section.text)$</a></li>
+  $CMS_END_FOR$
+</ul>
+```
+
+- Sections used together in one list must not share a name. `[odfs]`
+- For the anchor links to work, activate the `<a>` tag in the *File extension* area of the *Properties*
+  tab of the section templates. `[odfs]`
+- `FS_LIST` of type `PAGE` was replaced by this component (`deprecated.md`).
+

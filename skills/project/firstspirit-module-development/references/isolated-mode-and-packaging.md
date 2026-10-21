@@ -107,7 +107,7 @@ Change one bound (A `maxVersion=1.999`, B `minVersion=1.5` open top, C
 
 ## Build: FirstSpirit Module Gradle Plugin (recommended)
 
-Crownpeak supports and updates the **FirstSpirit Module Gradle Plugin**. A few
+FirstSpirit supports and updates the **FirstSpirit Module Gradle Plugin**. A few
 annotations in the Java sources plus a little `build.gradle` config generate a
 compliant FSM; run the **`assembleFSM`** Gradle task. This is the current
 recommended toolchain — prefer it over hand-maintaining the descriptor or older
@@ -144,7 +144,7 @@ API usage.)
 
 On **FirstSpirit Cloud** a custom module is a **Bitbucket repo** built by the Cloud
 CI (Bamboo → Artifactory), not an FSM you install — see
-[firstspirit-cloud → environments-and-workflow.md]. The Cloud team hands you a
+[firstspirit-cloud → environments-and-workflow.md]. FirstSpirit Cloud hands you a
 **project archetype** with a specific, load-bearing shape; keep it and just fill it in:
 
 - **Kotlin DSL** — `build.gradle.kts` + `settings.gradle.kts` (not Groovy).
