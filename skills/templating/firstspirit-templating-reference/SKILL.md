@@ -3,9 +3,9 @@ name: firstspirit-templating-reference
 description: >-
   Concrete lookup reference for FirstSpirit template development: template language ($CMS_VALUE$, $CMS_IF$, $CMS_FOR$, $CMS_REF$, $CMS_RENDER$, system objects, string operations, Navigation and PageGroup functions, content projection), GOM input components (CMS_INPUT_*, FS_REFERENCE, FS_CATALOG, FS_INDEX, FS_DATASET) and the datatype each yields, database schemas (table templates, column types, foreign keys, KEY column, queries, Remote Data), Rules (validation, visibility, editability, value), identifier and casing rules, deprecated components. Use whenever you need exact template syntax, the right input component, what a component produces and how to read it in the output channel, whether something is deprecated, or how a page becomes a PDF (template set, Apache FOP) — e.g. "syntax for CMS_FOR", "which component for a single choice", "what datatype does FS_REFERENCE produce", "is FS_LIST still supported", "review my Ruleset.xml". Explains GomSource.xml / Ruleset.xml / ChannelSource files.
 metadata:
-  source-commit: "ba64160"
-  published: "2026-10-14"
-  toolkit-version: "0.5.0"
+  source-commit: "92709aa"
+  published: "2026-10-21"
+  toolkit-version: "0.6.0"
 ---
 
 > **Beta.** Early public release. Feedback welcome; behaviour and structure may change.
@@ -56,6 +56,7 @@ the export **structure** (store folders, `StoreElement.xml`, UID/`templateid` se
 | `GomSource.xml` | the GOM form (input components) | `references/gom/`, `references/datatypes.md` |
 | `Ruleset.xml` | validation / visibility / editability / value rules | `references/rules/` |
 | `ChannelSource_<set>_<channel>.<ext>` | one output channel (template language) | `references/templates/` |
+| `SnippetHeader.txt`, `SnippetExtract.txt`, `SnippetThumb.txt` | the Snippet tab (label, extract, thumbnail) | `references/templates/snippets.md` |
 | `StoreElement.xml`, `FS_*.txt`, store/folder layout | element identity & structure | → downstream analysis |
 
 ## References
@@ -76,8 +77,9 @@ Loaded on demand — read the file that matches the question.
 | `text-inputs.md` | `CMS_INPUT_TEXT` / `TEXTAREA` / `DOM` / `DOMTABLE`, `CMS_LABEL` |
 | `selection-inputs.md` | `COMBOBOX` / `RADIOBUTTON` / `CHECKBOX` / `LIST`, `CMS_INCLUDE_OPTIONS` |
 | `numeric-date-boolean.md` | `NUMBER` / `DATE` / `TOGGLE` |
-| `references-links.md` | `FS_REFERENCE`, `CMS_INPUT_LINK`, `FS_DATASET`, `FS_BUTTON`, `IMAGEMAP` |
-| `catalogs-indexes.md` | `FS_CATALOG` / `FS_INDEX` |
+| `references-links.md` | `FS_REFERENCE`, `CMS_INPUT_LINK`, `FS_DATASET`, `FS_BUTTON`, `IMAGEMAP`, `CMS_INPUT_PERMISSION` |
+| `parameters.md` | which parameter exists on which component, with defaults and whether to use it |
+| `catalogs-indexes.md` | `FS_CATALOG` / `FS_INDEX` / `CMS_INPUT_SECTIONLIST` |
 | `database-schema.md` | schema → table templates → data source → datasets; `fs_id` / `FS_GID`, language-dependent columns, **column types and the components that map onto them**, what each dataset-backed component stores (`<KEY>`, GID, foreign key, index entries), cross-schema references vs schema-bound queries, Remote Data, deleting, `Entity` vs `Dataset` |
 | `real-world.md` | production form shapes |
 
@@ -99,6 +101,8 @@ Loaded on demand — read the file that matches the question.
 | `system-objects.md` | `#global` / `#nav` / `#row` / page / section / dataset context |
 | `string-operations.md` | string methods + output escaping / XSS safety |
 | `dom-media.md` | DOM output; format templates in their DOM-styling role; `$CMS_REF$` media |
+| `snippets.md` | the Snippet tab: thumbnail, label and extract, where they show, expression syntax, restrictions |
+| `preview-image.md` | the template's preview image (Properties tab), shown when the template is chosen; not the snippet |
 | `pdf-fop.md` | PDF output through a second template set and the Apache FOP module: setup, page sequences, bookmarks, table of contents, format templates for lists and tables in XSL-FO |
 | `navigation-function.md` | the `Navigation` header function: the six hooks and their order, `expansionVisibility` values, `wholePathSelected`, `#nav`, breadcrumb |
 | `page-group.md` | the `PageGroup` header function: previous/next/first/last fragments, table of contents, `groupSize` |

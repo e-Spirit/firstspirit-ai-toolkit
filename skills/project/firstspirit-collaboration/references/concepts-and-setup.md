@@ -173,7 +173,7 @@ deprecation path. Practically:
 
 ## Prerequisites, installation, activation
 
-> **Source of truth:** the Crownpeak
+> **Source of truth:** the FirstSpirit
 > [Collaboration installation guide](https://docs.crownpeak.com/firstspirit/collaboration/installation-guide/).
 > The summary below is for orientation; follow the guide for the authoritative,
 > current steps. **Cloud-hosted setups differ from local servers** — the guide

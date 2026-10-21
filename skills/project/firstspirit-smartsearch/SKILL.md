@@ -14,9 +14,9 @@ description: >-
   headless), and on-prem operations (ZooKeeper, Solr, application.yml, LDAP/OIDC, SSL,
   5.11 systemd, updates). Not for licensing positioning.
 metadata:
-  source-commit: "ba64160"
-  published: "2026-10-14"
-  toolkit-version: "0.5.0"
+  source-commit: "92709aa"
+  published: "2026-10-21"
+  toolkit-version: "0.6.0"
 ---
 
 > **Beta.** Early public release. Feedback welcome; behaviour and structure may change.
@@ -103,7 +103,7 @@ SmartSearch 5.12.1 (release notes to 5.13.0), Connect 1.15.2, smartsearch.js 1.4
 ## Where other skills take over
 
 - **Positioning, licensing (usage-based, own credentials), which customers it suits**:
-  `the FirstSpirit product documentation (hosting choice, modules, licensing)/references/extensions-and-modules.md` (*SmartSearch*).
+  `firstspirit-technical-product-knowledge/references/extensions-and-modules.md` (*SmartSearch*).
 - **CaaS, CaaS Connect, URL factories, CaaS document URLs** for the headless use case:
   `firstspirit-headless/references/caas-connect.md`.
 - **Metadata and table templates, input components, rules** (for the noindex toggle):

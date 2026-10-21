@@ -5,7 +5,7 @@ FirstSpirit Access API jar, and a compatible Java runtime with the right flags.
 
 ## 1. Install fsdevtools
 
-FS-CLI is the open-source **fsdevtools** tool, released by e-Spirit/Crownpeak on
+FS-CLI is the open-source **fsdevtools** tool, released by FirstSpirit on
 GitHub. It is a Java application distributed as a `.tar.gz` / `.zip` with a
 `bin/fs-cli.sh` (and `bin/fs-cli.cmd` on Windows).
 

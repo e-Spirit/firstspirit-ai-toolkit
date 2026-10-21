@@ -4,8 +4,8 @@ description: >-
   FirstSpirit Cloud (the managed SaaS on AWS): what the platform does differently or
   does not allow, and how to build and run a project on it. Covers the constraints to
   plan around (no server file-system or server-admin access, no custom global web apps,
-  locked configuration, self-service vs Support request, SSO and MFA limits, CaaS not
-  backed up), the DEV/QA/PROD stages and promotion, Git-based development and Template
+  locked configuration, self-service vs Support request, SSO and MFA limits, backup
+  scope of FirstSpirit and CaaS), the DEV/QA/PROD stages and promotion, Git-based development and Template
   Transport, identity and access (Keycloak realms, external IdPs), hosting and delivery
   (S3 + CloudFront caching, invalidation, deploy and generation options, redirects) and
   operations (patch days, backup and recovery, logging, incidents, go-live checklist).
@@ -14,9 +14,9 @@ description: >-
   "set up SSO", "when are the patch days", "is my content backed up", "go-live
   checklist".
 metadata:
-  source-commit: "ba64160"
-  published: "2026-10-14"
-  toolkit-version: "0.5.0"
+  source-commit: "92709aa"
+  published: "2026-10-21"
+  toolkit-version: "0.6.0"
 ---
 
 > **Beta.** Early public release. Feedback welcome; behaviour and structure may change.
@@ -28,14 +28,14 @@ Cloud** — the managed SaaS on AWS — this skill answers *what the Cloud
 does differently, what it does not allow, and how to develop and maintain a
 project on it well.*
 
-It sits **below** the FirstSpirit product documentation (hosting choice, modules, licensing). That skill makes
+It sits **below** `firstspirit-technical-product-knowledge`. That skill makes
 the **decision** (*Cloud vs. self-hosted, static vs. headless, which modules,
 which edition*). This skill takes over **after Cloud is chosen** and owns the
 operational reality: the constraints to plan around and the recommended
 practice. Use it to **signal a limitation before it bites a plan**, not to
 re-argue the hosting choice.
 
-> **Naming & branding → follow the FirstSpirit product documentation (hosting choice, modules, licensing).** The
+> **Naming & branding → follow `firstspirit-technical-product-knowledge`.** The
 > product is **FirstSpirit** (the managed service is **FirstSpirit Cloud** / "the
 > platform"); **Crownpeak Technology GmbH** is only the **legal entity**, used
 > where a legal entity is required. The branding is **in transition and not yet
@@ -72,7 +72,7 @@ constraints below.
    └───────────────┬───────────────────────┬───────────────────┘
         static push │                       │ headless pull
      S3 + CloudFront CDN                 CaaS (JSON) + Nav Service
-   (only FirstSpirit is backed up ── CaaS needs its own backup)
+   (FirstSpirit backed up; CaaS backed up periodically, confirm scope)
 ```
 
 ## The five things a Cloud plan must account for
@@ -99,8 +99,8 @@ Governance/status/KB links), see
   Cloud-native way to meet the need** — don't let it surface at go-live. The
   constraints list is [cloud-constraints.md](references/cloud-constraints.md).
 - **Say self-service vs. Support request.** For each capability, this skill
-  states whether the customer configures it or must **raise a request with the
-  Cloud team**. Where the boundary is not documented, it is flagged as **open**,
+  states whether the customer configures it or must **raise a Support
+  request**. Where the boundary is not documented, it is flagged as **open**,
   not guessed.
 - **Frame by project stage.** A pre-launch project can absorb changes cheaply; a
   **production** project carries migration and cutover cost (patch windows,
@@ -149,15 +149,16 @@ Governance/status/KB links), see
 - **When are the patch days?** Roughly every **4 weeks**, **07:00–09:00 CET**;
   **none in December** or near **Black Friday / Cyber Monday**. →
   [operations-and-maintenance.md](references/operations-and-maintenance.md)
-- **Is my content backed up?** **FirstSpirit is** backed up by the platform. If you
-  deliver headless, **CaaS is not — plan a separate backup.** →
+- **Is my content backed up?** **FirstSpirit is** backed up by the platform, and CaaS data in the SaaS
+  environment is backed up periodically; confirm scope and restore with your CSM or
+  Support, and back up a CaaS you run yourself. →
   [operations-and-maintenance.md](references/operations-and-maintenance.md)
 
 ## What this skill is *not* (point at these, don't restate)
 
 | If the question is really about… | Use |
 | --- | --- |
-| **Whether** to use Cloud vs. self-hosted, static vs. headless, which module, which edition | **the FirstSpirit product documentation (hosting choice, modules, licensing)** |
+| **Whether** to use Cloud vs. self-hosted, static vs. headless, which module, which edition | **firstspirit-technical-product-knowledge** |
 | Headless platform internals — CaaS REST/GraphQL, `toJson`, Navigation Service JSON, OCM/TPP/SNAP | **firstspirit-headless** |
 | Designing/structuring templates (incl. for headless) | **firstspirit-template-design** |
 | Template-language & GOM syntax / datatypes / rules | **firstspirit-templating-reference** |

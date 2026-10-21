@@ -14,9 +14,9 @@ description: >-
   "LicenseException on an AI request" or "isAvailable() is false". Not for Collaboration's
   AI agents, licensing positioning or module packaging basics.
 metadata:
-  source-commit: "ba64160"
-  published: "2026-10-14"
-  toolkit-version: "0.5.0"
+  source-commit: "92709aa"
+  published: "2026-10-21"
+  toolkit-version: "0.6.0"
 ---
 
 > **Beta.** Early public release. Feedback welcome; behaviour and structure may change.
@@ -29,8 +29,8 @@ the four assistants, the AI Content Review workflow, Collaboration's AI agents a
 scripts — runs on **one model connection** and **one prompt configuration**. Get those two
 right and the rest follows.
 
-> First pass from the product documentation and the API sources, not yet confirmed by the
-> AI Suite product team; statements tagged `[verify]` are the open ones.
+> Beta. Written from the product documentation and the API sources; statements tagged
+> `[verify]` are not yet confirmed and are the open ones.
 
 ## The mental model (read this before answering)
 
@@ -88,7 +88,7 @@ right and the rest follows.
 ## Where other skills take over
 
 - **Positioning, licensing tiers, which customers it suits**:
-  `the FirstSpirit product documentation (hosting choice, modules, licensing)/references/extensions-and-modules.md` (*AI Suite*).
+  `firstspirit-technical-product-knowledge/references/extensions-and-modules.md` (*AI Suite*).
 - **Collaboration's `@FirstSpiritAI` and custom agents** (license, `@name`, `AI_AGENT`
   participants): `firstspirit-collaboration/references/concepts-and-setup.md` (*AI agents are
   configured, not called from this API*). A custom agent is a prompt operation configured here.
@@ -101,7 +101,7 @@ right and the rest follows.
 
 ## Sources
 
-Crownpeak AI Suite docs (beta, `docs.crownpeak.com/ai-suite/`, read 2026-10-02), the older
+FirstSpirit AI Suite docs (beta, `docs.crownpeak.com/ai-suite/`, read 2026-10-02), the older
 ContentCreator AI-tools docs (`docs.e-spirit.com/contentcreator/ai-powered-tool/`), the online
 Javadoc of `de.espirit.firstspirit.ai` (version history), `javap` against the 5.2.261011 runtime
 jar, and read-only FirstSpirit Core source for license and discovery behaviour. Evidence tags:

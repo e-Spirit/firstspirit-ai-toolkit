@@ -3,7 +3,7 @@
 The Cloud-specific behaviour of **static delivery**: how generated output reaches
 the audience, how caching and invalidation work, how redirects behave, and the
 gotchas to plan around. This is the *how it behaves on the Cloud* reference;
-**whether** to go static vs. headless is a the FirstSpirit product documentation (hosting choice, modules, licensing)
+**whether** to go static vs. headless is a `firstspirit-technical-product-knowledge`
 decision, and the headless platform internals are `firstspirit-headless`.
 
 ## The static delivery path
@@ -39,7 +39,7 @@ FirstSpirit ──generate──▶ S3 (aws-services-s3deployment) ──▶ Clo
 > delivery path in FirstSpirit Cloud**; the modules are technically installable
 > **self-hosted** too (they need Isolated Mode). It's documented here because the
 > Cloud is where it's the norm. For the hosting *decision*, see
-> the FirstSpirit product documentation (hosting choice, modules, licensing).
+> `firstspirit-technical-product-knowledge`.
 
 ## Caching — the defaults that surprise people
 
@@ -156,7 +156,7 @@ configuration.
 - **Confirm delivery-layer security ownership** (self-service vs. Support) before
   committing.
 - For **headless** delivery instead, jump to `firstspirit-headless` and remember
-  **CaaS needs its own backup** (see operations).
+  **check the CaaS backup scope** (see operations).
 
 ---
 

@@ -37,12 +37,12 @@ go from *a component in a form* (or in a sync export) to *how its value is acces
 | `CMS_INPUT_LINK` | `Link` | `$CMS_VALUE(st_x)$` | output is whatever the **link template** used here produces |
 | `FS_REFERENCE` | `TargetReference` | `$CMS_REF(st_x)$` | `$CMS_REF$` resolves URL/link (media: `resolution:"…"`, `abs:1` — see notes); `$CMS_VALUE(st_x)$` gives the object, `st_x.get` the referenced element (`IDProvider`) |
 | `FS_CATALOG` | `CatalogAccessor` / `Catalog<Catalog$Card>` | per item: `$CMS_FOR(item, st_x)$$CMS_VALUE(item)$$CMS_END_FOR$` · or `st_x.getItems().get(n)` | has an included section/link `<TEMPLATE>`, so each card can render itself — see notes |
-| `CMS_INPUT_LIST` | `Set<Option>` | `$CMS_VALUE(st_x)$` | **legacy** (prefer `FS_CATALOG`/`FS_INDEX`); renders via included template, or loop — see notes |
+| `CMS_INPUT_LIST` | `Set<Option>` | `$CMS_VALUE(st_x)$` | same stored type as `CMS_INPUT_CHECKBOX` (they exchange); list box instead of checkboxes; for many entries (>100) use `FS_INDEX` `[odfs]`; loop as for the checkbox, not a catalog |
 | `FS_INDEX` | `Index<Index$Record>` | `$CMS_VALUE(st_x.values.first.<field>)$` · loop `st_x.values` | records reached via `.values`; **no included template → bare `$CMS_VALUE(st_x)$` does not render it** — see notes |
 | `FS_DATASET` | `DatasetContainer` | `$CMS_VALUE(st_x)$` | one referenced dataset; fields reached through the container (in scripts: `getData()` / entity access) |
 | `CMS_INPUT_IMAGEMAP` | `MappingMedium` | `$CMS_FOR(for_area, st_x.areas)$…$CMS_END_FOR$` | **loop over `.areas`** — see notes |
-| `CMS_INPUT_PERMISSION` | `Permissions` | (permission checks) | access-control object, not typical output |
-| `CMS_INPUT_SECTIONLIST` | `List<SectionListEntry>` | `$CMS_FOR(entry, st_x)$…$CMS_END_FOR$` | in-page section navigation |
+| `CMS_INPUT_PERMISSION` | `Permissions` | `.getAllowed("<activity>")` on the metadata value, with the DynamicPersonalization tags | access-control object, not typical output; see `gom/references-links.md` |
+| `CMS_INPUT_SECTIONLIST` | `List<SectionListEntry>` | `$CMS_FOR(entry, st_x)$…$CMS_END_FOR$` | in-page section navigation; entry has `anchorName`, `text`, `sectionName` — see `gom/catalogs-indexes.md` |
 | `FS_BUTTON` | *(no stored value)* | two use cases — see notes | form action (no output) **or** preview action (`fsbutton(...)` in ContentCreator) |
 
 ## Access notes
@@ -87,13 +87,13 @@ is just the entry's value string — the database resolution below is a separate
   or its primary key `fs_id` when the row has no GID. `[odfs]` `[core]` Details and the
   schema-side facts: `gom/database-schema.md`.
 - Columns of the row: `$CMS_VALUE(st_x.value.<column>)$` — the `Entity` is a map of column
-  values `[jar]`; `st_x.value.id` for the `fs_id` is production knowledge, `[verify]` against a
+  values `[jar]`; `st_x.value.id` for the `fs_id` is not yet verified, `[verify]` against a
   DB-connected form.
 
 *(The reference projects contain no DB-connected selection input, so only the plain-list form
-above is corroborated there; the stored-value facts come from the ODFS and the product source.)*
+above is corroborated there; the stored-value facts come from the ODFS.)*
 
-### FS_CATALOG / CMS_INPUT_LIST — per-item rendering
+### FS_CATALOG — per-item rendering
 
 An `FS_CATALOG` carries an included `<TEMPLATE>` (its section or link template), so **each card
 renders itself**. Reach the cards two ways — a loop, or an indexed accessor:
@@ -140,8 +140,7 @@ So check the DAP: `.values.first.<field>` is the common shape, but commerce DAPs
 `.identifiers[n]` (the external id) or `.values[n].<method>`. Guard with `.isEmpty()`.
 
 Neither a bare `$CMS_VALUE` nor a blanket `$CMS_FOR` is the right access: bare-value rendering is
-unsupported, and the real access is `.values.first`. Verified across 16 `FS_INDEX` uses in the Connect-for-Commerce and SAP-Commerce
-reference projects. Note those all use **commerce/external DAPs**, not `DatasetDataAccessPlugin`.
+unsupported, and the real access is `.values.first`. The Connect-for-Commerce and SAP-Commerce reference projects use this access throughout. Note those all use **commerce/external DAPs**, not `DatasetDataAccessPlugin`.
 
 ### Imagemap — loop over areas
 
@@ -199,15 +198,14 @@ $CMS_END_IF$
 
 | Component | Status | Use instead |
 |---|---|---|
-| `FS_LIST` | removed (deprecated v5.2R3, discontinued Jan 2020) | by type — see `deprecated.md` |
+| `FS_LIST` | removed (deprecated v5.2R3, removed in 2020-07) | by type — see `deprecated.md` |
 | `CMS_INPUT_PICTURE` | deprecated | `FS_REFERENCE` with a `picture` filter |
 
 ## Sources
 
 Datatypes verified against the GOM component definitions in `references/gom/` (`Returns`) and the official datatype pages of the
-template-syntax documentation. Access idioms reflect production usage where the
-source pages were thin or stale, and were cross-checked against three official e-Spirit reference
-projects (Connect for Commerce, SAP Commerce Cloud / ContentConnect, COMS Marketplace) — all
-headless/CaaS, deploying without errors. Where an idiom is corroborated or, conversely, not
+template-syntax documentation. Access idioms are cross-checked against three official e-Spirit reference
+projects (Connect for Commerce, SAP Commerce Cloud / ContentConnect, COMS Marketplace), all
+headless/CaaS. Where an idiom is corroborated or, conversely, not
 exercised by that (headless) corpus, the notes say so. For the full method list of a datatype, read
 its source page; for component attributes and form examples, read the matching `gom/*.md` file.

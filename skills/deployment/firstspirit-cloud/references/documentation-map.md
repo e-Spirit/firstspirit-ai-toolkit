@@ -5,7 +5,7 @@ portfolio skill. **Point here; don't restate** — especially the Governance
 Center and the status page, which are canonical and change.
 
 > **Naming & branding:** follow the rule in
-> the FirstSpirit product documentation (hosting choice, modules, licensing) (`product-overview.md` "Naming &
+> `firstspirit-technical-product-knowledge` (`product-overview.md` "Naming &
 > branding") — **FirstSpirit**-first, "Crownpeak" only as the legal entity. It's
 > **mid-transition**, so the docs and URLs below still carry legacy names; the
 > hosts (`docs.crownpeak.com` / `docs.e-spirit.com`, being consolidated under
@@ -28,7 +28,7 @@ Center and the status page, which are canonical and change.
 
 | Topic | Source | Owner |
 | --- | --- | --- |
-| Reference architectures (static / headless / commerce) | docs.crownpeak.com/reference-architectures/firstspirit/ | the FirstSpirit product documentation (hosting choice, modules, licensing) (decision) / firstspirit-headless (headless depth) |
+| Reference architectures (static / headless / commerce) | docs.crownpeak.com/reference-architectures/firstspirit/ | firstspirit-technical-product-knowledge (decision) / firstspirit-headless (headless depth) |
 | Static hosting, configuration, caching, invalidation | AWS S3 deployment module doc (docs.e-spirit.com, **DE — being reworked to EN/DE**) | this skill (hosting-and-delivery) |
 | URL redirects | docs.crownpeak.com/firstspirit/url-redirect-module/ | this skill (points here for detail) |
 | Own-webserver delivery (rsync) | docs.crownpeak.com/firstspirit/rsync-deployment/ | this skill (alternative path) |
@@ -37,7 +37,7 @@ Center and the status page, which are canonical and change.
 
 | Topic | Source | Owner |
 | --- | --- | --- |
-| Template Development Guide (root) — Cloud env, developing/distributing templates | docs.crownpeak.com/template-development-guide/ | template *technology* → firstspirit-template-design / firstspirit-templating-reference (the FirstSpirit product documentation (hosting choice, modules, licensing) routes there); the **Cloud Git workflow** sub-page → this skill |
+| Template Development Guide (root) — Cloud env, developing/distributing templates | docs.crownpeak.com/template-development-guide/ | template *technology* → firstspirit-template-design / firstspirit-templating-reference (firstspirit-technical-product-knowledge routes there); the **Cloud Git workflow** sub-page → this skill |
 | Git-based / distributed development | docs.crownpeak.com/template-development-guide/distributed-development-of-firstspirit-projects/ (**2026.8; link it prominently; it is the page people look for**) | this skill (environments-and-workflow) |
 | Templates (template language, GOM, rules) | ODFS (docs.e-spirit.com/odfs/) + Training | firstspirit-template-design / firstspirit-templating-reference |
 | Module development (FSM) | docs.crownpeak.com/module-development-guide/ | firstspirit-module-development |
@@ -60,7 +60,7 @@ Center and the status page, which are canonical and change.
 
 | Topic | Source | Owner |
 | --- | --- | --- |
-| Hosting model differences, Cloud-specific limits (file-system/roles/config, module availability) | docs.crownpeak.com/firstspirit/cloud-vs-self-hosted/hosting-model-differences/ | this skill (cloud-constraints) — also the hosting *decision* in the FirstSpirit product documentation (hosting choice, modules, licensing) |
+| Hosting model differences, Cloud-specific limits (file-system/roles/config, module availability) | docs.crownpeak.com/firstspirit/cloud-vs-self-hosted/hosting-model-differences/ | this skill (cloud-constraints) — also the hosting *decision* in firstspirit-technical-product-knowledge |
 | Cloud-specific processes (support-ticket actions, custom-module pipeline, external-DB/staging/archive/logging specifics) | docs.crownpeak.com/firstspirit/cloud-vs-self-hosted/cloud-specific-processes/ | this skill (cloud-constraints, environments-and-workflow, operations) |
 
 ## Parked (future configuration/admin skill)

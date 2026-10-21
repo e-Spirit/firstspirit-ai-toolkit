@@ -194,3 +194,32 @@ Key points:
 - `simpleMode="yes"` uses simplified hotspot drawing
 - `<LINKEDITORS>` defines what link templates are available for each hotspot
 - `<PROJECTS>` restricts the image source folder
+
+## CMS_INPUT_PERMISSION -- User permissions
+
+Assigns user permissions (not editorial rights) on the basis of a hierarchical permission group. The
+result is evaluated with the DynamicPersonalization tags. `[odfs]` FirstSpirit 2026.11, *CMS_INPUT_PERMISSION*.
+
+```xml
+<CMS_INPUT_PERMISSION name="meta_perm" group="GROUP_IDENTIFIER" hFill="YES">
+  <ACTIVITIES>
+    <ACTIVITY name="Allowed"/>
+  </ACTIVITIES>
+  <LANGINFOS>
+    <LANGINFO lang="*" label="Permissions" description="Who may see this"/>
+  </LANGINFOS>
+</CMS_INPUT_PERMISSION>
+```
+
+Key attributes: `group` (mandatory, the permission group), `priority` (`ALLOW` default, or `DENY`),
+`autoSave` (default NO), `onClick` / `onLoad` / `onSave` (validation scripts). The component has no
+`useLanguages` attribute; `searchRelevancy` exists.
+Child elements: `ACTIVITIES` with `ACTIVITY name=…`, `LANGINFOS`, `BUTTONS`.
+
+Output: stored as `Permissions` (`de.espirit.firstspirit.access.editor.value.Permissions`) `[odfs]`.
+Read the metadata value, then ask it `getAllowed("<activity>")` (returns a `Set<String>`; `isInherited()` also exists) `[jar]` 5.2.261011; use the result with the DynamicPersonalization
+tags `<fsp:isAuthorized>` / `<fsp:isNotAuthorized>` (declare the `fsp` prefix in the page header).
+
+- Default values are **not recommended**: they can make the display differ from the output `[odfs]`.
+- If the component defines no permissions, the `Permissions` object returns an empty list even when
+  permissions are inherited from a higher node; check set or inherited permissions before querying `[odfs]`.

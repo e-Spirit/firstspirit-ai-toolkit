@@ -68,7 +68,7 @@ The agents you reach for most (all via `requireSpecialist(X.TYPE)`):
 | `RenderingAgent` | Render a template/element to a string from code |
 | `UrlAgent` / `UrlCreatorAgent` | `UrlAgent`: the stored SEO and short URL entries (`getSEOUrls()`, `getShortUrls()`); `UrlCreatorAgent`: the available URL-creator specifications. **Neither yields a URL for a given element** `[jar]` — use `ContentProducer.getStoredUrl(...)`, `Media.getStoredUrl(...)` or `PreviewUrlAgent` |
 | `PreviewUrlAgent` / `ClientUrlAgent` | Preview URLs; client (SiteArchitect/ContentCreator) URLs |
-| `SnippetAgent` | The editor snippet (label/thumbnail) for an element |
+| `SnippetAgent` | The editor snippet (thumbnail, header, extract) for an element or form data, as a `SnippetProvider` `[jar]`; shown in search, history and reports (`firstspirit-templating-reference`, `templates/snippets.md`) |
 | `FormsAgent` | Access to form definitions / `FormData` handling |
 | `RuleValidationAgent` / `ValidationAgent` | Run rule/element validation from code. `RuleValidationAgent` on 5.2.261011, not on 5.2.240208 `[jar]` |
 | `ModuleAdminAgent` | Install/configure modules and components (admin) |

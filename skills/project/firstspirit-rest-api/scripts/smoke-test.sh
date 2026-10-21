@@ -25,9 +25,8 @@
 # Raw responses land in results/firstspirit-rest-api/<run>/ (numbered) with requests.log —
 # attach the folder when you report a FAIL — and one summary line per run is appended to
 # logs/firstspirit-rest-api.log. Both live under the output root: $FS_OUT_ROOT if set, else
-# the nearest parent directory holding tracked-skills.tsv (the skills monorepo), else the
-# working directory. This is the portfolio's shared output layout; the directories are
-# git-ignored. Exit code 1 if anything failed.
+# the nearest parent directory holding a tracked-skills.tsv (a checkout of a skill collection),
+# else the working directory. Git-ignore the directories. Exit code 1 if anything failed.
 #
 # O1 keeps a normalised copy of the server's OpenAPI spec per host under
 # results/firstspirit-rest-api/openapi/<host>/ in the shared output root (override:
@@ -438,7 +437,7 @@ if [ "$DO_WRITE" = 1 ]; then
       else fail W4 "GET→jq→PATCH round trip" "PATCH → $PS, read-back content: $(jqr .content | head -c 80)"; fi
 
       # Rule 1: only name and type are required; configuration/description/language are ignored on
-      # write for every editor type (module source). A minimal {name,type,content} PATCH must be accepted.
+      # write for every editor type (SKILL.md → Rule 1). A minimal {name,type,content} PATCH must be accepted.
       jq '{name,type,content}' "$OUT/editor.patched.json" > "$OUT/editor.minimal.json"
       req PATCH "$FBASE/$TEDITOR$SUFFIX" application/json "$OUT/editor.minimal.json"
       case "$STATUS" in
@@ -470,7 +469,7 @@ if [ "$DO_WRITE" = 1 ]; then
     # data-list-attributes (URL-encoded name=value pairs joined by ":|:") plus a style of its own.
     # A <ul> outside a <p> is stored plain, and ContentCreator then resets an editor's type change on
     # save. The payload is built from scratch each time — never GET→PATCH a DOM field with lists (the
-    # server nests the properties and SiteArchitect fails on the section).
+    # server nests the properties and the stored list properties no longer match).
     DFBASE="$P/pages/$CREATED_PAGE/form"
     req GET "$DFBASE"
     DEDITOR="$(jqr '[.editors[]? | select(.type=="CMS_INPUT_DOM")][0].name // empty')"
@@ -784,11 +783,15 @@ if [ "$DO_SCRIPTS" = 1 ]; then
       # S5 — the REST execute context has no getElement()
       printf 'return context.getElement();\n' > "$OUT/script-elm.bsh"
       req PUT "$P/scripts/$TSCRIPT/template-sets/$TSET" text/plain "$OUT/script-elm.bsh"
-      if ! is2xx; then fail S5 "PUT the getElement probe script" "HTTP $STATUS: $(head -c 120 "$BODY") — /execute not judged"
+      if ! is2xx; then
+        fail S5 "PUT the getElement probe script" "HTTP $STATUS: $(head -c 120 "$BODY") — /execute not judged"
       else
-      req POST "$P/scripts/$TSCRIPT/execute" application/json "$OUT/empty.json"   # status-free: judged by the error text, any status
-      if grep -qiE 'getElement|method' "$BODY"; then pass S5 "/execute context has no getElement() (error mentions it) — element-dependent scripts cannot be tested here"
-      else skip S5 "/execute context lacks getElement()" "HTTP $STATUS: $(head -c 120 "$BODY") — record the context class if it worked"; fi
+        req POST "$P/scripts/$TSCRIPT/execute" application/json "$OUT/empty.json"   # status-free: judged by the error text, any status
+        if grep -qiE 'getElement|method' "$BODY"; then
+          pass S5 "/execute context has no getElement() (error mentions it) — element-dependent scripts cannot be tested here"
+        else
+          skip S5 "/execute context lacks getElement()" "HTTP $STATUS: $(head -c 120 "$BODY") — record the context class if it worked"
+        fi
       fi
     fi
   fi

@@ -141,7 +141,7 @@ you don't just upload and install a black-box FSM (arbitrary/complete FSMs are
 
 ### The module repo (Cloud archetype)
 
-The Cloud team provides a **Gradle project archetype** as the Bitbucket repo's
+FirstSpirit Cloud provides a **Gradle project archetype** as the Bitbucket repo's
 initial commit. Its shape is load-bearing for the pipeline — fill it in, don't
 restructure it:
 
@@ -168,7 +168,7 @@ restructure it:
   don't hand-install the FSM. PROD is still a Support ticket on a patch day (see
   *Modules on the Cloud* above). *(Confirm the exact branch→stage mapping for a given
   customer's pipeline.)*
-- **Credentials.** The build resolves two things from the Crownpeak/e-Spirit
+- **Credentials.** The build resolves two things from the FirstSpirit
   **Artifactory** — the **FirstSpirit Module Gradle plugin** and the
   **`fs-isolated-runtime`** artifact — using `artifactory_hosting_username` /
   `artifactory_hosting_password` from the developer's `~/.gradle/gradle.properties`

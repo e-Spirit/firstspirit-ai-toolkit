@@ -9,9 +9,9 @@ description: >
   media upload, content search. Also use when the user mentions "FirstSpirit REST API" or asks how to read/write
   content via the API.
 metadata:
-  source-commit: "ba64160"
-  published: "2026-10-14"
-  toolkit-version: "0.5.0"
+  source-commit: "92709aa"
+  published: "2026-10-21"
+  toolkit-version: "0.6.0"
 ---
 
 > **Beta.** Early public release. Feedback welcome; behaviour and structure may change.
@@ -69,7 +69,7 @@ reference, medium, dataset and section template — use a test project; `--scrip
 `/scripts/…/execute`). Run it once on a new server or after a
 REST-module update; report any FAIL with the `results/firstspirit-rest-api/<run>/` folder attached
 (one line per run is appended to `logs/firstspirit-rest-api.log`; both sit under `FS_OUT_ROOT`,
-else the skills monorepo root, else the working directory — add `results/`, `logs/` and `.env` to your
+else the working directory — add `results/`, `logs/` and `.env` to your
 project's `.gitignore` when you run it inside a repo). The run
 also keeps a snapshot of the server's OpenAPI spec (`results/firstspirit-rest-api/openapi/<host>/` under the shared output root; override with `FS_OPENAPI_SNAPSHOTS`) and prints a
 WARN with a diff when the API surface changed since the last run — the cue to re-check the
@@ -267,11 +267,15 @@ GET    /projects/{id}/media/{uid}/usages
 GET    /projects/{id}/media/{uid}/revisions/    GET .../revisions/{revisionId}
 ```
 
+Media limits seen in `0.0.25-beta` `[observed]` (2026-10-14, one server):
+- The `0.0.25-beta` OpenAPI document offers `GET` and `PATCH` on `medium-folders` and no create operation, and no operation that moves a medium into a folder. Where the folder matters, encode it in the uid (for example `<prefix>_<folder>_<stem>`) and reference by uid.
+- Create with `POST /media/` (type `FILE` or `PICTURE`), then `PUT /media/{uid}/data` as multipart. SVG must be created as `FILE`, not `PICTURE`.
+- `parseFile` (the "Parse file" switch on a CSS file) is readable on `GET` but a `POST` ignores it and a `PATCH` answers `405`; the `actions` endpoint documents `copy` and `release` only. Set it in the client: CSS that needs `$CMS_REF(media:"uid")$` for its assets is uploaded over REST and parsed in the client.
+
 ### Data Sources & Datasets
-> **Dataset writes are not working yet in the beta module** (known limitation of the beta module,
-> verified 2026-10-07). On `0.0.25-beta` creating a dataset answers `500 ValidationError` on every data source
-> tried; treat the create / edit / delete operations below as the documented surface, not as verified
-> behaviour, and read datasets only until a release note says otherwise.
+> **Dataset writes did not work on `0.0.25-beta`** (verified 2026-10-07). Creating a dataset answered
+> `500 ValidationError` on every data source tried; treat the create / edit / delete operations below as the
+> documented surface, not as verified behaviour, and read datasets only; re-test on a newer module.
 > **Changed in this API version.** Datasets are now addressed **directly under the
 > data-source** — the old `/datasets/` path segment is gone (returns 404). Dataset
 > field editing has moved from `PATCH …/{gid}/entity` to the **form editor pattern**
@@ -340,9 +344,13 @@ GET    /projects/{id}/global-content/project-properties
 PATCH  /projects/{id}/global-content/project-properties/form/{editor}
 ```
 
-Added in `0.0.24-beta` `[core]` (the operations are present in the `0.0.25-beta` OpenAPI
-document, their behaviour is not yet probed live) — GCA pages get the same
-body/section/form model as pages, sections by numeric id:
+Added in `0.0.24-beta` `[core]` — GCA pages get the same body/section/form model as pages, sections
+by numeric id. Create, write and fill verified live: `POST` with `{"uid","templateUid"}`, then `PATCH`
+on `/form/{editor}` for text, `FS_REFERENCE` (`uidType` `MEDIASTORE_LEAF`) and `FS_CATALOG` `[observed]`
+(REST module `0.0.25-beta`, 2026-10-14). The page template for a GCA page must exist first, with the form
+fields the template defines. The endpoint list below has no whole-form `GET` for a GCA page; read one
+editor at a time. How a template reads the content is the template language, not REST:
+see `firstspirit-templating-reference`.
 
 ```
 POST   /projects/{id}/global-content/                                  # create GCA page
@@ -401,6 +409,18 @@ Actions: `copy`, `release`. Options for release:
 - `dependentReleaseType`: `NO_DEPENDENT_RELEASE` | `DEPENDENT_RELEASE_NEW_AND_CHANGED`
 - `ensureAccessibility`: ensure page is reachable in SiteStore
 - `recursive`: include children
+
+## Not available over REST
+
+- **Snippets cannot be created over REST** `[observed]` 2026-10-16. A person creates them in the template store in
+  SiteArchitect or in Template Development in ContentCreator; each client has a dedicated step for it. Do not look for an endpoint: write down what
+  the snippet should contain (name, template, field values), say that you did not create it, and hand it over.
+- Template store content cannot be released (see *Actions Pattern*).
+
+## When a call fails
+
+Read the status code and the response body, name the cause in one sentence, change one thing, and read the result back.
+Pasting the error text into the same session is the fastest recovery; do not retry the identical request, and do not change several things at once.
 
 ## Error Codes
 

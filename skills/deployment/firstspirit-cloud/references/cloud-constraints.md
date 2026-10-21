@@ -8,7 +8,7 @@ go-live.
 
 Each item states: what the constraint is, why it exists, and **the Cloud-native
 way to meet the need**. Where a capability is customer-managed vs. a **Support
-request** to the Cloud team, that is called out.
+request**, that is called out.
 
 ## The managed-server constraints (the big four)
 
@@ -45,6 +45,10 @@ they are not instant, and some only take effect on the next **patch day** (see
 - **Deleting a Keycloak user group** — a User-Manager **cannot** delete groups;
   it takes a Support request (empty new groups auto-delete after a preset time).
   See [identity-and-access.md](identity-and-access.md)
+- **Getting the REST API module** (open beta) — raise a Support ticket; Support
+  installs it, for now on **DEV and QA only, not PROD**, with no downtime for
+  clients. On-premise customers download the module from the Download Portal and
+  install it themselves. Owner skill for the API: `firstspirit-rest-api`
 - **Setting up a federation** (partner-realm access) — the **customer** must
   request it from Support; the partner cannot
 
@@ -118,10 +122,10 @@ These bite at **go-live and during content updates**. Depth in
 
 Depth in `firstspirit-headless`; the Cloud-planning facts:
 
-- **CaaS is not backed up by the platform.** Only **FirstSpirit** is backed up.
-  If you deliver via CaaS, a **separate CaaS backup strategy is your
-  responsibility** — the source of truth is FirstSpirit, but a CaaS
-  outage/restore is your plan to make. Call this out in every headless design.
+- **Backup scope differs.** **FirstSpirit** is backed up by the platform, and CaaS
+  data in the SaaS environment is backed up periodically; the reference
+  architectures describe a backup strategy for the FirstSpirit server only. The
+  source of truth is FirstSpirit, so a CaaS restore can be rebuilt from it. Confirm scope, frequency and restore options with your CSM or Support; a CaaS you operate yourself needs your own backup. Call this out in every headless design.
 - **You own the frontend and its caching.** Static delivery gets CloudFront
   caching "for free"; headless means **you implement frontend caching** and
   **hide CaaS API keys behind middleware** (never ship a key to the browser).
@@ -175,7 +179,7 @@ don't present them as Cloud limits:
 If the constraint above is a blocker, **self-hosted** removes some of them (file
 system access, server admin, server-config control) at the cost of owning
 operations, upgrades, backups and delivery infrastructure. That is a **hosting
-decision** — route it to the FirstSpirit product documentation (hosting choice, modules, licensing)
+decision** — route it to `firstspirit-technical-product-knowledge`
 (`hosting-and-deployment.md`); it is not re-decided here. The official
 comparison is the **Cloud vs. Self-Hosted → hosting-model-differences** doc (see
 [documentation-map.md](documentation-map.md)).

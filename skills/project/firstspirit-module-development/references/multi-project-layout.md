@@ -4,7 +4,7 @@ The single-project build in [isolated-mode-and-packaging.md](isolated-mode-and-p
 is right for a module with a handful of components. Split into **subprojects** when the
 module exposes a **Java API other modules or scripts call** (a service interface), when it has
 a **web-app component** that must not drag the server-side implementation into the web
-container, or when third-party libraries should reach only one classloader. Every Crownpeak
+container, or when third-party libraries should reach only one classloader. Every FirstSpirit
 e-commerce connector module is built this way; the shape below is what they share.
 
 ---
@@ -208,7 +208,7 @@ web-app component and bundles few libraries. The split costs a Gradle project pe
 discipline about what may import what. Add the API jar the day another module or a script
 needs to call your service, not before.
 
-> Sources: three Crownpeak e-commerce connector modules in production (Connect for Commerce,
+> Sources: three FirstSpirit e-commerce connector modules in production (Connect for Commerce,
 > ContentConnect for SAP Commerce Cloud, ContentConnect for Salesforce Commerce Cloud), read
 > 2026-09-17. Gradle wiring and annotation usage are `[observed]` in their build files; FirstSpirit
 > interfaces are `[jar]`-verified against the runtime; annotation attributes against the FSM

@@ -3,27 +3,27 @@ name: firstspirit-headless
 description: >-
   Reference for the FirstSpirit headless delivery platform: how content leaves
   FirstSpirit and how a frontend reads and previews it. Covers CaaS Platform (REST and
-  GraphQL on the MongoDB-backed repository: filtering, aggregations, reference
-  resolution, change streams, API keys and secure tokens), CaaS Connect (the toJson
-  document shape, preview vs release collections, media URLs), the Navigation Service
-  (site structure as JSON, seoRouteMap/idMap, route resolution) and OCM / TPP / SNAP
-  (TPP_SNAP and live.js for click-to-edit). Use it for any question about the headless
-  stack itself: "how do I filter a CaaS collection", "how do I build a CaaS
+  GraphQL: filtering, aggregations, reference resolution, change streams, API keys and
+  secure tokens), CaaS Connect (the toJson document shape, preview vs release, media
+  URLs), the Navigation Service (seoRouteMap/idMap, route resolution), OCM / TPP / SNAP
+  (TPP_SNAP and live.js for click-to-edit) and the official client library fsxa-api
+  (FSXARemoteApi, FSXAProxyApi, fetch methods, remote projects). Use it for any question
+  about the headless stack itself: "how do I filter a CaaS collection", "how do I build a CaaS
   aggregation", "what does a CaaS document look like", "how does CaaS Connect deliver
   content", "resolve a URL with the Navigation Service", "OCM vs TPP vs SNAP", "wire
-  click-to-edit with TPP_SNAP", "how does a frontend authenticate to CaaS". Template
+  click-to-edit with TPP_SNAP", "how does a frontend authenticate to CaaS", "fetchByFilter", "fsxa-api remotes". Template
   structure for headless: firstspirit-template-design.
 metadata:
-  source-commit: "ba64160"
-  published: "2026-10-14"
-  toolkit-version: "0.5.0"
+  source-commit: "92709aa"
+  published: "2026-10-21"
+  toolkit-version: "0.6.0"
 ---
 
 > **Beta.** Early public release. Feedback welcome; behaviour and structure may change.
 
 # FirstSpirit headless delivery platform
 
-Factual lookup for the **FirstSpirit (Crownpeak) headless stack** — the pieces
+Factual lookup for the **FirstSpirit headless stack** — the pieces
 that get content out of FirstSpirit and onto a decoupled frontend, and let editors
 preview and edit that frontend inside ContentCreator.
 
@@ -46,10 +46,9 @@ Point at these; do not restate them.
   keys, content modelling) — is **`firstspirit-template-design`**. That material
   is template strategy/structure/conventions and stays there. This skill takes the
   JSON as produced and covers the *platform* that carries it.
-- **Building the frontend** — a Next.js/React app consuming CaaS, Navigation
-  Service and TPP — is not covered; start from the official `fsxa-api` client and
-  PWA template ([caas-platform.md](references/caas-platform.md) → *Official client
-  libraries*).
+- **Framework code** — an app built around the stack — is not covered; the
+  client library it would use is ([fsxa-api.md](references/fsxa-api.md)), with the
+  FirstSpirit PWA template as the example application.
 - **The FirstSpirit REST API** (`/rest/v1/`, editing content in FirstSpirit
   itself) is **`firstspirit-rest-api`** — a different API from CaaS's REST read
   interface.
@@ -99,6 +98,9 @@ Point at these; do not restate them.
   headless preview editing); TPP = ThirdPartyPreview, the mechanism; `TPP_SNAP`
   (via `snap.js` / `live.js`) = the JS API. Click-to-edit binds DOM nodes with
   `data-preview-id`. → [preview-and-editing.md](references/preview-and-editing.md)
+- **Read it from JavaScript:** the official client `fsxa-api`: `FSXARemoteApi` on the server (holds the key),
+  `FSXAProxyApi` in the browser; `fetchNavigation`, `fetchElement`, `fetchByFilter`. →
+  [fsxa-api.md](references/fsxa-api.md)
 - **Don't use `WE_API`/`JC_API` in a headless frontend** — those drive
   FirstSpirit's *own* previews. Use `TPP_SNAP`. →
   [preview-and-editing.md](references/preview-and-editing.md)
@@ -112,6 +114,7 @@ Loaded on demand — read the file that matches the question.
 | [caas-platform.md](references/caas-platform.md) | The CaaS repository: storage hierarchy, REST read API (filter/pagination/resolveRef/HAL), aggregations, GraphQL, WebSocket change streams, API keys & secure tokens, operational limits | You're reading/querying CaaS or securing frontend access |
 | [caas-connect.md](references/caas-connect.md) | The delivery module: the `toJson` document shape (fields, FormData, sections, references, media/rendition URLs), preview vs release, sync, and the "JSON isn't templated" constraint | You need to know what the delivered JSON looks like or how it's produced |
 | [navigation-service.md](references/navigation-service.md) | Site structure as JSON: the REST endpoints, default vs `caas` format (`idMap`/`seoRouteMap`/`structure`), route resolution, customData, security | You're resolving routes or consuming navigation |
+| [fsxa-api.md](references/fsxa-api.md) | The official JavaScript client: the two classes and the recommended server/browser setup, configuration, the fetch methods and filter operators, the value each input component maps to, remote projects and their locale rules, own aggregations, frontend rules | You read headless content from JavaScript, or build a frontend |
 | [preview-and-editing.md](references/preview-and-editing.md) | OCM/TPP/SNAP: the `TPP_SNAP` API (methods, events, dialogs), `data-preview-id` decoration, common flows, OCM button attributes, and the non-headless ODFS JS APIs | You're wiring click-to-edit / on-page editing into a headless frontend |
 | [configuration-and-install.md](references/configuration-and-install.md) | Install, configuration and admin pointers for CaaS Platform, CaaS Connect, Navigation Service and OCM | You need setup pointers |
 

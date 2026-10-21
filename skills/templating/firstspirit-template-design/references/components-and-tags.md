@@ -1,8 +1,8 @@
 # Components, tags and structure
 
-Look-up reference for the FirstSpirit building blocks: stores, template types, input components, CMS tags, datatypes and header functions. Source: FirstSpirit overview material; verify component details in firstspirit-templating-reference. For anything not here, the authoritative source is the ODFS (Online Documentation FirstSpirit).
+Look-up reference for the FirstSpirit building blocks: stores, template types, input components, CMS tags, datatypes and header functions. Verify component details in firstspirit-templating-reference. For anything not here, the authoritative source is the ODFS (Online Documentation FirstSpirit).
 
-**Source of truth.** Within the portfolio, the firstspirit-templating-reference skill owns the component and datatype facts (its `datatypes.md` and GOM references, which track the documentation). This catalogue is the design-oriented view the principles point to; where the two differ, templating-reference wins on the facts.
+**Source of truth.** The firstspirit-templating-reference skill owns the component and datatype facts (its `datatypes.md` and GOM references, which track the documentation). This catalogue is the design-oriented view the principles point to; where the two differ, templating-reference wins on the facts.
 
 **Headless and CaaS.** In a headless project delivered through CaaS, FirstSpirit renders the JSON in a fixed setup and nests components into each other. Design templates for that consumer: keep nesting flatter and shaped around what frontend developers need (see SKILL.md, principles 4 and 7).
 
@@ -53,7 +53,7 @@ Every input component returns a value of a defined type (a Java class or interfa
 | `CMS_INPUT_RADIOBUTTON` | Single selection by activation. |
 | `CMS_INPUT_COMBOBOX` | Single selection via drop-down. |
 | `CMS_INPUT_CHECKBOX` | Any number of selections. |
-| `CMS_INPUT_LIST` | Multiple selection via drop-down. |
+| `CMS_INPUT_LIST` | Multiple selection via drop-down; same stored type as `CMS_INPUT_CHECKBOX`, which it can replace. Above 100 entries use `FS_INDEX`. |
 | `CMS_INPUT_SECTIONLIST` | Build a named list from a page's existing sections. |
 | `CMS_INPUT_LINK` | Supply a link; output via link templates. |
 | `CMS_INPUT_NUMBER` | Numerical values. |
@@ -89,7 +89,7 @@ this view is the design side.
 | `NUMBER` | Long, Integer or Double (per `type`) | none |
 | `DATE` | Date, or Long (timestamp) | none |
 | `DOM` / `DOMTABLE` | FirstSpirit editor | none |
-| `LIST` (legacy) | FirstSpirit editor | foreign key dependency to n — replaced by `FS_INDEX` |
+| `LIST` | FirstSpirit editor | foreign key dependency to n; above 100 rows the ODFS recommends `FS_INDEX` |
 
 ## Reading variables
 
