@@ -68,8 +68,9 @@ CALLS="$(grep -E '"name": ?"(Read|Skill)"' "$TRANSCRIPT" 2>/dev/null || true)"
 
 SKILL_NAMES="$(
   {
-    printf '%s\n' "$CALLS" \
-      | grep -oE 'skills/(templating|project|deployment)/firstspirit-[a-z0-9-]+' \
+    # A Read counts by the file path it opened, not by any text on the line.
+    printf '%s\n' "$CALLS" | grep -E '"name": ?"Read"' \
+      | grep -oE '"file_path": ?"[^"]*skills/(templating|project|deployment)/firstspirit-[a-z0-9-]+' \
       | sed 's#.*/##'
     printf '%s\n' "$CALLS" | grep -E '"name": ?"Skill"' \
       | grep -oE '"skill": ?"(firstspirit-ai-toolkit:)?firstspirit-[a-z0-9-]+"' \
@@ -79,8 +80,8 @@ SKILL_NAMES="$(
 
 FILES_READ="$(
   printf '%s\n' "$CALLS" | grep -E '"name": ?"Read"' \
-    | grep -oE 'skills/(templating|project|deployment)/firstspirit-[a-z0-9-]+/(SKILL\.md|references/[A-Za-z0-9._/-]+\.md)' \
-    | sort -u | head -40
+    | grep -oE '"file_path": ?"[^"]*skills/(templating|project|deployment)/firstspirit-[a-z0-9-]+/(SKILL\.md|references/[A-Za-z0-9._/-]+\.md)' \
+    | sed -E 's#^"file_path": ?"[^"]*(skills/)#\1#' | sort -u | head -40
 )"
 
 # A session that never touched a toolkit skill leaves no note.
@@ -117,7 +118,7 @@ mkdir -p "$DIR" 2>/dev/null || exit 0
 # The folder ignores itself, so a note is never committed by accident.
 [ -f "$DIR/.gitignore" ] || printf '*\n' > "$DIR/.gitignore" 2>/dev/null || true
 
-OUT="$DIR/firstspirit-feedback-$STAMP.md"
+OUT="$DIR/firstspirit-feedback-$STAMP-$$.md"
 
 cat > "$OUT" 2>/dev/null <<EOF || exit 0
 # FirstSpirit AI Toolkit: feedback note

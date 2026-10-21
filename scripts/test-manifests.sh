@@ -140,12 +140,13 @@ case "$ps" in
 esac
 check_hook_command "SessionEnd powershell key" "$ps"
 if [ -f "$REPO_ROOT/hooks/session-end.ps1" ]; then pass "hooks/session-end.ps1 exists"; else fail "hooks/session-end.ps1 exists" "missing"; fi
-# Claude Code gives a SessionEnd hook only a short default, so the entry sets 10 seconds.
-# Gemini reads the same value as milliseconds; the feedback note is opt-in and not
-# supported there. Cursor's own file carries its timeout too.
-assert_json_field "session-end hook sets a timeout of 1 to 10" \
+# Claude Code gives a SessionEnd hook only a short default, so the entry sets a timeout.
+# The same number means seconds to Claude Code and milliseconds to Gemini CLI, which reads
+# this file too. 2000 is 33 minutes for Claude (the hook never runs that long) and 2 seconds
+# for Gemini (one grep pass over the transcript fits). Cursor's own file counts in seconds.
+assert_json_field "session-end timeout fits both units" \
   "$REPO_ROOT/hooks/hooks.json" \
-  '.hooks.SessionEnd[0].hooks[0].timeout | if . != null and . >= 1 and . <= 10 then "yes" else "no" end' "yes"
+  '.hooks.SessionEnd[0].hooks[0].timeout | if . != null and . >= 1000 and . <= 3600 then "yes" else "no" end' "yes"
 check_hook_command "cursor sessionEnd" \
   "$(jq -r '.hooks.sessionEnd[0].command' "$REPO_ROOT/hooks/hooks-cursor.json")"
 
@@ -324,7 +325,7 @@ HOOK_TOKEN="${HOOK_CMD#bash }"
 HOOK_TOKEN="${HOOK_TOKEN%% session-start}"
 
 # Claude: variable exported, ${extensionPath} left untouched.
-as_claude="$(CLAUDE_PLUGIN_ROOT="$REPO_ROOT" bash -c "eval printf '%s' $HOOK_TOKEN" 2>/dev/null)"
+as_claude="$(CLAUDE_PLUGIN_ROOT="$REPO_ROOT" TOK="$HOOK_TOKEN" bash -c 'eval "printf %s $TOK"' 2>/dev/null)"
 assert_eq "resolves for Claude Code" "$REPO_ROOT/hooks/run-hook.cmd" "$as_claude"
 
 # Gemini: substitutes ${extensionPath} itself, sets no variable of its own.
@@ -352,7 +353,7 @@ else
 fi
 
 gemini_token="${HOOK_TOKEN//\$\{extensionPath\}/$REPO_ROOT}"
-as_gemini="$(env -u CLAUDE_PLUGIN_ROOT bash -c "eval printf '%s' $gemini_token" 2>/dev/null)"
+as_gemini="$(env -u CLAUDE_PLUGIN_ROOT TOK="$gemini_token" bash -c 'eval "printf %s $TOK"' 2>/dev/null)"
 assert_eq "resolves for Gemini CLI" "$REPO_ROOT/hooks/run-hook.cmd" "$as_gemini"
 
 # The specific failure the tester saw: an unresolved variable leaves a path

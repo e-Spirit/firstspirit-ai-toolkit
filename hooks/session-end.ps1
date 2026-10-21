@@ -25,7 +25,7 @@ if ($null -eq $in) { exit 0 }
 
 $transcript = [string]$in.transcript_path
 $workdir = [string]$in.cwd
-$reason = ([string]$in.reason) -replace '[^a-z_]', '?'
+$reason = ([string]$in.reason) -creplace '[^a-z_]', '?'
 if ($reason.Length -gt 40) { $reason = $reason.Substring(0, 40) }
 if ([string]::IsNullOrEmpty($transcript) -or -not (Test-Path -LiteralPath $transcript)) { exit 0 }
 if ([string]::IsNullOrEmpty($workdir) -or -not (Test-Path -LiteralPath $workdir)) {
@@ -36,17 +36,21 @@ if (-not (Test-Path -LiteralPath $workdir)) { exit 0 }
 # What the session touched: only Read and Skill tool calls, only toolkit names and paths.
 $names = New-Object System.Collections.Generic.SortedSet[string]
 $files = New-Object System.Collections.Generic.SortedSet[string]
-$callLines = Select-String -LiteralPath $transcript -Pattern '"name": ?"(Read|Skill)"' | ForEach-Object { $_.Line }
+$callLines = Select-String -CaseSensitive -LiteralPath $transcript -Pattern '"name": ?"(Read|Skill)"' | ForEach-Object { $_.Line }
 foreach ($line in $callLines) {
-    foreach ($m in [regex]::Matches($line, 'skills/(templating|project|deployment)/(firstspirit-[a-z0-9-]+)')) {
-        [void]$names.Add($m.Groups[2].Value)
+    if ($line -cmatch '"name": ?"Read"') {
+        foreach ($m in [regex]::Matches($line, '"file_path": ?"[^"]*skills/(?:templating|project|deployment)/(firstspirit-[a-z0-9-]+)')) {
+            [void]$names.Add($m.Groups[1].Value)
+        }
     }
-    foreach ($m in [regex]::Matches($line, '"skill": ?"(?:firstspirit-ai-toolkit:)?(firstspirit-[a-z0-9-]+)"')) {
-        [void]$names.Add($m.Groups[1].Value)
+    if ($line -cmatch '"name": ?"Skill"') {
+        foreach ($m in [regex]::Matches($line, '"skill": ?"(?:firstspirit-ai-toolkit:)?(firstspirit-[a-z0-9-]+)"')) {
+            [void]$names.Add($m.Groups[1].Value)
+        }
     }
-    if ($line -match '"name": ?"Read"') {
-        foreach ($m in [regex]::Matches($line, 'skills/(?:templating|project|deployment)/firstspirit-[a-z0-9-]+/(?:SKILL\.md|references/[A-Za-z0-9._/-]+\.md)')) {
-            [void]$files.Add($m.Value)
+    if ($line -cmatch '"name": ?"Read"') {
+        foreach ($m in [regex]::Matches($line, '"file_path": ?"[^"]*(skills/(?:templating|project|deployment)/firstspirit-[a-z0-9-]+/(?:SKILL\.md|references/[A-Za-z0-9._/-]+\.md))')) {
+            [void]$files.Add($m.Groups[1].Value)
         }
     }
 }
@@ -76,7 +80,7 @@ $ignore = Join-Path $dir '.gitignore'
 $utf8 = New-Object System.Text.UTF8Encoding($false)
 if (-not (Test-Path -LiteralPath $ignore)) { [System.IO.File]::WriteAllText($ignore, "*`n", $utf8) }
 
-$out = Join-Path $dir "firstspirit-feedback-$stamp.md"
+$out = Join-Path $dir "firstspirit-feedback-$stamp-$PID.md"
 $text = @"
 # FirstSpirit AI Toolkit: feedback note
 

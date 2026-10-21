@@ -129,6 +129,28 @@ printf '{"transcript_path":"%s","cwd":"%s","reason":"other"}' "$T" "${W//\"/\\\"
   | env -i PATH="$NOJQ" HOME="$HOME" FIRSTSPIRIT_FEEDBACK=1 "$FAKEROOT/hooks/session-end" >/dev/null 2>&1
 if [ -n "$(note_of "$W")" ]; then pass "an escaped quote in cwd parses with jq absent"; else fail "an escaped quote in cwd parses with jq absent" "none written"; fi
 
+echo "== two notes in the same second do not overwrite each other =="
+W="$(make_workdir twice)"; T="$(make_transcript twice)"
+run_hook "$W" "$T" FIRSTSPIRIT_FEEDBACK=1
+run_hook "$W" "$T" FIRSTSPIRIT_FEEDBACK=1
+assert_eq "two notes written" "2" "$(find "$W/.firstspirit-feedback" -name 'firstspirit-feedback-*.md' | wc -l | tr -d ' ')"
+
+echo "== a toolkit path outside a Read does not count =="
+W="$(make_workdir stray)"
+T="$TMPROOT/stray.jsonl"
+printf '%s\n' '{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Read","input":{"file_path":"/proj/a.java","note":"skills/project/firstspirit-rest-api/SKILL.md"}}]}}' > "$T"
+run_hook "$W" "$T" FIRSTSPIRIT_FEEDBACK=1
+assert_eq "no note when only the text mentions a toolkit path" "" "$(note_of "$W")"
+
+echo "== the PowerShell twin writes the same marker and uses the same hand-in script =="
+for needle in '<!-- end of report: everything below stays on your machine -->' 'submit-feedback.sh'; do
+  if grep -qF -- "$needle" "$HOOK" && grep -qF -- "$needle" "$REPO_ROOT/hooks/session-end.ps1"; then
+    pass "both hooks carry: $needle"
+  else
+    fail "both hooks carry: $needle" "differs between hooks/session-end and hooks/session-end.ps1"
+  fi
+done
+
 # --- submit-feedback.sh -----------------------------------------------------
 
 # A fake gh that records its arguments. FAKE_GH_AUTH=0 makes 'gh auth status' fail;
@@ -239,6 +261,21 @@ assert_eq "a /var path exits 2" "2" "$rc"
 DP="$(filled_note sub8 'The file D:\work\site\x.xml was rejected.')"
 out="$(run_submit "$DP" --yes)"; rc=$?
 assert_eq "a drive path exits 2" "2" "$rc"
+
+TP="$(filled_note sub9 "The REST reference misses the PATCH status.")"
+out="$(run_submit "$TP" --yes --title "see /Users/someone/x")"; rc=$?
+assert_eq "a title with a local path exits 2" "2" "$rc"
+out="$(run_submit "$TP" --yes --title "token: ghp_abcdefghijklmnopqrstuvwxyz0123")"; rc=$?
+assert_eq "a title with a credential exits 2" "2" "$rc"
+# shellcheck disable=SC2088  # the literal tilde is the test input
+for odd in '~/work/x.xml' '/etc/hosts' '\\server\share\x'; do
+  OP="$(filled_note sub10 "The file $odd was rejected.")"
+  out="$(run_submit "$OP" --yes)"; rc=$?
+  assert_eq "path form $odd exits 2" "2" "$rc"
+done
+UP="$(filled_note sub11 "See https://docs.example.com/var/www/page and /var-like words.")"
+out="$(run_submit "$UP")"; rc=$?
+assert_eq "a docs URL is not a local path" "0" "$rc"
 
 out="$(run_submit "$TMPROOT/does-not-exist.md")"; rc=$?
 assert_eq "missing note exits 2" "2" "$rc"

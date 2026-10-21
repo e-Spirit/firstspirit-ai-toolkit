@@ -68,7 +68,7 @@ fi
 
 # A public issue must not carry credentials or local paths. Report line numbers, never the text.
 SECRET_RE='-----BEGIN [A-Z ]*PRIVATE KEY|ghp_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|gho_[A-Za-z0-9]{20,}|AKIA[0-9A-Z]{16}|xox[baprs]-[A-Za-z0-9-]{10,}|authorization:[[:space:]]*(bearer|basic)|(password|passwd|secret|api[_-]?key|token)[[:space:]]*[=:][[:space:]]*[^[:space:]]{6,}'
-PATH_RE='/Users/[A-Za-z0-9._-]+|/home/[A-Za-z0-9._-]+|/(var|opt|srv|mnt|private|tmp|root)/[A-Za-z0-9._-]+|[A-Za-z]:\\[A-Za-z0-9._ -]+'
+PATH_RE='(^|[^A-Za-z0-9:/._~-])(/(Users|home|var|opt|srv|mnt|private|tmp|root|etc)/[A-Za-z0-9._-]+|~/[A-Za-z0-9._-]+)|[A-Za-z]:\\[A-Za-z0-9._ -]+|\\\\[A-Za-z0-9._-]+\\[A-Za-z0-9$._-]+'
 
 hits="$(grep -nEi -e "$SECRET_RE" "$BODY" | cut -d: -f1 | tr '\n' ' ')"
 if [ -n "$hits" ]; then
@@ -79,6 +79,17 @@ hits="$(grep -nE -e "$PATH_RE" "$BODY" | cut -d: -f1 | tr '\n' ' ')"
 if [ -n "$hits" ]; then
   echo "Not posted: line(s) $hits contain a local file path. Remove it and try again." >&2
   exit 2
+fi
+# The title goes to the same public issue, so it gets the same checks. It is one line.
+if [ -n "$TITLE" ]; then
+  if printf '%s\n' "$TITLE" | grep -qEi -e "$SECRET_RE"; then
+    echo "Not posted: the title looks like a credential. Remove it and try again." >&2
+    exit 2
+  fi
+  if printf '%s\n' "$TITLE" | grep -qE -e "$PATH_RE"; then
+    echo "Not posted: the title contains a local file path. Remove it and try again." >&2
+    exit 2
+  fi
 fi
 
 if [ -z "$TITLE" ]; then
@@ -93,7 +104,7 @@ manual_route() {
   echo "Manual route: open an issue at https://github.com/$REPO/issues and paste the report." >&2
   if [ -n "$report" ]; then
     echo "The report text alone is in $report" >&2
-    echo "With gh: gh issue create --repo $REPO --title \"$TITLE\" --body-file \"$report\"" >&2
+    printf 'With gh: gh issue create --repo %q --title %q --body-file %q\n' "$REPO" "$TITLE" "$report" >&2
   fi
 }
 

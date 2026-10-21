@@ -35,7 +35,7 @@ updates to nine existing skills.
   existing text to match.
 - **New: session-end feedback hook** — an opt-in note at the end of a session and a hand-in of
   feedback as a GitHub issue (`hooks/session-end`, `scripts/submit-feedback.sh`). Nothing is
-  sent without your confirmation. See `using-firstspirit-toolkit` for how to turn it on. It is
+  sent without your confirmation. The README says how to turn it on (`FIRSTSPIRIT_FEEDBACK=1`). It is
   registered for Claude Code and Cursor; the transcript is read in one pass, and the version
   without `jq` reads escaped paths.
 - **`firstspirit-template-design`** — choosing an input component from an editor's need, common
