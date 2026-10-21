@@ -132,7 +132,7 @@ for spec in "hooks/hooks.json#.hooks.SessionStart[0].hooks[0].powershell" \
 done
 if [ -f "$REPO_ROOT/hooks/session-start.ps1" ]; then pass "hooks/session-start.ps1 exists"; else fail "hooks/session-start.ps1 exists" "missing"; fi
 
-echo "== the session-end hook has a bash command, a PowerShell twin, and a short timeout =="
+echo "== the session-end hook has a bash command, a PowerShell twin, and no shared timeout =="
 ps="$(jq -r '.hooks.SessionEnd[0].hooks[0].powershell // empty' "$REPO_ROOT/hooks/hooks.json")"
 case "$ps" in
   *'-ExecutionPolicy Bypass -File'*'/hooks/session-end.ps1'*) pass "hooks/hooks.json SessionEnd has a PowerShell variant" ;;
@@ -140,9 +140,12 @@ case "$ps" in
 esac
 check_hook_command "SessionEnd powershell key" "$ps"
 if [ -f "$REPO_ROOT/hooks/session-end.ps1" ]; then pass "hooks/session-end.ps1 exists"; else fail "hooks/session-end.ps1 exists" "missing"; fi
-assert_json_field "session-end hook has a timeout of at most 10 seconds" \
-  "$REPO_ROOT/hooks/hooks.json" \
-  '.hooks.SessionEnd[0].hooks[0].timeout | if . != null and . <= 10 then "yes" else "no" end' "yes"
+# Gemini reads "timeout" as milliseconds, so the shared file carries none; the hook itself
+# makes one pass over the transcript and Cursor's own file carries a timeout in seconds.
+assert_json_field "session-end hook carries no shared timeout" \
+  "$REPO_ROOT/hooks/hooks.json" '.hooks.SessionEnd[0].hooks[0] | has("timeout") | tostring' "false"
+check_hook_command "cursor sessionEnd" \
+  "$(jq -r '.hooks.sessionEnd[0].command' "$REPO_ROOT/hooks/hooks-cursor.json")"
 
 echo "== PowerShell scripts are pure ASCII =="
 # Windows PowerShell 5.1 reads a BOM-less .ps1 in the ANSI code page. A UTF-8 em dash

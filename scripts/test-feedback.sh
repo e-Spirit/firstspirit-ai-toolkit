@@ -123,6 +123,12 @@ W="$(make_workdir nojq)"; T="$(make_transcript nojq)"
 run_hook "$W" "$T" FIRSTSPIRIT_FEEDBACK=1 PATH="$NOJQ"
 if [ -n "$(note_of "$W")" ]; then pass "note written with jq absent"; else fail "note written with jq absent" "none written"; fi
 
+# A cwd containing a quote, as JSON writes it (\"), read without jq.
+W="$TMPROOT/q\"b"; mkdir -p "$W"; T="$(make_transcript esc)"
+printf '{"transcript_path":"%s","cwd":"%s","reason":"other"}' "$T" "${W//\"/\\\"}" \
+  | env -i PATH="$NOJQ" HOME="$HOME" FIRSTSPIRIT_FEEDBACK=1 "$FAKEROOT/hooks/session-end" >/dev/null 2>&1
+if [ -n "$(note_of "$W")" ]; then pass "an escaped quote in cwd parses with jq absent"; else fail "an escaped quote in cwd parses with jq absent" "none written"; fi
+
 # --- submit-feedback.sh -----------------------------------------------------
 
 # A fake gh that records its arguments. FAKE_GH_AUTH=0 makes 'gh auth status' fail;

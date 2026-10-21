@@ -5,6 +5,12 @@
       {
         "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/run-hook.cmd\" session-start"
       }
+    ],
+    "sessionEnd": [
+      {
+        "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/run-hook.cmd\" session-end",
+        "timeout": 10
+      }
     ]
   }
 }

@@ -19,8 +19,7 @@
           {
             "type": "command",
             "command": "bash \"${CLAUDE_PLUGIN_ROOT}${extensionPath}/hooks/run-hook.cmd\" session-end",
-            "powershell": "powershell -NoProfile -ExecutionPolicy Bypass -File \"${CLAUDE_PLUGIN_ROOT}${extensionPath}/hooks/session-end.ps1\"",
-            "timeout": 5
+            "powershell": "powershell -NoProfile -ExecutionPolicy Bypass -File \"${CLAUDE_PLUGIN_ROOT}${extensionPath}/hooks/session-end.ps1\""
           }
         ]
       }

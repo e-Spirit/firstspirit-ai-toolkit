@@ -40,7 +40,11 @@ json_field() {
   if command -v jq >/dev/null 2>&1; then
     printf '%s' "$INPUT" | jq -r --arg k "$1" '.[$k] // empty' 2>/dev/null
   else
-    printf '%s' "$INPUT" | sed -n 's/.*"'"$1"'"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -1
+    # Without jq: take the string value up to the first unescaped quote, then undo the
+    # JSON escapes that occur in paths (\\ and \" and \/).
+    printf '%s' "$INPUT" \
+      | sed -En 's/.*"'"$1"'"[[:space:]]*:[[:space:]]*"(([^"\\]|\\.)*)".*/\1/p' | head -1 \
+      | sed -e 's#\\/#/#g' -e 's#\\"#"#g' -e 's#\\\\#\\#g'
   fi
 }
 
@@ -57,19 +61,24 @@ fi
 # --- What the session touched ------------------------------------------------
 # Only Read and Skill tool calls count, and only toolkit paths and names match.
 
+# One pass over the transcript: only the Read and Skill tool-call lines are kept, and
+# everything below works on those lines. A long session has a large transcript, and the
+# hook runs under a short timeout.
+CALLS="$(grep -E '"name": ?"(Read|Skill)"' "$TRANSCRIPT" 2>/dev/null || true)"
+
 SKILL_NAMES="$(
   {
-    grep -E '"name": ?"(Read|Skill)"' "$TRANSCRIPT" 2>/dev/null \
+    printf '%s\n' "$CALLS" \
       | grep -oE 'skills/(templating|project|deployment)/firstspirit-[a-z0-9-]+' \
       | sed 's#.*/##'
-    grep -E '"name": ?"Skill"' "$TRANSCRIPT" 2>/dev/null \
+    printf '%s\n' "$CALLS" | grep -E '"name": ?"Skill"' \
       | grep -oE '"skill": ?"(firstspirit-ai-toolkit:)?firstspirit-[a-z0-9-]+"' \
       | sed -e 's/^"skill": *"//' -e 's/"$//' -e 's/^firstspirit-ai-toolkit://'
   } | sort -u
 )"
 
 FILES_READ="$(
-  grep -E '"name": ?"Read"' "$TRANSCRIPT" 2>/dev/null \
+  printf '%s\n' "$CALLS" | grep -E '"name": ?"Read"' \
     | grep -oE 'skills/(templating|project|deployment)/firstspirit-[a-z0-9-]+/(SKILL\.md|references/[A-Za-z0-9._/-]+\.md)' \
     | sort -u | head -40
 )"
