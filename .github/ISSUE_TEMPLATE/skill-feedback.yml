@@ -1,0 +1,38 @@
+name: Skill feedback
+description: Something wrong, unclear, or missing in a FirstSpirit skill? Tell us.
+title: "[feedback] "
+labels: ["feedback"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. Keep it short — even one line helps. If you were using an AI assistant with the toolkit,
+        just ask it to "report this as a skill issue" and it will fill this in for you.
+  - type: input
+    id: skill
+    attributes:
+      label: Which skill?
+      placeholder: e.g. firstspirit-templating-reference
+    validations:
+      required: true
+  - type: dropdown
+    id: category
+    attributes:
+      label: What kind of issue?
+      options: [wrong, unclear, missing, crash, suggestion]
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, and what did you expect?
+      placeholder: What the skill said or did, and what you expected instead.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version / commit (optional)
+      placeholder: e.g. 53c4569 — helps us reproduce; your assistant can fill this in
+    validations:
+      required: false
