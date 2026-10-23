@@ -1,25 +1,25 @@
 # Release Notes
 
-## 0.6.0 — 2026-10-20
+## 0.6.0 — 2026-10-21
 
 Skills in this release (each SKILL.md carries the same source commit in its `metadata:` block):
 
-- `firstspirit-api-reference` @ 1c55549 (beta)
-- `firstspirit-templating-reference` @ 1c55549 (beta)
-- `firstspirit-scripting` @ 1c55549 (beta)
-- `firstspirit-rest-api` @ 1c55549 (beta)
-- `firstspirit-external-sync-export` @ 1c55549 (beta)
-- `firstspirit-operations` @ 1c55549 (beta)
-- `firstspirit-contentcreator-extensions` @ 1c55549 (beta)
-- `firstspirit-template-design` @ 1c55549 (beta)
-- `firstspirit-cloud` @ 1c55549 (beta)
-- `firstspirit-headless` @ 1c55549 (beta)
-- `firstspirit-module-development` @ 1c55549 (beta)
-- `firstspirit-ai-suite` @ 1c55549 (beta)
-- `firstspirit-smartsearch` @ 1c55549 (beta)
-- `firstspirit-collaboration` @ 1c55549 (beta)
-- `firstspirit-technical-product-knowledge` @ 1c55549 (beta)
-- `firstspirit-technical-tone-of-voice` @ 1c55549 (beta)
+- `firstspirit-api-reference` @ 92709aa (beta)
+- `firstspirit-templating-reference` @ 92709aa (beta)
+- `firstspirit-scripting` @ 92709aa (beta)
+- `firstspirit-rest-api` @ 92709aa (beta)
+- `firstspirit-external-sync-export` @ 92709aa (beta)
+- `firstspirit-operations` @ 92709aa (beta)
+- `firstspirit-contentcreator-extensions` @ 92709aa (beta)
+- `firstspirit-template-design` @ 92709aa (beta)
+- `firstspirit-cloud` @ 92709aa (beta)
+- `firstspirit-headless` @ 92709aa (beta)
+- `firstspirit-module-development` @ 92709aa (beta)
+- `firstspirit-ai-suite` @ 92709aa (beta)
+- `firstspirit-smartsearch` @ 92709aa (beta)
+- `firstspirit-collaboration` @ 92709aa (beta)
+- `firstspirit-technical-product-knowledge` @ 92709aa (beta)
+- `firstspirit-technical-tone-of-voice` @ 92709aa (beta)
 
 Changes since 0.5.0 — two new orientation skills, a session-end feedback hook, and content
 updates to nine existing skills.

@@ -150,6 +150,12 @@ anything else the hook prints a single line telling the assistant where to find
 the index if the work turns out to be FirstSpirit after all — and nothing else is
 loaded.
 
+The hook runs at every session start in every project, FirstSpirit or not. It
+looks for the markers below at most four directory levels under the project
+root, reads nothing else, writes nothing and uses no network; a run takes well
+under a second on a large repository because dependency and build directories
+are skipped. With `FIRSTSPIRIT_PROJECT` set it does not scan at all.
+
 **Codex** has no session-start hook to run, so the index is always loaded.
 Gating there is done by the skill itself: its first section tells the assistant
 to ignore the toolkit entirely, and not mention it, unless the task actually
@@ -195,9 +201,9 @@ Wrong, unclear or missing guidance in a skill is useful to us. There are two way
 export FIRSTSPIRIT_FEEDBACK=1
 ```
 
-The hook is registered for Claude Code and Cursor (the Cursor entry has not been tried in Cursor yet). PowerShell on Windows is covered by a twin script that has not been tested there yet. When a session touched a toolkit skill, it writes `.firstspirit-feedback/firstspirit-feedback-<date>-<time>.md` in the working directory. The folder ignores itself, so git never picks it up.
+The hook is registered for Claude Code and Cursor (the Cursor entry has not been tried in Cursor yet); Gemini CLI reads the same hook file, and the session-end entry has not been tried there either. PowerShell on Windows is covered by a twin script that has not been tested there yet. When a session touched a toolkit skill, it writes `.firstspirit-feedback/firstspirit-feedback-<date>-<time>.md` in the working directory. The folder ignores itself, so git never picks it up.
 
-What the note holds: the toolkit version, the assistant, the date, the names of the toolkit skills and reference files the session used, and empty sections for you to describe what went wrong. What it never holds: prompts, answers, file contents, project names or paths. The skill names come from a fixed pattern over the session record, so nothing else can reach the note. Nothing is sent anywhere.
+What the note holds: the toolkit version, the assistant, the date, the names of the toolkit skills and reference files the session used, and empty sections for you to describe what went wrong. The report part (above the line "end of report") never holds prompts, answers, file contents, project names or paths; the skill names come from a fixed pattern over the session record, so nothing else can reach it. The hand-in section below that line names the local path of the note and of the toolkit so the script can find them; the script cuts the text at that line before it shows or posts anything. Nothing is sent anywhere.
 
 To hand a note in, read it, fill in the empty sections in your own words, and paste the text above the line "end of report" into an issue. If you have the [GitHub CLI](https://cli.github.com/) installed and signed in, you can ask your assistant to do it:
 
