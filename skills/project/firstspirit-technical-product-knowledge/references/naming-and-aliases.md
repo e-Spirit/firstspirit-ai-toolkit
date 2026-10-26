@@ -85,12 +85,25 @@ Versions are **orientation, not a matrix**; confirm on the live release notes.
   `FirstSpirit Jetty Web Server` category is legacy. See
   [hosting-and-deployment.md](hosting-and-deployment.md).
 - **Omnichannel Manager 2.x** — deprecated (2025-01); use the current OCM/TPP line.
-- **FragmentCreator** — **discontinued.** Announced in the 2025.1 release notes; no
-  longer supported with FirstSpirit **2025.12** and no longer in the download portal
-  (release notes 2025.12, "Discontinuation of the FragmentCreator"). The same applies
-  to its modules: CaaS Integration, Fragment DAP, Tagging Editor, Markdown Editor and
-  CXT Dataservice. It was a separate editor for omnichannel content **fragments**;
-  don't propose it for new work.
+- **FragmentCreator** — **discontinued.** Release notes 2025.1 `[odfs]`: placed in
+  maintenance mode with 2025.1 (only security-relevant and critical errors fixed), from
+  2025.3 available in the SaaS offering on request only, and with **2025.12** no longer
+  supported and no longer available. Release notes 2025.12 `[odfs]` ("Discontinuation of
+  the FragmentCreator"): the same applies to its modules CaaS Integration, Fragment DAP,
+  Tagging Editor, Markdown Editor and CXT Dataservice; the *Deprecations* table lists
+  FragmentCreator as deprecated 2025-01, removed 2025-12, with no rows of their own for
+  the modules. The Markdown Editor module page carries the marker *Available up to
+  FirstSpirit Version 2025.12* `[odfs]` (CXT documentation, 2026.11). It was a separate
+  editor for omnichannel content **fragments**; don't propose it for new work.
+  **These modules do not work with the 2026 releases:** the Markdown Editor 1.29.20 was
+  built against an API class that the 2026 isolated runtime no longer exports. On a
+  server where it is still installed, the SiteArchitect's GOM form view fails with a
+  `NoClassDefFoundError` for every template, not only those using the component
+  `[observed]` (2026-10-26, FirstSpirit 5.2.261119). Deactivating the module on the
+  server resolved it at once, without a server or client restart `[observed]`. The
+  mechanism and the diagnosis recipe are in `firstspirit-module-development`
+  (`firstspirit-module-development/references/isolated-mode-and-packaging.md`, *When a
+  module stops linking after a server update*).
 - **WebSphere Application Server** support — deprecated (2019); long legacy.
 - **Java floor moved** — Java 17 operation is no longer possible from **2026.5**
   (bytecode level 21; Java 21 is the reference version, Java 25 officially
