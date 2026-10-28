@@ -56,6 +56,10 @@ def load_policy(path, profile):
 def is_protected(pol, name):
     return any(fnmatch.fnmatch(name, pat) for pat in pol["protectedGroups"])
 
+def check_name(kind, name):
+    """Group and workflow names travel to the scripts as |-, comma- and newline-delimited text."""
+    if not name or any(c in name for c in "|,\n\r"): raise Fail(f"{kind} name {name!r} is empty or contains | , or a line break, which the tool cannot carry")
+
 def expand(perms):
     out = set()
     for x in perms:
@@ -73,6 +77,7 @@ def desired(pol):
         if role not in pol["groups"]: raise Fail(f"permissions names the role {role}, which has no groups entry (typo?)")
     for role, groups in pol["groups"].items():
         for g in groups:
+            check_name("group", g)
             if is_protected(pol, g): raise Fail(f"the policy names the protected group {g}")
             names.add(g)
             for kind, plist in pol.get("permissions", {}).get(role, {}).items():
@@ -80,6 +85,7 @@ def desired(pol):
                 for store in pol["storeKinds"][kind]:
                     perms.setdefault((store, g), set()).update(expand(plist))
     for w in pol.get("workflows", []):
+        check_name("workflow", w["workflow"])
         gs = set()
         for role in w["roles"]:
             if role not in pol["groups"]: raise Fail(f"workflow {w['workflow']}: unknown role {role}")
@@ -106,6 +112,8 @@ def plan(pol, state):
     want_p, want_w, names = desired(pol)
     ops, notes, errors = [], [], []
     ext = pol.get("externalNames", {})
+    for g, e in ext.items():
+        if any(c in e for c in "|\n\r"): raise Fail(f"externalNames[{g}] contains | or a line break, which the tool cannot carry")
     for g in sorted(names):
         if g not in state["groups"]:
             if g in ext and not ext[g].startswith("<"): ops.append(("GROUP", f"GROUP|{g}|{ext[g]}", f"create external group {g}"))
@@ -123,9 +131,10 @@ def plan(pol, state):
         if state["workflows"] and wf not in state["workflows"]:
             errors.append(f"workflow {wf} is not in the project's Template Store (it has: {', '.join(sorted(state['workflows']))}); install the module that provides it or take it out of the policy"); continue
         have = state["wfs"].get((store, wf), set())
-        if have != want and state["inherit"].get(store):
-            notes.append(f"{store}: inherits its workflow permissions now; apply switches it to its own set, and workflows the policy does not list for this store lose their inherited authorisation")
-        if have != want:
+        inherits = state["inherit"].get(store, False)
+        if inherits:
+            notes.append(f"{store}: inherits its workflow permissions now; apply switches it to its own set (also when the inherited groups already match), and workflows the policy does not list for this store lose their inherited authorisation")
+        if have != want or inherits:
             extra = sorted(have - want)
             if extra: notes.append(f"{store} {wf}: groups {extra} may start it and are not in the policy; they are kept only if listed")
             ops.append(("WFPERM", f"WFPERM|{store}|{wf}|{','.join(sorted(want))}", f"{store} {wf}: allowed {sorted(have)} -> {sorted(want)}"))

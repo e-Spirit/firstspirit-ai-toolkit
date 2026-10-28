@@ -2,7 +2,7 @@
 name: firstspirit-workflow-development
 description: Building your own FirstSpirit workflows, the definitions and not only their scripts. Use it to model a workflow (states, activities, transitions, who may start and switch, error state, forms), to make it appear in SiteArchitect and ContentCreator, to build it in the Template Store UI or from a script, to release from a script (server-side release options, ReleaseOperation), and to find out why a workflow is not offered ("my workflow does not appear next to Release", "Hello World workflow", "workflow button missing in ContentCreator", "Runnable in ContentCreator", "Authorized checkbox", "Start transition", "missing rights error"). Also for reading the BasicWorkflows and ODFS sample workflows as models. Script contexts: firstspirit-scripting; installing BasicWorkflows: firstspirit-installation.
 metadata:
-  source-commit: "8a9c029"
+  source-commit: "e293e30"
   published: "2026-10-28"
   toolkit-version: "0.7.0"
 ---

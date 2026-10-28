@@ -2,7 +2,7 @@
 name: firstspirit-configuration
 description: Configuring a FirstSpirit project and server after it exists, first topic permissions. Use it to set up or repair who can see a project and what each role may do in each store and workflow (groups and roles, store permissions, workflow permissions, BasicWorkflows, external groups on FirstSpirit Cloud), by hand with a checklist or with a tool that plans, applies and verifies from a role policy. Also for "I cannot see the project in the clients", "permissions were lost after the import", "which group may release", "configure a module's project component".
 metadata:
-  source-commit: "8a9c029"
+  source-commit: "e293e30"
   published: "2026-10-28"
   toolkit-version: "0.7.0"
 ---

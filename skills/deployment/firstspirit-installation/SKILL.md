@@ -2,7 +2,7 @@
 name: firstspirit-installation
 description: Installing FirstSpirit itself (on-premises only) and installing, updating and activating modules and project components on a server and in a project: BasicWorkflows, Development Tools, CaaS Connect, Navigation Service, OCM, AI Suite, Collaboration, SmartSearch, DQM Connect, Multisite Management, VideoManagementPro, Connect for Commerce. Also licence files, ports, Java wrapper, updates and uninstall. Use it for "how do I install the BasicWorkflows module", "release / delete workflow is missing", "which ServerManager step comes first", "Development Tools missing in ContentCreator", "install CaaS Connect", "Navigation Service project component", "OCM 3.0 or the TPP module", "Collaboration needs PostgreSQL", "DQM Connect endpoint", "Multisite Management bundles", "VideoManagementPro setup", "preview is empty in the headless project", "a module left from an older server breaks the client". Covers the order of steps (server, project, permissions), what each step needs and what to check afterwards.
 metadata:
-  source-commit: "8a9c029"
+  source-commit: "e293e30"
   published: "2026-10-28"
   toolkit-version: "0.7.0"
 ---

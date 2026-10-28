@@ -9,7 +9,7 @@ description: >
   media upload, content search. Also use when the user mentions "FirstSpirit REST API" or asks how to read/write
   content via the API.
 metadata:
-  source-commit: "8a9c029"
+  source-commit: "e293e30"
   published: "2026-10-28"
   toolkit-version: "0.7.0"
 ---
@@ -44,6 +44,9 @@ mkdir -p ./tmp   # JSON payloads go here; avoids shell-quoting issues
 Every call below passes `-K "$FS_CURLRC"`; delete the file when the session ends
 (`rm -f "$FS_CURLRC"`). A `"` or `\` in the password is escaped as `\"` or `\\` inside the
 config file. Add `.env` to your project's `.gitignore` (the smoke test's `results/` and `logs/` too, see below).
+The smoke test reads the same `.env` line by line instead of sourcing it (nothing in it is executed): `KEY=VALUE`,
+a value in single or double quotes with no escapes inside, or bare up to an inline ` #` comment. A password with
+a quote in it goes in the other kind of quotes.
 
 Standard curl pattern (read):
 ```bash

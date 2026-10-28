@@ -14,7 +14,7 @@ description: >-
   headless), and on-prem operations (ZooKeeper, Solr, application.yml, LDAP/OIDC, SSL,
   5.11 systemd, updates). Not for licensing positioning.
 metadata:
-  source-commit: "8a9c029"
+  source-commit: "e293e30"
   published: "2026-10-28"
   toolkit-version: "0.7.0"
 ---

@@ -67,27 +67,34 @@ skip() { SKIP=$((SKIP+1)); printf '  SKIP  %-5s %s\n            -> %s\n' "$1" "$
 warn() { WARN=$((WARN+1)); printf '  WARN  %-5s %s\n            -> %s\n' "$1" "$2" "$3"; }   # server changed, skill may be stale; not a failure
 say()  { printf '\n%s\n' "$1"; }
 
-# ---- .env: the quoting check happens BEFORE sourcing -------------------------
+# ---- .env: read as KEY=VALUE lines, never sourced ----------------------------
 say "Environment ($ENV_FILE)"
 [ -f "$ENV_FILE" ] || { echo "no $ENV_FILE — see SKILL.md → Setup" >&2; exit 2; }
 
-# Rule (SKILL.md Setup): a value starting with `$` must be single-quoted, or `source`
-# expands it to empty and every call 401s with a misleading message.
-if grep -qE '^[[:space:]]*(export[[:space:]]+)?FS_[A-Z_]+=("?\$|[^'"'"'"][^=]*\$)' "$ENV_FILE"; then
-  fail E1 "values containing \$ are single-quoted in .env" \
-       "$(grep -nE '^[[:space:]]*(export[[:space:]]+)?FS_[A-Z_]+=' "$ENV_FILE" | grep -E '\$' | sed -E 's/=.*/=…/' | tr '\n' ' ')— wrap the value in single quotes"
+# This script reads the file literally (a `$` in a value stays a `$`). The curl examples in
+# SKILL.md `source` the same file, and there an unquoted `$` is expanded to nothing: so the
+# rule "single-quote a value containing $" is checked here as a warning, not a failure.
+if grep -qE '^[[:space:]]*(export[[:space:]]+)?FS_[A-Z0-9_]+=("?\$|[^'"'"'"][^=]*\$)' "$ENV_FILE"; then
+  warn E1 "values containing \$ are single-quoted in .env" \
+       "$(grep -nE '^[[:space:]]*(export[[:space:]]+)?FS_[A-Z0-9_]+=' "$ENV_FILE" | grep -E '\$' | sed -E 's/=.*/=…/' | tr '\n' ' ')— fine for this script, but \`source .env\` (SKILL.md examples) expands it: wrap the value in single quotes"
 else
   pass E1 "no unquoted \$ in .env values"
 fi
 
-# The file is read as KEY=VALUE lines, not sourced: nothing in it is executed, a `$` in a value
-# stays literal, and the variables stay shell-local (nothing is exported to child processes).
+# Nothing in the file is executed and the variables stay shell-local (nothing is exported to
+# child processes). Format: KEY=VALUE, optional `export`, a value in single or double quotes
+# (no escapes inside; the closing quote ends it) or bare up to an inline ` #` comment; a
+# trailing CR (a file saved with CRLF) is dropped. The key is checked against a strict
+# pattern BEFORE it reaches `printf -v`: bash evaluates an array subscript in the name
+# (`FS_X[$(cmd)]=…`) before it rejects it, which would run code from the file.
 while IFS= read -r line || [ -n "$line" ]; do
+  line="${line%$'\r'}"
   line="${line#"${line%%[![:space:]]*}"}"
   case "$line" in ''|'#'*) continue ;; esac
   line="${line#export }"; line="${line#"${line%%[![:space:]]*}"}"
-  case "$line" in FS_[A-Z_]*=*) ;; *) continue ;; esac
+  case "$line" in *=*) ;; *) continue ;; esac
   k="${line%%=*}"; v="${line#*=}"
+  [[ "$k" =~ ^FS_[A-Z0-9_]+$ ]] || continue
   case "$v" in                                   # quoted value up to its closing quote; else up to an inline comment
     \'*) v="${v#\'}"; v="${v%%\'*}" ;;
     \"*) v="${v#\"}"; v="${v%%\"*}" ;;

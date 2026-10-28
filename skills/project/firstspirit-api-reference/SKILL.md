@@ -14,7 +14,7 @@ description: >-
   uid". Pair with firstspirit-scripting (how to run code + the script contexts)
   and firstspirit-module-development (how to package it).
 metadata:
-  source-commit: "8a9c029"
+  source-commit: "e293e30"
   published: "2026-10-28"
   toolkit-version: "0.7.0"
 ---

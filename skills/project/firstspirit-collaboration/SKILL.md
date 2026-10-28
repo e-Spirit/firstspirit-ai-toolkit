@@ -14,7 +14,7 @@ description: >-
   firstspirit-api-reference (broker, IDProvider) and firstspirit-scripting or
   firstspirit-module-development (running the code).
 metadata:
-  source-commit: "8a9c029"
+  source-commit: "e293e30"
   published: "2026-10-28"
   toolkit-version: "0.7.0"
 ---
