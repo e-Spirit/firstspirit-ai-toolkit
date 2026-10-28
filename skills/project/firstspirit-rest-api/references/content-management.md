@@ -15,7 +15,7 @@
 
 ### Create Page
 ```bash
-curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
+curl -s -K "$FS_CURLRC" \
   -X POST -H "Content-Type: application/json" \
   -d '{"uid":"homepage","templateUid":"standard_page"}' \
   "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/pages/"
@@ -25,11 +25,11 @@ Response includes `id` (numeric) — needed for creating PageReferences.
 ### Read Page
 ```bash
 # Current (working copy)
-curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
+curl -s -K "$FS_CURLRC" \
   "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/pages/homepage"
 
 # Released version
-curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
+curl -s -K "$FS_CURLRC" \
   "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/pages/homepage?released=true"
 ```
 
@@ -39,7 +39,7 @@ Body is `RenameRequestDTO {name, language}` (both required; `{uid}` → 500). Th
 0.0.23-beta, it is fixed at creation. Observed: the name is applied to *all* languages regardless
 of the `language` value.
 ```bash
-curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
+curl -s -K "$FS_CURLRC" \
   -X PATCH -H "Content-Type: application/json" \
   -d '{"name":"Homepage","language":"DE"}' \
   "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/pages/homepage/rename"
@@ -47,7 +47,7 @@ curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
 
 ### Delete Page
 ```bash
-curl -s -u "$FS_USERNAME:$FS_PASSWORD" -X DELETE \
+curl -s -K "$FS_CURLRC" -X DELETE \
   "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/pages/homepage"
 ```
 
@@ -57,7 +57,7 @@ curl -s -u "$FS_USERNAME:$FS_PASSWORD" -X DELETE \
 
 ### List Bodies
 ```bash
-curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
+curl -s -K "$FS_CURLRC" \
   "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/pages/homepage/bodies/"
 ```
 
@@ -65,7 +65,7 @@ curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
 
 **Up to `0.0.23-beta`** (verified live) the section name is the last path segment:
 ```bash
-curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
+curl -s -K "$FS_CURLRC" \
   -X PUT -H "Content-Type: application/json" \
   -d '{"templateUid":"hero_teaser"}' \
   "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/pages/homepage/bodies/content/sections/hero"
@@ -75,7 +75,7 @@ The `{sectionName}` in the URL (`hero`) becomes the section's name.
 **From `0.0.24-beta`** `[core]` sections are created with POST and addressed by their numeric
 `id`, because a body may hold several sections of the same name:
 ```bash
-curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
+curl -s -K "$FS_CURLRC" \
   -X POST -H "Content-Type: application/json" \
   -d '{"name":"hero","templateUid":"hero_teaser","index":0}' \
   "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/pages/homepage/bodies/content/sections/"
@@ -89,7 +89,7 @@ body's section list, so an existing section is found by listing the body, not by
 ### Delete Section
 ```bash
 # ≤ 0.0.23-beta: by name        ≥ 0.0.24-beta: by numeric id (e.g. …/sections/4711)
-curl -s -u "$FS_USERNAME:$FS_PASSWORD" -X DELETE \
+curl -s -K "$FS_CURLRC" -X DELETE \
   "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/pages/homepage/bodies/content/sections/hero"
 ```
 - **Never rebuild a page blind.** Deleting every section and re-creating them from a source
@@ -103,7 +103,7 @@ curl -s -u "$FS_USERNAME:$FS_PASSWORD" -X DELETE \
 
 ### Rename Section
 ```bash
-curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
+curl -s -K "$FS_CURLRC" \
   -X PATCH -H "Content-Type: application/json" \
   -d '{"name":"new_name"}' \
   "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/pages/homepage/bodies/content/sections/hero/rename"
@@ -118,11 +118,11 @@ below keep the name form; substitute the id on newer servers.
 ### Read Form (overview of all editors)
 ```bash
 # Page-level form
-curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
+curl -s -K "$FS_CURLRC" \
   "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/pages/homepage/form"
 
 # Section form
-curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
+curl -s -K "$FS_CURLRC" \
   "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/pages/homepage/bodies/content/sections/hero/form"
 ```
 The whole-form response is an object wrapping the editor list: `{ "editors": [ … ] }`.
@@ -140,11 +140,11 @@ that exists in the template but was never stored in this element yields `content
 ### Read Single Editor (with content)
 ```bash
 # All languages
-curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
+curl -s -K "$FS_CURLRC" \
   "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/pages/homepage/bodies/content/sections/hero/form/st_headline"
 
 # Specific language (UPPERCASE abbreviation — check GET /projects/{id}/languages/)
-curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
+curl -s -K "$FS_CURLRC" \
   "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/pages/homepage/bodies/content/sections/hero/form/st_headline/EN"
 ```
 
@@ -163,7 +163,7 @@ GET → mutate → PATCH stays the reliable pattern because the GET response alr
 **Reliable pattern — GET → mutate → PATCH:**
 ```bash
 # 1. Read the current DTO (includes all required fields)
-curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
+curl -s -K "$FS_CURLRC" \
   "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/pages/{pageUid}/bodies/{body}/sections/{section}/form/{editor}/DE" \
   > ./tmp/{editor}.json
 
@@ -171,7 +171,7 @@ curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
 jq '.content = "Neuer Titel"' ./tmp/{editor}.json > ./tmp/{editor}.patched.json
 
 # 3. Send the whole DTO back via file (never via -d '...')
-curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
+curl -s -K "$FS_CURLRC" \
   -X PATCH -H "Content-Type: application/json" \
   --data-binary @./tmp/{editor}.patched.json \
   "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/pages/{pageUid}/bodies/{body}/sections/{section}/form/{editor}/DE"
@@ -407,10 +407,10 @@ PageReferences live in the SiteStore and connect Pages to the URL structure.
 ### Create PageReference
 ```bash
 # First get the page ID from the create-page response or from search
-PAGE_ID=$(curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
+PAGE_ID=$(curl -s -K "$FS_CURLRC" \
   "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/pages/homepage" | jq '.id')
 
-curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
+curl -s -K "$FS_CURLRC" \
   -X POST -H "Content-Type: application/json" \
   -d "{\"uid\":\"homepage\",\"pageId\":$PAGE_ID,\"location\":\"/\"}" \
   "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/page-references/"
@@ -421,10 +421,10 @@ curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
 `…/settings` is a `PageReferenceSettingsDTO` with exactly two fields — `filename` (output
 filename) and `showInSitemap`. GET it, change a field, PATCH the whole object back:
 ```bash
-curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
+curl -s -K "$FS_CURLRC" \
   "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/page-references/homepage/settings" > ./tmp/settings.json
 jq '.showInSitemap = false' ./tmp/settings.json > ./tmp/settings.patch.json
-curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
+curl -s -K "$FS_CURLRC" \
   -X PATCH -H "Content-Type: application/json" \
   --data-binary @./tmp/settings.patch.json \
   "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/page-references/homepage/settings"
@@ -437,13 +437,13 @@ REST. Use SiteArchitect or the Access API (`SiteStoreFolder.setStartNode(StartNo
 ### Document Groups
 ```bash
 # Create
-curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
+curl -s -K "$FS_CURLRC" \
   -X POST -H "Content-Type: application/json" \
   -d '{"uid":"doc_group"}' \
   "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/page-references/document-groups/"
 
 # List
-curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
+curl -s -K "$FS_CURLRC" \
   "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/page-references/document-groups/"
 ```
 
@@ -476,7 +476,7 @@ curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
 
 ### Create Medium
 ```bash
-curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
+curl -s -K "$FS_CURLRC" \
   -X POST -H "Content-Type: application/json" \
   -d '{"uid":"hero_image","filename":"hero","type":"PICTURE"}' \
   "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/media/"
@@ -494,7 +494,7 @@ Types: `PICTURE`, `FILE`, `ANIMATION`
 
 ### Upload File Data
 ```bash
-curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
+curl -s -K "$FS_CURLRC" \
   -X PUT -F "file=@/path/to/image.jpg" \
   "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/media/hero_image/data"
 ```
@@ -503,14 +503,14 @@ Language-specific upload: append `/{lang}` (e.g., `/DE`).
 
 ### Download File Data
 ```bash
-curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
+curl -s -K "$FS_CURLRC" \
   -o image.jpg \
   "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/media/hero_image/data"
 ```
 
 ### Get with Resolution
 ```bash
-curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
+curl -s -K "$FS_CURLRC" \
   -o thumb.jpg \
   "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/media/hero_image/data/resolution/thumbnail"
 ```
@@ -520,7 +520,7 @@ Which renditions exist for a picture, with pixel size and whether the file is st
 computed on demand (`ORIGINAL` is always present). Append `/{LANG}` for language-dependent
 media.
 ```bash
-curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
+curl -s -K "$FS_CURLRC" \
   "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/media/hero_image/resolutions" \
   | jq -r '.[] | "\(.uid)\t\(.width)x\(.height)\t\(.mimeType)\tstored=\(.stored)"'
 ```
@@ -532,7 +532,7 @@ curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
 
 ### Create Data Source
 ```bash
-curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
+curl -s -K "$FS_CURLRC" \
   -X POST -H "Content-Type: application/json" \
   -d '{"uid":"products","schemaUid":"product_schema","tableTemplateUid":"product_table"}' \
   "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/data-sources/"
@@ -546,11 +546,11 @@ curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
 ### List / Create Datasets
 ```bash
 # List datasets of a data-source (note trailing slash)
-curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
+curl -s -K "$FS_CURLRC" \
   "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/data-sources/products/"
 
 # Create a new (empty) dataset — response contains the new GID
-curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
+curl -s -K "$FS_CURLRC" \
   -X POST \
   "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/data-sources/products/"
 ```
@@ -563,7 +563,7 @@ the test project. Read datasets; do not build a write flow on this without re-te
 ### Read Entity (read-only)
 ```bash
 # Flat view of all field values for one dataset
-curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
+curl -s -K "$FS_CURLRC" \
   "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/data-sources/products/{gid}/entity"
 ```
 
@@ -578,18 +578,18 @@ Dataset editing works exactly like page/section editors: **GET the editor → mu
 ```bash
 # 1. Read the whole form once to discover editor names
 #    (response is { "editors": [ … ] } — same shape as page/section forms)
-curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
+curl -s -K "$FS_CURLRC" \
   "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/data-sources/products/{gid}/form" \
   | jq -r '.editors[].name'
 
 # 2. GET one editor (add /{LANG} when configuration.usesLanguages is true)
-curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
+curl -s -K "$FS_CURLRC" \
   "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/data-sources/products/{gid}/form/title/DE" \
   > ./tmp/title_de.json
 
 # 3. Mutate only content, then PATCH the full DTO back
 jq '.content = "Neuer Titel"' ./tmp/title_de.json > ./tmp/title_de.patch.json
-curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
+curl -s -K "$FS_CURLRC" \
   -X PATCH -H "Content-Type: application/json" \
   --data-binary @./tmp/title_de.patch.json \
   "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/data-sources/products/{gid}/form/title/DE"
@@ -601,7 +601,7 @@ curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
 
 ### Release a Page
 ```bash
-curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
+curl -s -K "$FS_CURLRC" \
   -X POST -H "Content-Type: application/json" \
   -d '{"action":"release","options":{"checkOnly":false,"dependentReleaseType":"NO_DEPENDENT_RELEASE","ensureAccessibility":false,"recursive":false}}' \
   "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/pages/homepage/actions"
@@ -609,7 +609,7 @@ curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
 
 ### Release with Dependencies
 ```bash
-curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
+curl -s -K "$FS_CURLRC" \
   -X POST -H "Content-Type: application/json" \
   -d '{"action":"release","options":{"checkOnly":false,"dependentReleaseType":"DEPENDENT_RELEASE_NEW_AND_CHANGED","ensureAccessibility":true,"recursive":true}}' \
   "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/pages/homepage/actions"
@@ -617,7 +617,7 @@ curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
 
 ### Copy a Page
 ```bash
-curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
+curl -s -K "$FS_CURLRC" \
   -X POST -H "Content-Type: application/json" \
   -d '{"action":"copy"}' \
   "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/pages/homepage/actions"

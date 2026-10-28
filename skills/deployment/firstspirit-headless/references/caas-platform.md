@@ -38,7 +38,7 @@ On Cloud the REST host is tenant-specific, e.g.
 - **Reserved databases:** `caas_admin`, `_logic`, `graphql`.
   **Reserved collections:** `apikeys`, `gql-apps`.
 - **Document `_id`** = FirstSpirit **GID** + locale suffix, e.g.
-  `f6910b22-6ae8-4ce1-af45-c7b364b3117a.en_GB`. (CaaS Connect owns the exact
+  `12345678-90ab-cdef-1234-567890abcdef.en_GB`. (CaaS Connect owns the exact
   document shape — see [caas-connect.md](caas-connect.md).)
 
 The collection/URL scheme CaaS Connect writes into:
@@ -246,8 +246,9 @@ wss://<host>/<database>/<collection>/_streams/<stream-name>
 ## Security — how a frontend authenticates
 
 **Three accepted forms:** `?securetoken=<token>` query param,
-`Authorization: Bearer <key>` header, `securetoken` cookie `[core]`. The two
-token forms need the tenant to be derivable from the request path.
+`Authorization: Bearer <key>` header, `securetoken` cookie `[odfs]` (CaaS Platform
+Documentation 21.5.0, 2.1.1 to 2.1.3, which also gives the evaluation order). The two
+token forms need the tenant to be derivable from the request path `[core]`.
 
 ### Secure tokens (recommended for browsers)
 Short-lived tokens minted from an API key — exposes read access to a public

@@ -14,9 +14,14 @@
 #   scripts/smoke-test.sh --scripts       + creates a throwaway script, exercises /execute, deletes it
 #   scripts/smoke-test.sh --all           everything
 #   scripts/smoke-test.sh --env path/.env use another env file (default ./.env)
+#   scripts/smoke-test.sh --yes           confirm the printed target: --write and --scripts refuse to
+#                                           run without it (or FS_SMOKE_CONFIRM=<project id> in the
+#                                           environment, for unattended runs)
 #
 # Needs: curl, jq. Reads FS_USERNAME, FS_PASSWORD, FS_REST_BASE_URL, FS_PROJECT_ID
-# from .env. Optional overrides (else auto-discovered from the project):
+# from .env (parsed line by line, not sourced; the credentials reach curl through a
+# config file of mode 600 that is removed at exit, never on the command line).
+# Optional overrides (else auto-discovered from the project):
 #   FS_TEST_PAGE            uid of an existing page with at least one section
 #   FS_TEST_PAGE_TEMPLATE   uid of a page template the throwaway page is created from
 #   FS_TEST_SECTION_TEMPLATE uid of a section template for the throwaway section
@@ -25,8 +30,7 @@
 # Raw responses land in results/firstspirit-rest-api/<run>/ (numbered) with requests.log —
 # attach the folder when you report a FAIL — and one summary line per run is appended to
 # logs/firstspirit-rest-api.log. Both live under the output root: $FS_OUT_ROOT if set, else
-# the nearest parent directory holding a tracked-skills.tsv (a checkout of a skill collection),
-# else the working directory. Git-ignore the directories. Exit code 1 if anything failed.
+# the working directory. Git-ignore the directories. Exit code 1 if anything failed.
 #
 # O1 keeps a normalised copy of the server's OpenAPI spec per host under
 # results/firstspirit-rest-api/openapi/<host>/ in the shared output root (override:
@@ -37,14 +41,15 @@
 
 set -u
 
-DO_WRITE=0; DO_SCRIPTS=0; ENV_FILE=".env"
+DO_WRITE=0; DO_SCRIPTS=0; CONFIRM=0; ENV_FILE=".env"
 while [ $# -gt 0 ]; do
   case "$1" in
     --write)   DO_WRITE=1 ;;
     --scripts) DO_SCRIPTS=1 ;;
     --all)     DO_WRITE=1; DO_SCRIPTS=1 ;;
     --env)     shift; ENV_FILE="${1:?--env needs a path}" ;;
-    -h|--help) sed -n '2,33p' "$0"; exit 0 ;;
+    --yes)     CONFIRM=1 ;;
+    -h|--help) sed -n '2,40p' "$0"; exit 0 ;;
     *) echo "unknown option: $1" >&2; exit 2 ;;
   esac
   shift
@@ -75,21 +80,38 @@ else
   pass E1 "no unquoted \$ in .env values"
 fi
 
-# The variables stay shell-local: nothing here is exported to child processes (git-ignore the .env file).
-set +u   # +u: a mis-quoted $ must not abort, E1 already said why
-# shellcheck disable=SC1090
-. "$ENV_FILE"
-set -u
+# The file is read as KEY=VALUE lines, not sourced: nothing in it is executed, a `$` in a value
+# stays literal, and the variables stay shell-local (nothing is exported to child processes).
+while IFS= read -r line || [ -n "$line" ]; do
+  line="${line#"${line%%[![:space:]]*}"}"
+  case "$line" in ''|'#'*) continue ;; esac
+  line="${line#export }"; line="${line#"${line%%[![:space:]]*}"}"
+  case "$line" in FS_[A-Z_]*=*) ;; *) continue ;; esac
+  k="${line%%=*}"; v="${line#*=}"
+  case "$v" in                                   # quoted value up to its closing quote; else up to an inline comment
+    \'*) v="${v#\'}"; v="${v%%\'*}" ;;
+    \"*) v="${v#\"}"; v="${v%%\"*}" ;;
+    *)   v="${v%%[[:space:]]#*}"; v="${v%"${v##*[![:space:]]}"}" ;;
+  esac
+  printf -v "$k" '%s' "$v"
+done < "$ENV_FILE"
 for v in FS_USERNAME FS_PASSWORD FS_REST_BASE_URL FS_PROJECT_ID; do
-  [ -n "${!v:-}" ] || { echo "$v is empty after sourcing $ENV_FILE" >&2; exit 2; }
+  [ -n "${!v:-}" ] || { echo "$v is empty or missing in $ENV_FILE" >&2; exit 2; }
 done
 FS_REST_BASE_URL="${FS_REST_BASE_URL%/}"
+
+# Credentials go to curl through a config file (-K), mode 600, removed at exit: with -u the
+# password would be visible in the process list for the duration of every call.
+CURLRC="$(mktemp "${TMPDIR:-/tmp}/fs-smoke.XXXXXX")" || { echo "cannot create the curl config file" >&2; exit 2; }
+chmod 600 "$CURLRC"
+esc() { printf '%s' "$1" | sed 's/[\\"]/\\&/g'; }   # curl quotes: \\ and \" are the escapes
+printf 'user = "%s:%s"\n' "$(esc "$FS_USERNAME")" "$(esc "$FS_PASSWORD")" > "$CURLRC"
+finish() { rm -f "$CURLRC"; }
+trap finish EXIT
 
 # Output root of the shared results/ + logs/ layout (see header).
 out_root() {
   if [ -n "${FS_OUT_ROOT:-}" ]; then printf '%s' "$FS_OUT_ROOT"; return; fi
-  local d="$PWD"
-  while [ "$d" != / ]; do [ -f "$d/tracked-skills.tsv" ] && { printf '%s' "$d"; return; }; d="$(dirname "$d")"; done
   printf '%s' "$PWD"
 }
 ROOT_OUT="$(out_root)"
@@ -102,11 +124,10 @@ N=0
 P="$FS_REST_BASE_URL/projects/$FS_PROJECT_ID"
 
 # req METHOD URL [content-type] [datafile]  -> STATUS, BODY (path of response body)
-# The credentials go to curl via -u (visible in the process list for the duration of the call).
 req() {
   local m="$1" u="$2" ct="${3:-}" data="${4:-}"
   N=$((N+1)); BODY="$OUT/$(printf '%03d' "$N").body"
-  local args=(-s -u "$FS_USERNAME:$FS_PASSWORD" -X "$m" -o "$BODY" -w '%{http_code}')
+  local args=(-s -K "$CURLRC" -X "$m" -o "$BODY" -w '%{http_code}')
   [ -n "$ct" ]   && args+=(-H "Content-Type: $ct")
   [ -n "$data" ] && args+=(--data-binary "@$data")
   STATUS="$(curl "${args[@]}" "$u" 2>>"$LOG" || echo 000)"
@@ -116,12 +137,29 @@ req() {
 reqform() {
   local m="$1" u="$2" f="$3"
   N=$((N+1)); BODY="$OUT/$(printf '%03d' "$N").body"
-  STATUS="$(curl -s -u "$FS_USERNAME:$FS_PASSWORD" -X "$m" -F "file=@$f" -o "$BODY" -w '%{http_code}' "$u" 2>>"$LOG" || echo 000)"
+  STATUS="$(curl -s -K "$CURLRC" -X "$m" -F "file=@$f" -o "$BODY" -w '%{http_code}' "$u" 2>>"$LOG" || echo 000)"
   printf '%03d  %-6s %s  -> %s  (multipart %s)\n' "$N" "$m" "${u#"$FS_REST_BASE_URL"}" "$STATUS" "$(basename "$f")" >> "$LOG"
 }
 jqr() { jq -r "$1" "$BODY" 2>/dev/null; }          # jq on the last body, empty on error
 is2xx() { case "$STATUS" in 2??) return 0 ;; *) return 1 ;; esac; }
 keys() { jq -c 'if type=="object" then keys else type end' "$BODY" 2>/dev/null | cut -c1-120; }
+
+# ---- Target ------------------------------------------------------------------
+# Printed before anything is sent. --write and --scripts create, change and delete elements in
+# this project: they run only after the target is confirmed (--yes, or FS_SMOKE_CONFIRM set to
+# this project id for unattended runs). Read-only probes need no confirmation.
+HOST="${FS_REST_BASE_URL#*://}"; HOST="${HOST%%/*}"
+PNAME="$(curl -s -K "$CURLRC" -o - -w '' "$P" 2>/dev/null | jq -r '.name // .displayName // empty' 2>/dev/null)"
+say "Target: host $HOST, project $FS_PROJECT_ID${PNAME:+ ($PNAME)}, user $FS_USERNAME"
+if [ "$DO_WRITE" = 1 ] || [ "$DO_SCRIPTS" = 1 ]; then
+  if [ "$CONFIRM" = 1 ] || [ "${FS_SMOKE_CONFIRM:-}" = "$FS_PROJECT_ID" ]; then
+    echo "  write probes confirmed for project $FS_PROJECT_ID (throwaway elements, deleted at the end)"
+  else
+    echo "  --write/--scripts create and delete elements in this project. Check the target above, then" >&2
+    echo "  re-run with --yes (or FS_SMOKE_CONFIRM=$FS_PROJECT_ID for unattended runs)." >&2
+    exit 2
+  fi
+fi
 
 # ---- Read-only probes --------------------------------------------------------
 say "Read-only probes  (project $FS_PROJECT_ID @ $FS_REST_BASE_URL)"
@@ -358,7 +396,7 @@ if [ "$DO_WRITE" = 1 ]; then
     else fail W9 "throwaway page deleted" "GET after DELETE → $STATUS — remove page '$CREATED_PAGE' by hand"; fi
     CREATED_PAGE=""
   }
-  trap cleanup_page EXIT
+  trap 'cleanup_page; finish' EXIT
 
   if [ -z "$PAGE_TEMPLATE" ]; then
     skip W1 "create page" "no page template found — set FS_TEST_PAGE_TEMPLATE"
@@ -555,7 +593,7 @@ if [ "$DO_WRITE" = 1 ]; then
     fi
   }
   cleanup_all() { cleanup_extras; cleanup_page; }
-  trap cleanup_all EXIT
+  trap 'cleanup_all; finish' EXIT
 
   # W10–W11 — page reference: {uid,pageId,location} (content-management.md → Create PageReference);
   # /settings is readable (Set as Start Node) — read only, a throwaway must not become start node.
@@ -695,7 +733,7 @@ XML
     else fail W24 "GET …/gom reads the GOM back" "HTTP $STATUS: $(head -c 120 "$BODY")"; fi
   else fail W22 "POST /templates/section-templates/ creates a template" "HTTP $SC: $(head -c 160 "$BODY")"; fi
 
-  cleanup_all; trap - EXIT
+  cleanup_all; trap finish EXIT
 fi
 
 # ---- Script probes -----------------------------------------------------------
@@ -709,7 +747,7 @@ if [ "$DO_SCRIPTS" = 1 ]; then
     else fail S6 "throwaway script deleted" "HTTP $STATUS — remove script '$CREATED_SCRIPT' by hand"; fi
     CREATED_SCRIPT=""
   }
-  trap cleanup_script EXIT
+  trap 'cleanup_script; finish' EXIT
 
   req GET "$P/template-sets/"; TSET_STATUS="$STATUS"
   if is2xx; then
@@ -795,13 +833,12 @@ if [ "$DO_SCRIPTS" = 1 ]; then
       fi
     fi
   fi
-  cleanup_script; trap - EXIT
+  cleanup_script; trap finish EXIT
 fi
 
 # ---- Summary -----------------------------------------------------------------
 say "Summary: $PASS passed, $FAIL failed, $SKIP skipped, $WARN warning(s) — responses in ${OUT#"$ROOT_OUT"/}"
 MODE="read"; [ "$DO_WRITE" = 1 ] && MODE="write"; [ "$DO_SCRIPTS" = 1 ] && MODE="$MODE+scripts"
-HOST="${FS_REST_BASE_URL#*://}"; HOST="${HOST%%/*}"
 RESULT=ok; [ "$FAIL" -eq 0 ] || RESULT=fail
 printf '%s smoke mode=%s host=%s project=%s pass=%s fail=%s skip=%s warn=%s result=%s took=%ss dir=%s\n' \
   "$(date +%Y-%m-%dT%H:%M:%S%z)" "$MODE" "$HOST" "$FS_PROJECT_ID" "$PASS" "$FAIL" "$SKIP" "$WARN" "$RESULT" \

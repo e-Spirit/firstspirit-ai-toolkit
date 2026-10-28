@@ -14,9 +14,9 @@ description: >-
   click-to-edit with TPP_SNAP", "how does a frontend authenticate to CaaS", "fetchByFilter", "fsxa-api remotes". Template
   structure for headless: firstspirit-template-design.
 metadata:
-  source-commit: "92709aa"
-  published: "2026-10-21"
-  toolkit-version: "0.6.0"
+  source-commit: "8a9c029"
+  published: "2026-10-28"
+  toolkit-version: "0.7.0"
 ---
 
 > **Beta.** Early public release. Feedback welcome; behaviour and structure may change.

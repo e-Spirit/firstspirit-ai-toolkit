@@ -14,9 +14,9 @@ description: >-
   "set up SSO", "when are the patch days", "is my content backed up", "go-live
   checklist".
 metadata:
-  source-commit: "92709aa"
-  published: "2026-10-21"
-  toolkit-version: "0.6.0"
+  source-commit: "8a9c029"
+  published: "2026-10-28"
+  toolkit-version: "0.7.0"
 ---
 
 > **Beta.** Early public release. Feedback welcome; behaviour and structure may change.

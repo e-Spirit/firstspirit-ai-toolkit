@@ -32,8 +32,14 @@ live template set on FirstSpirit 5.2.261116 with FOP module 2.8 (2026-10-09 to 2
 Every page, section, format and link template gets a tab per template set `[odfs]`; the PDF tab
 holds the FO source. Over the REST API that is `PUT …/templates/{kind}-templates/{uid}/channel-sources/{templateSetUid}`
 with `text/plain` (`…/channel-sources/PDF` beside `…/channel-sources/html`); the REST skill has the
-calls `[observed]`. The *conversion* of a format template (block or inline) and its display name
-are set in the client, not in the source.
+calls `[observed]`. Whether a format template formats a whole paragraph or a selection, and its display name,
+are set in the client, not in the source: the *Section* box on the format template's Properties tab `[odfs]`
+(FirstSpirit 2026.11, *Format templates → Properties tab*). Checked, the format applies to the entire section up to
+the next line break and the editor picks it from the left-hand list of the DOM editor with nothing selected (the
+block case: headings, paragraphs, lists); unchecked, it applies to selected text only, from the right-hand list
+(the inline case: bold, links, spans). Alignment is offered only for section formats and reaches the output as
+`%align%` in the format template's source. The design skill's rule that the setting matches the HTML the format
+emits (`firstspirit-template-design`, principle 15) rests on this box.
 
 ### Page template: the document
 

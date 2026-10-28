@@ -29,11 +29,11 @@ This works because the API accepts its own GET output as valid PATCH input.
 
 ```bash
 # Language-independent catalog
-curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
+curl -s -K "$FS_CURLRC" \
   "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/pages/{pageUid}/bodies/{body}/sections/{section}/form/{catalogEditor}"
 
 # Language-dependent catalog (usesLanguages: true)
-curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
+curl -s -K "$FS_CURLRC" \
   "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/pages/{pageUid}/bodies/{body}/sections/{section}/form/{catalogEditor}/EN"
 ```
 
@@ -43,7 +43,7 @@ curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
 
 ```bash
 # 1. GET current state (use /EN suffix if language-dependent)
-CURRENT=$(curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
+CURRENT=$(curl -s -K "$FS_CURLRC" \
   "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/pages/{pageUid}/bodies/{body}/sections/{section}/form/st_cards/EN")
 
 # 2. Mutate with jq — change only the content of specific editors
@@ -57,7 +57,7 @@ UPDATED=$(echo "$CURRENT" | jq '
 ')
 
 # 3. PATCH back (same URL suffix as GET)
-echo "$UPDATED" | curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
+echo "$UPDATED" | curl -s -K "$FS_CURLRC" \
   -X PATCH -H "Content-Type: application/json" \
   -d @- \
   "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/pages/{pageUid}/bodies/{body}/sections/{section}/form/st_cards/EN"
@@ -66,7 +66,7 @@ echo "$UPDATED" | curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
 ### Add a new card
 
 ```bash
-CURRENT=$(curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
+CURRENT=$(curl -s -K "$FS_CURLRC" \
   "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/pages/{pageUid}/bodies/{body}/sections/{section}/form/st_cards/EN")
 
 NEW_ID=$(uuidgen)
@@ -84,7 +84,7 @@ UPDATED=$(echo "$CURRENT" | jq --arg id "$NEW_ID" '
   ]
 ')
 
-echo "$UPDATED" | curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
+echo "$UPDATED" | curl -s -K "$FS_CURLRC" \
   -X PATCH -H "Content-Type: application/json" \
   -d @- \
   "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/pages/{pageUid}/bodies/{body}/sections/{section}/form/st_cards/EN"
@@ -108,7 +108,7 @@ An empty catalog gives nothing to clone. Build the card by hand once; this shape
 ### Remove a card
 
 ```bash
-CURRENT=$(curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
+CURRENT=$(curl -s -K "$FS_CURLRC" \
   "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/pages/{pageUid}/bodies/{body}/sections/{section}/form/st_cards/EN")
 
 # Remove card by id
@@ -116,7 +116,7 @@ UPDATED=$(echo "$CURRENT" | jq '
   .content |= map(select(.id != "the-uuid-to-remove"))
 ')
 
-echo "$UPDATED" | curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
+echo "$UPDATED" | curl -s -K "$FS_CURLRC" \
   -X PATCH -H "Content-Type: application/json" \
   -d @- \
   "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/pages/{pageUid}/bodies/{body}/sections/{section}/form/st_cards/EN"
@@ -125,13 +125,13 @@ echo "$UPDATED" | curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
 ### Reorder cards
 
 ```bash
-CURRENT=$(curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
+CURRENT=$(curl -s -K "$FS_CURLRC" \
   "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/pages/{pageUid}/bodies/{body}/sections/{section}/form/st_cards/EN")
 
 # Reverse order as example
 UPDATED=$(echo "$CURRENT" | jq '.content |= reverse')
 
-echo "$UPDATED" | curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
+echo "$UPDATED" | curl -s -K "$FS_CURLRC" \
   -X PATCH -H "Content-Type: application/json" \
   -d @- \
   "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/pages/{pageUid}/bodies/{body}/sections/{section}/form/st_cards/EN"

@@ -1,0 +1,50 @@
+// report.bsh: prints the current permissions of the project it runs in. Read-only; changes nothing.
+//
+// Output (one line per fact, in the same format apply.bsh reads), through context.logInfo:
+//   GROUP|<name>|<external|local>|<admin|->
+//   WORKFLOW|<name>                             every workflow in the Template Store (TemplateStoreRoot.getWorkflows() [jar]);
+//                                               permissions.py refuses a policy that names a workflow not listed here
+//   PERM|<STORETYPE>|<group>|<CAN_X,...>        every group that has any permission on the store root
+//   WFINHERIT|<STORETYPE>|<true|false>          whether the store root inherits its workflow permissions
+//   WFPERM|<STORETYPE>|<workflow>|<group,...>   the groups that may start a workflow on the store root
+// The REST execute endpoint returns these lines in the response body (observed 2026-10-09 on FirstSpirit 5.2.261116).
+import de.espirit.firstspirit.agency.StoreAgent;
+import de.espirit.firstspirit.agency.ProjectMembersAgent;
+import de.espirit.firstspirit.access.store.Store;
+import de.espirit.firstspirit.access.store.Permission;
+import de.espirit.firstspirit.access.store.templatestore.Workflow;
+
+storeAgent = context.requireSpecialist(StoreAgent.TYPE);
+members = context.requireSpecialist(ProjectMembersAgent.TYPE);
+names = new String[] {"CAN_SEE", "CAN_READ", "CAN_CHANGE", "CAN_APPEND_FOLDER", "CAN_APPEND_LEAF", "CAN_DELETE_FOLDER",
+    "CAN_DELETE_LEAF", "CAN_CHANGE_PERMISSION", "CAN_RELEASE", "CAN_META_SEE", "CAN_META_CHANGE"};
+groups = members.getGroups();
+
+for (int i = 0; i < groups.size(); i++) {
+    g = groups.get(i);
+    context.logInfo("GROUP|" + g.getName() + "|" + (g.isExternal() ? "external" : "local") + "|" + (g.isAdmin() ? "admin" : "-"));
+}
+wfIt = storeAgent.getStore(Store.Type.TEMPLATESTORE).getWorkflows().getChildren().iterator();
+while (wfIt.hasNext()) {
+    wf = wfIt.next();
+    if (wf instanceof Workflow) context.logInfo("WORKFLOW|" + wf.getName());
+}
+stores = new String[] {"PAGESTORE", "SITESTORE", "MEDIASTORE", "CONTENTSTORE", "GLOBALSTORE", "TEMPLATESTORE"};
+for (int s = 0; s < stores.length; s++) {
+    store = storeAgent.getStore(Store.Type.valueOf(stores[s]));
+    for (int i = 0; i < groups.size(); i++) {
+        g = groups.get(i);
+        perm = store.getPermission(g);
+        list = new ArrayList();
+        for (int k = 0; k < names.length; k++) if (perm.isAllowed(Permission.class.getField(names[k]).getInt(null))) list.add(names[k]);
+        if (list.size() > 0) context.logInfo("PERM|" + stores[s] + "|" + g.getName() + "|" + String.join(",", list));
+    }
+    context.logInfo("WFINHERIT|" + stores[s] + "|" + store.inheritWorkflowPermission());
+    wps = store.getWorkflowPermissions();
+    for (int w = 0; w < wps.length; w++) {
+        gl = new ArrayList();
+        ag = wps[w].getAllowedGroups();
+        for (int k = 0; k < ag.length; k++) gl.add(ag[k].getName());
+        context.logInfo("WFPERM|" + stores[s] + "|" + wps[w].getWorkflow().getName() + "|" + String.join(",", gl));
+    }
+}

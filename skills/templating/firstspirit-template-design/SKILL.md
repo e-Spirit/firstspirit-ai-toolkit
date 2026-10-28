@@ -3,9 +3,9 @@ name: firstspirit-template-design
 description: >-
   Design principles and review guidance for FirstSpirit template development. Use whenever creating, generating, reviewing or auditing FirstSpirit templates: page, section, format and link templates, input components and forms (GOM), CMS tags and output, headless and CaaS projects, content modelling and datasets, naming and coding conventions, reuse, editorial usability, localisation, documenting a created template set, and cutting an HTML example, wireframe or design into templates. Trigger it for any FirstSpirit template task (ContentCreator, SiteArchitect, ODFS, CaaS, AI Suite), even without "design principles" — e.g. "build a section template", "review this FirstSpirit template", "which input component should I use", "turn this HTML page into FirstSpirit templates", "what do customers mean by component". References: components, tags, naming, common wording to FirstSpirit terms, cutting an artifact. Pair with firstspirit-technical-tone-of-voice for written deliverables.
 metadata:
-  source-commit: "92709aa"
-  published: "2026-10-21"
-  toolkit-version: "0.6.0"
+  source-commit: "8a9c029"
+  published: "2026-10-28"
+  toolkit-version: "0.7.0"
 ---
 
 > **Beta.** Early public release. Feedback welcome; behaviour and structure may change.
@@ -47,7 +47,9 @@ Good looks like: single-occurrence elements live in the page template; sections 
 
 A content area can be restricted to the section templates that make sense in it. Use that. Allowing every section everywhere pushes layout decisions onto editors and invites broken pages.
 
-Good looks like: each content area allows only the sections it should, so an editor cannot place a section where it does not belong.
+The same applies inside rich text. A format template offered in a `CMS_INPUT_DOM` cannot be limited in how often it is used, so whitelist the formats and link types a field may use, and give anything that must occur once or sparingly on a page, such as the `h1`, its own component instead of a DOM format. A heading format that is never used in content is then expected, not a gap.
+
+Good looks like: each content area allows only the sections it should, so an editor cannot place a section where it does not belong; every rich-text field whitelists its formats; once-only elements are components, not formats.
 
 ### 4. Match template structure to how it is consumed
 
@@ -81,7 +83,9 @@ Prefixes let you read a variable's origin and purpose from its name. They serve 
 
 Output mode changes this. The prefix convention matters most when the output is HTML or similar. In a pure headless project the variable names surface in the JSON and frontend developers prefer clean keys, so the convention is not always applied. Decide per project, by agreement with the frontend team.
 
-Good looks like: in classic projects, variables carry the correct prefix and reference names follow the convention; in headless projects, naming keeps the JSON clean while keeping contexts unambiguous. See `references/naming-and-conventions.md`.
+Templates themselves carry no type prefix, so their role is read from where they sit: group them in folders named for that role (cards, entries, formats, render templates). A reader, and a diagnostic, classifies a template by its folder and name before anything else; a flat template store makes every later review guess.
+
+Good looks like: in classic projects, variables carry the correct prefix and reference names follow the convention; in headless projects, naming keeps the JSON clean while keeping contexts unambiguous; templates sit in folders that name their role. See `references/naming-and-conventions.md`.
 
 ### 8. Reuse instead of repeat
 
@@ -93,13 +97,17 @@ Good looks like: no copy-pasted template logic, shared code lives in a format te
 
 Settings that several templates depend on, such as a date format, belong in project settings, maintained once. Repeating them per template guarantees they drift.
 
-Good looks like: shared formats and configuration are read from project settings, not redefined in each template.
+Two more things to keep in one place. Define only the media resolutions that templates render: every resolution in the project settings is a crop the editor may have to make on every image. And in a master project that is rolled out to cloned projects, keep content shared across all projects (a dictionary, legal text) and content each clone replaces (a logo) in separate templates, so a clone changes one without touching the other.
+
+Good looks like: shared formats and configuration are read from project settings, not redefined in each template; no resolution exists that no template uses; in a master, shared and clone-specific content do not share a template.
 
 ### 10. Write display names and descriptions for the editor
 
 Display names and template descriptions are how an editor picks the right template or section, so write them for the editor, not only for developers. Give each template a meaningful, unique, language-independent description and a clear display name, and give site store folders proper display names.
 
-Good looks like: an editor can choose the right template from its name and description alone, and the site map is readable.
+The other half of the choice is what the editor does not see. Hide every template an editor never chooses, such as render-only format templates, system singletons and channel machinery, with the template's hide-from-editor setting, and in a master project also the global content templates whose pages ship inside the master. A hidden template needs no snippet and no editor-facing description; a technical template that is visible is a finding, because it appears in the ContentCreator chooser next to the real ones.
+
+Good looks like: an editor can choose the right template from its name and description alone, the chooser shows nothing technical, and the site map is readable.
 
 ### 11. Model structured and repeated content as data, and respect its dependencies
 
@@ -121,7 +129,9 @@ There are two cases. `FS_LIST` was deprecated in 5.2R3 and removed in FirstSpiri
 
 The full list, with the replacement for each component, is in `references/deprecated.md`. Note the scope: this principle is about keeping new templates clean. Migrating a removed component in an existing project is specialist, multi-step, cross-version work that sits outside this skill, so the review flags it for a FirstSpirit expert rather than planning it here. In practice this is rare, since the affected components are very old.
 
-Good looks like: no deprecated or removed components in new templates. Where an existing project still contains one, it is flagged for a FirstSpirit expert, not migrated as part of the review.
+The same goes for syntax that the product has superseded, such as the pre-5.2 rule blocks (`<ON_EVENT>`, `<ON_SAVE>`, `<ON_RELEASE>`) in place of `<RULE>`, or old script visibility code: do not copy it from legacy projects or older documentation. The templating-reference skill lists the superseded forms next to the components.
+
+Good looks like: no deprecated or removed components, and no superseded rule or script syntax, in new templates. Where an existing project still contains one, it is flagged for a FirstSpirit expert, not migrated as part of the review.
 
 ### 13. Document the template set as you build it
 
@@ -151,27 +161,30 @@ Good looks like: editor-facing languages and content language-dependence are dec
 
 Give every output of a variable that can be empty a default (`$CMS_VALUE(var, default:"")$`) unless an `$CMS_IF$` around it handles the empty case. Set `editorId` on every HTML output channel unless the project says otherwise: on the outer element of each section, on text fields with the component variable (inline editing), and on every picture reference with its resolution; where no element exists, leave a comment that says so, and let the developer decide between a preview-only element and no inline editing. Other component types are edited inline only when the developer specifies it. Render with line breaks and indentation; remove unwanted blank lines with `$CMS_TRIM$`, not by collapsing the output (practice, `[verify]`; details in `references/output-conventions.md`).
 
-Good looks like: no bare `$CMS_VALUE$` on a nullable field outside a condition, an `editorId` on each section, text field and picture or a comment saying why it is missing, a deliberate choice for any other inline editing, and output that is readable in the preview.
+Three further defaults keep the output clean. Where a template has nothing to render in a channel, say so with `#global.stopGenerate` instead of leaving an empty channel source; an empty channel reads as unfinished, a stop reads as a decision. Output a rich-text field that allows lists through `.normalize` (`firstspirit-templating-reference`, DOM output), or an editor's list arrives wrapped in a paragraph. And set each format template's block or inline conversion to what its HTML is; a heading declared inline ends up inside a paragraph with nothing to catch it.
 
-### 16. Give every editor-facing template a snippet
+Good looks like: no bare `$CMS_VALUE$` on a nullable field outside a condition, an `editorId` on each section, text field and picture or a comment saying why it is missing, a deliberate choice for any other inline editing, a stop on every channel a template does not serve, normalised DOM output, formats whose conversion matches their HTML, and output that is readable in the preview.
+
+### 16. Give every editor-facing template a snippet, and a preview image where the editor chooses among variants
 
 The snippet (label, extract, thumbnail) is what the editor sees for each individual section or page in lists, search results and selection dialogs; it is built from the content (a catalog of cards without snippets cannot be told apart). Define it with the form: the label is the field that names the object, the extract adds meaning, the thumbnail is set only where the form has an image field. Guard optional inputs and escape the result. A section, page or table template an editor opens, an `FS_CATALOG` item template and a link template without a snippet is unfinished; a hidden technical template is not (`references/snippets.md`). Snippets cannot be created over REST: write the expressions down and hand them over.
 
-Good looks like: each editor-facing template has a label that identifies the object, an extract where one adds meaning, and a thumbnail only where an image field exists.
+The preview image is the other picture the editor meets: it belongs to the template, not to the content, and is shown when the editor picks a template among several to create a section, page or table. It matters in proportion to the number of options, and most where several variants of one thing exist, because names alone do not tell four hero variants apart (`references/preview-image.md`).
+
+Good looks like: each editor-facing template has a label that identifies the object, an extract where one adds meaning, and a thumbnail only where an image field exists; every template an editor chooses among several has a preview image that shows what it does.
 
 ## References
 
 - `references/naming-and-conventions.md`: reference and display names, variable prefixes and when they apply, database schema naming, reuse do's.
 - `references/components-and-tags.md`: stores, page and section templates, input component catalogue, datatype mapping, CMS tags, header functions.
 - `references/choosing-an-input-component.md`: the editor's need mapped to the input component, what it returns, alternatives and cases to avoid, plus required fields, language dependence and layout.
-- `references/deprecated.md`: deprecated and removed input components and their replacements, with the deprecation or removal version where known.
+- `references/deprecated.md`: the design view behind principle 12: why deprecated components are a trap, what is in and out of scope, how a review reports a hit; the list itself is in the templating-reference skill.
 - `references/template-documentation.md`: the fill-in pattern for documenting a created template set — originating instruction, templates by store type, per-component table, build order.
 - `references/common-language-to-fs-terms.md`: how customers and briefs word things ("component", "block", "header", "publish") and which FirstSpirit term each usually means, with the questions to ask when a word is ambiguous.
 - `references/cutting-an-artifact.md`: turning an HTML example, wireframes, a design system or a description into templates: the default map from parts of the artifact to template kinds, the question tree when there is no artifact, and the decisions taken once for the whole project.
 - `references/global-content-areas.md`: a global content area owns its output and the page template only places it; contexts and variables when the two meet.
 - `references/snippets.md`: the snippet of a template (label, extract, thumbnail): which templates need one, what to put in each part, building and reviewing it.
-- `references/preview-image.md`: the preview image of a template, shown when the template is chosen to create content: when it matters, what to show, style of the reference projects. Not the snippet.
-- `references/preview-image.md`: the preview image of a template, shown when the template is chosen to create content: when it matters, what to show, style of the reference projects. Not the snippet.
+- `references/preview-image.md`: the preview image of a template (principle 16), shown when the template is chosen to create content: when it matters, what to show, style of the reference projects. Not the snippet.
 - `references/output-conventions.md`: defaults for variables without a condition, `editorId` on sections, text fields and pictures (with a comment when no element exists), inline editing versus the whole form, indentation and trimming.
 - `references/localisation.md`: the two language dimensions (editor-facing vs `useLanguages`), language-dependence by template and component type, and the catalog/index shared-structure behaviour.
 

@@ -15,9 +15,9 @@ description: >-
   firstspirit-api-reference, firstspirit-template-design, firstspirit-scripting,
   firstspirit-module-development and firstspirit-rest-api.
 metadata:
-  source-commit: "902bd48"
-  published: "2026-10-26"
-  toolkit-version: "0.6.0"
+  source-commit: "8a9c029"
+  published: "2026-10-28"
+  toolkit-version: "0.7.0"
 ---
 
 > **Beta.** Early public release. Feedback welcome; behaviour and structure may change.

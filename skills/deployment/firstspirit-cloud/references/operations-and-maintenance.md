@@ -154,4 +154,4 @@ crownpeak.com/patchday-calendar; firstspiritstatus.crownpeak.com; support KB —
 Maintenance Window Schedule, Product Status Pages & Maintenance Notifications,
 SaaS Customer Logging quick start, Backup/recovery/data-consistency;
 docs.crownpeak.com/cloud-logging; the reference architectures (CaaS backup).
-First pass, version-dependent; not yet verified live.*
+Version-dependent.*

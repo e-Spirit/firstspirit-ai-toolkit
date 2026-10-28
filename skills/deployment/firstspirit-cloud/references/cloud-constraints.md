@@ -192,4 +192,4 @@ comparison is the **Cloud vs. Self-Hosted → hosting-model-differences** doc (s
 restrictions, Kibana logging); the AWS S3 deployment module doc
 (caching/invalidation/redirects/allowed characters); the FirstSpirit Cloud
 documentation pages; reference architectures (headless backup/caching). Verified
-against the two Cloud-vs-Self-Hosted docs 2026-07-31; other items not yet verified live.*
+against the two Cloud-vs-Self-Hosted docs 2026-07-31; version-dependent.*

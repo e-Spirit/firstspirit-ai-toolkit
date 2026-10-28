@@ -81,7 +81,7 @@ chmod 600 ~/.fs-cli-creds.env
 
 ```bash
 # at run time: source it, use the vars, redact on the way out
-set -a; . ~/.fs-cli-creds.env; set +a
+. ~/.fs-cli-creds.env            # shell-local; passed to fs-cli per call below, not exported
 fsuser="$FS_USER" fspwd="$FS_PWD" fs-cli … 2>&1 | sed -E "s/$(printf '%s' "$FS_PWD" | sed 's/[][\.*^$\/+?(){}|]/\\&/g')/***/g"
 ```
 
@@ -102,7 +102,7 @@ project name therefore surfaces only at `export` — or with `test project`, whi
 Use the two to separate the gates cleanly:
 
 ```bash
-set -a; . ~/.fs-cli-creds.env; set +a
+. ~/.fs-cli-creds.env            # shell-local; passed to fs-cli per call below, not exported
 fsuser="$FS_USER" fspwd="$FS_PWD" fs-cli -h <host> -port 443 -c HTTPS test
 fsuser="$FS_USER" fspwd="$FS_PWD" fs-cli -h <host> -port 443 -c HTTPS -p "<Project Name>" test project
 ```

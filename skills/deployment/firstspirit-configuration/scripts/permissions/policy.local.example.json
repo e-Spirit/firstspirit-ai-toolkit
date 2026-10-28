@@ -1,0 +1,7 @@
+{
+  "_comment": "Local only: add policy.local.json to .gitignore. The external string a group is matched with (on FirstSpirit Cloud: the Keycloak group). Needed only when a group must be created; groups that exist are used as they are.",
+  "externalNames": {
+    "ChiefEditor": "<keycloak group string>",
+    "Editor": "<keycloak group string>"
+  }
+}

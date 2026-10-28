@@ -141,8 +141,8 @@ projects keep editor in-context editing.
   dependency on CaaS (the preview is rendered by the templates unless a
   PreviewRenderingPlugin is configured) `[odfs]`. The **2.x module** `fs-tpp-<version>.fsm`
   (with its ThirdPartyPreview web component and a CaaS dependency) is deprecated but may
-  still run in older projects. New installs: OCM 3.0 (see
-  the OCM 3.0 documentation).
+  still run in older projects. New installs: OCM 3.0 (`firstspirit-installation`,
+  `firstspirit-installation/references/ocm.md`).
 - **Depends on:** FirstSpirit (ContentCreator) + the external app; CaaS is the usual content source.
 - **Depth:** `firstspirit-headless` (OCM/TPP/SNAP, `data-preview-id`).
 
@@ -263,7 +263,7 @@ service** running.
   projects (project component *Bundle management*). That guide does not mention
   `license.PACKAGEPOOL` or the PackageManager service, so how the older package-based Corporate
   Content above relates to it, and which licence flag applies, is `[verify]`. Install:
-  the Multisite Management installation guide.
+  `firstspirit-installation` (`firstspirit-installation/references/multisite-management.md`).
 
 ### Formcentric Webforms, VideoManagementPro
 - **Formcentric Webforms** — editorial form builder (formerly "Monday").
@@ -271,7 +271,7 @@ service** running.
   there and are referenced from a report in both clients and embedded via embed codes. Needs a
   licence with the **AppCenter** on (`license.APPTAB_SLOTS`), a technical movingimage user, and
   **does not work with the external preview** (so not with OCM or headless previews) `[odfs]`.
-  Install: the VideoManagementPro administrator documentation.
+  Install: `firstspirit-installation` (`firstspirit-installation/references/videomanagementpro.md`).
 
 ### External Synchronization (FSDevTools / `fs-cli`)
 Exports a project's **templates and their dependent elements** to a **filesystem**

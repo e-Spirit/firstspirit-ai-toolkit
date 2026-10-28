@@ -1,5 +1,59 @@
 # Release Notes
 
+## 0.7.0 — 2026-10-28
+
+Skills in this release (each SKILL.md carries the same source commit in its `metadata:` block):
+
+- `firstspirit-api-reference` @ 8a9c029 (beta)
+- `firstspirit-templating-reference` @ 8a9c029 (beta)
+- `firstspirit-scripting` @ 8a9c029 (beta)
+- `firstspirit-rest-api` @ 8a9c029 (beta)
+- `firstspirit-external-sync-export` @ 8a9c029 (beta)
+- `firstspirit-operations` @ 8a9c029 (beta)
+- `firstspirit-contentcreator-extensions` @ 8a9c029 (beta)
+- `firstspirit-template-design` @ 8a9c029 (beta)
+- `firstspirit-cloud` @ 8a9c029 (beta)
+- `firstspirit-headless` @ 8a9c029 (beta)
+- `firstspirit-module-development` @ 8a9c029 (beta)
+- `firstspirit-ai-suite` @ 8a9c029 (beta)
+- `firstspirit-smartsearch` @ 8a9c029 (beta)
+- `firstspirit-collaboration` @ 8a9c029 (beta)
+- `firstspirit-technical-product-knowledge` @ 8a9c029 (beta)
+- `firstspirit-technical-tone-of-voice` @ 8a9c029 (beta)
+- `firstspirit-workflow-development` @ 8a9c029 (beta)
+- `firstspirit-installation` @ 8a9c029 (beta)
+- `firstspirit-configuration` @ 8a9c029 (beta)
+
+Changes since 0.6.0 — three new setup skills, and the FragmentCreator-module facts in two existing skills.
+
+- **New: `firstspirit-installation`** — installing FirstSpirit on-premises (Java wrapper, ports,
+  launcher, licence file, update and backup) and installing, updating and activating modules per
+  server and project: BasicWorkflows, Development Tools, CaaS Connect, Navigation Service, OCM 3.0,
+  AI Suite, Collaboration, SmartSearch Connect, DQM Connect, Multisite Management,
+  VideoManagementPro, Connect for Commerce. Built from the product documentation; the steps marked
+  `[verify]` have not been run on a server yet.
+- **New: `firstspirit-configuration`** — configuring a project after it exists: groups and roles,
+  store and workflow permissions, external groups on FirstSpirit Cloud, ServerManager labels, and a
+  plan-apply-verify permissions tool (a role policy as JSON, applied and read back through the REST
+  API). First topic is permissions; module configuration is documented, not yet run.
+- **New: `firstspirit-workflow-development`** — building your own workflows: the workflow model,
+  building one in the Template Store or from a script, why a workflow is not offered on an element
+  (store authorisation, Start-transition rights, the ContentCreator flag, display logic, status
+  colours, stuck instances), server-side release options and `ReleaseOperation`, the BasicWorkflows
+  and ODFS examples as models. The "not offered" checklist's first two items are verified in
+  ContentCreator; the Hello World build is documented from the tutorial and marked `[verify]`.
+- **`firstspirit-technical-product-knowledge`** — FragmentCreator: maintenance mode since 2025.1,
+  not available from 2025.12, and the modules that went with it; the Markdown Editor module left
+  on a server breaks the SiteArchitect's form view on the 2026 releases.
+- **`firstspirit-module-development`** — a section on modules that stop linking after a server
+  update (why the JVM fails a class the module never calls, how to find the module from the
+  client's jar cache, the fix).
+- **`firstspirit-installation`** also carries the rule of thumb: deactivate modules of
+  discontinued products after a server update.
+- Toolkit: README rows for the three skills; release-notes provenance and the session-end note
+  as data (polish before 0.7.0); an issue form for skill feedback.
+
+
 ## 0.6.0 — 2026-10-21
 
 Skills in this release (each SKILL.md carries the same source commit in its `metadata:` block):

@@ -9,9 +9,9 @@ description: >
   media upload, content search. Also use when the user mentions "FirstSpirit REST API" or asks how to read/write
   content via the API.
 metadata:
-  source-commit: "92709aa"
-  published: "2026-10-21"
-  toolkit-version: "0.6.0"
+  source-commit: "8a9c029"
+  published: "2026-10-28"
+  toolkit-version: "0.7.0"
 ---
 
 > **Beta.** Early public release. Feedback welcome; behaviour and structure may change.
@@ -29,22 +29,25 @@ metadata:
 
 ## Setup
 
-Load credentials before any API call:
+Load credentials before any API call and hand them to curl through a config file, never on
+the command line (`-u` shows the password in the process list for the duration of every call):
 ```bash
 source .env
 # Provides: $FS_USERNAME, $FS_PASSWORD, $FS_REST_BASE_URL, $FS_PROJECT_ID
 # In .env, SINGLE-QUOTE any value containing `$` (e.g. FS_PASSWORD='$ecret'): `source`
 # expands $… inside double-quoted or bare values, so the password silently becomes
 # empty and every call fails with a misleading 401.
+FS_CURLRC="$(mktemp)"                      # mode 600, owner only
+printf 'user = "%s:%s"\n' "$FS_USERNAME" "$FS_PASSWORD" > "$FS_CURLRC"
 mkdir -p ./tmp   # JSON payloads go here; avoids shell-quoting issues
 ```
-Add `.env` to your project's `.gitignore` (the smoke test's `results/` and `logs/` too, see below).
-On a shared host prefer a curl config file (`curl -K <file>` with `user = "name:password"`, mode 600)
-over `-u` so the password is not in the process list.
+Every call below passes `-K "$FS_CURLRC"`; delete the file when the session ends
+(`rm -f "$FS_CURLRC"`). A `"` or `\` in the password is escaped as `\"` or `\\` inside the
+config file. Add `.env` to your project's `.gitignore` (the smoke test's `results/` and `logs/` too, see below).
 
 Standard curl pattern (read):
 ```bash
-curl -s -u "$FS_USERNAME:$FS_PASSWORD" "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/..."
+curl -s -K "$FS_CURLRC" "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/..."
 ```
 
 Standard curl pattern (write — **always via file**):
@@ -53,7 +56,7 @@ Standard curl pattern (write — **always via file**):
 cat > ./tmp/payload.json <<'JSON'
 { ... }
 JSON
-curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
+curl -s -K "$FS_CURLRC" \
   -X PATCH -H "Content-Type: application/json" \
   --data-binary @./tmp/payload.json \
   "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/..."
@@ -66,7 +69,9 @@ Every rule above is a claim about the REST module's behaviour, and the module is
 beta. `scripts/smoke-test.sh` probes each claim against the project in `.env` and prints
 PASS/FAIL per rule (read-only by default; `--write` creates and deletes a throwaway page, page
 reference, medium, dataset and section template — use a test project; `--scripts` exercises
-`/scripts/…/execute`). Run it once on a new server or after a
+`/scripts/…/execute`). It prints the target (host, project id and name, user) before the first
+call; `--write` and `--scripts` run only with `--yes` after you have checked that line
+(`FS_SMOKE_CONFIRM=<project id>` for unattended runs). Run it once on a new server or after a
 REST-module update; report any FAIL with the `results/firstspirit-rest-api/<run>/` folder attached
 (one line per run is appended to `logs/firstspirit-rest-api.log`; both sit under `FS_OUT_ROOT`,
 else the working directory — add `results/`, `logs/` and `.env` to your
@@ -115,7 +120,7 @@ Standard sequence for copying an existing page, registering it in the SiteStore 
 
 1. **Copy the source page**
    ```bash
-   curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
+   curl -s -K "$FS_CURLRC" \
      -X POST -H "Content-Type: application/json" \
      -d '{"action":"copy"}' \
      "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/pages/{sourceUid}/actions"
@@ -125,7 +130,7 @@ Standard sequence for copying an existing page, registering it in the SiteStore 
 
 2. **Set the display name of the new page** *(∥ with step 3)*
    ```bash
-   curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
+   curl -s -K "$FS_CURLRC" \
      -X PATCH -H "Content-Type: application/json" \
      -d '{"name":"Example Event","language":"EN"}' \
      "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/pages/{copiedUid}/rename"
@@ -139,9 +144,9 @@ Standard sequence for copying an existing page, registering it in the SiteStore 
 
 3. **Create PageReference in the SiteStore** *(∥ with step 2 — uses numeric page id, not the uid)*
    ```bash
-   PAGE_ID=$(curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
+   PAGE_ID=$(curl -s -K "$FS_CURLRC" \
      "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/pages/{copiedUid}" | jq '.id')
-   curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
+   curl -s -K "$FS_CURLRC" \
      -X POST -H "Content-Type: application/json" \
      -d "{\"uid\":\"{copiedUid}\",\"pageId\":$PAGE_ID,\"location\":\"/events/\"}" \
      "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/page-references/"
@@ -398,7 +403,7 @@ exactly these three). **Nothing in the TemplateStore can be released** (template
 ContentCreator they cannot be released either `[observed]`. Template store content moves between projects by Template
 Transport, Content Transport or Git, not by release.
 ```bash
-curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
+curl -s -K "$FS_CURLRC" \
   -X POST -H "Content-Type: application/json" \
   -d '{"action":"release","options":{"checkOnly":false,"dependentReleaseType":"NO_DEPENDENT_RELEASE","ensureAccessibility":false,"recursive":false}}' \
   "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/pages/{uid}/actions"

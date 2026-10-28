@@ -182,3 +182,105 @@ Two traps seen in a live FOP (PDF) template set `[observed]` (FS 5.2.261116, 202
 
   Check both branches: a missing `>` in the one that did not render in your test shows up only
   with the other list type. PDF output of the same lists is in `pdf-fop.md`.
+
+## Multiple pages — `#cs`
+
+`#cs` is bound in **table templates used as data-source-based sections** of a page (content
+projection); it describes the current sub-page of a multiple page and the current dataset in it
+`[odfs]`. Other members of the same context are `#global.pageParams` and `#global.dataset`
+(`content-projection.md`).
+
+| Member | Yields | Notes |
+| --- | --- | --- |
+| `#cs.contentLength` | Integer | number of datasets on the current sub-page, counted from 1; same as `#global.pageParams.data.size` |
+| `#cs.contentPosition` | Integer | index of the sub-page in the multiple page, from 0; same as `#global.pageParams.index` |
+| `#cs.currentRowNumber` | Integer | number of the current dataset in the sub-page (the page's example adds 1 for display, so it counts from 0) |
+| `#cs.dataset` | Dataset | the current dataset; for the **first** dataset of a multiple page use `#global.dataset` |
+| `#cs.dataset.javaClientUrl`, `#cs.dataset.webeditUrl` | String | edit link in SiteArchitect / ContentCreator |
+| `#cs.isFirstContentRow`, `#cs.isLastContentRow` | Boolean | same as `#global.pageParams.isFirst`, `.isLast` |
+| `#cs.isEvenContentRow`, `#cs.isOddContentRow` | Boolean | parity of the dataset number in the sub-page |
+
+```
+$CMS_IF(#cs.isFirstContentRow)$<table>$CMS_END_IF$
+<tr><td>$CMS_VALUE(#cs.currentRowNumber + 1)$/$CMS_VALUE(#cs.contentLength)$</td></tr>
+$CMS_IF(#cs.isLastContentRow)$</table>$CMS_END_IF$
+```
+
+## Document groups — `#docGroup`, `#docNode`
+
+Both belong to **document-group generation** (for example a table of contents in a print or PDF
+template set); a document group's pages and menu levels are walked as a tree `[odfs]`. Everything
+else about document groups is in the ODFS *Document groups* area, not here.
+
+`#docGroup` is the (virtual) root of the current document group and, through dot notation, any node
+of it. System objects are read-only in general; `pageFirst` is a deliberate exception.
+
+| Member | Yields | Notes |
+| --- | --- | --- |
+| `#docGroup.childs` | list of nodes | children, **page references first, then menu levels** |
+| `#docGroup.depth` | Integer | 0 for the top; the items of `childs` have 1 |
+| `#docGroup.isFolder`, `.isPageRef` | Boolean | node type (menu level / page reference) |
+| `#docGroup.index` | Integer | position in the parent's `childs` |
+| `#docGroup.parent` | node | the parent; `null` on the root |
+| `#docGroup.selected` | Boolean | the node itself or a child is being written to the output |
+| `#docGroup.label` | String | root: the document group's name; menu level: menu name; page reference: sitemap name |
+| `#docGroup.chapter` | String | chapter number such as `2.3.1` |
+| `#docGroup.section` | String | like `chapter`, but only **folders** are numbered |
+| `#docGroup.root` | node | the virtual root (equals `#docGroup`) |
+| `#docGroup.pageFirst` | Boolean, **set** it | set to `true` with `$CMS_SET(...)$` in the start template to output pages before folders; read it with `$CMS_VALUE(...)$` |
+
+`#docNode` is the **current element** (for example a page reference) while the document group is
+generated; it is of the same type as a `#docGroup` node. Members: `#docNode.depth`,
+`#docNode.chapter` (page reference or menu-level numbering), `#docNode.label`. `[odfs]`
+
+`#depth` and `#docFolder` have a page each in the 2026.5 ODFS (*System objects*) **with no content**,
+so nothing is documented about them. Do not guess a member list **[verify]**; for depth in a document
+group use `#docGroup.depth` / `#docNode.depth`.
+
+## Arithmetic precision — `#mathContext`
+
+Controls the **division of numbers** (for example `$CMS_VALUE(100.0/33.0)$`) `[odfs]`:
+
+| Member | Effect |
+| --- | --- |
+| `#mathContext.precision` | number of decimal places for the calculation; default **32** |
+| `#mathContext.roundingMode` | `UP`, `DOWN`, `CEILING`, `FLOOR`, `HALF_UP` (default), `HALF_DOWN`, `HALF_EVEN`, `UNNECESSARY` (the `java.math.RoundingMode` names) |
+| `#mathContext.useDefault` | resets both to the defaults |
+
+```
+$CMS_SET(#mathContext.precision, 3)$           $-- 100.0/33.0 gives 3.03 --$
+$CMS_SET(#mathContext.roundingMode, "UP")$     $-- 100.0/33.0 gives 3.0303030303030303030303030303031 --$
+$CMS_SET(_void, #mathContext.useDefault)$
+```
+
+The two outputs are the documented ones, with `precision` set to 3 and `roundingMode` set to `UP`
+one after the other. How long a setting lasts (this template, this page, the
+whole generation) is not documented **[verify]**. Number datatype: `datatypes.md`; operators: `expressions.md`.
+
+## Generation time — `#startdate`
+
+The time of the **last project change before the generation time**, so a generation of a historical
+state yields the last change before that state `[odfs]`. A `java.util.Date`: the fields below plus
+the methods of `Date`.
+
+| Member | Yields |
+| --- | --- |
+| `.format("PATTERN")` | String, Java `SimpleDateFormat` pattern (`"dd.MM.yyyy HH:mm"`) |
+| `.year`, `.month`, `.date` (= `.day_of_month`), `.day_of_week`, `.day_of_week_in_month`, `.day_of_year`, `.week_of_month`, `.week_of_year`, `.era` | BigInteger |
+| `.hour` (0-11), `.hour_of_day` (0-23), `.am_pm` (0 AM, 1 PM), `.minute`, `.second`, `.millisecond` | BigInteger |
+| `.dst_offset`, `.zone_offset` | BigInteger, milliseconds |
+| `.milliseconds` | Long, Unix timestamp |
+
+
+## Table rows — `#tr`
+
+In the format template with the abbreviation `tr` and in the `Table` function `[odfs]`
+(`small-functions.md`):
+
+| Member | Yields |
+| --- | --- |
+| `#tr.row` | Integer, 0-based row number |
+| `#tr.rowNumber` | Integer, 1-based |
+| `#tr.firstRow`, `#tr.lastRow` | Boolean |
+
+Cell and table information: `#cell`, `#table` (above).

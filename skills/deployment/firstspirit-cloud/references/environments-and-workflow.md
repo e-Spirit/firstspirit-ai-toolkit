@@ -204,5 +204,4 @@ root — its template-development *technology* is owned by the template skills, 
 restated here); docs.crownpeak.com/firstspirit/first-steps;
 docs.crownpeak.com/firstspirit/cloud-vs-self-hosted/cloud-specific-processes
 (custom-module DEV/QA pipeline + PROD ticket/patch-day install); the AWS S3
-deployment module doc (generation & deploy options). Items not marked verified
-are not yet verified live.*
+deployment module doc (generation & deploy options). Version-dependent.*
