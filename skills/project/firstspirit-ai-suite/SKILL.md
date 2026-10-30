@@ -14,8 +14,8 @@ description: >-
   "LicenseException on an AI request" or "isAvailable() is false". Not for Collaboration's
   AI agents, licensing positioning or module packaging basics.
 metadata:
-  source-commit: "e293e30"
-  published: "2026-10-28"
+  source-commit: "4a75bd0"
+  published: "2026-10-30"
   toolkit-version: "0.7.0"
 ---
 

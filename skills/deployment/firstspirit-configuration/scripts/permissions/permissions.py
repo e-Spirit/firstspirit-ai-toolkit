@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """permissions.py: set permissions from a role policy, safely. plan, apply, verify, report.
 
-apply sets, for every group the policy names, exactly the permission set the policy gives it: rights the group has
-and the policy does not list are removed. Groups the policy does not name are left alone. It needs a user who may
+apply sets, for every group the policy names, exactly the permission set the policy gives it on every store root: rights
+the group has and the policy does not list are removed, also on a store the policy does not mention for that group. Groups the policy does not name are left alone. It needs a user who may
 change permissions in the project (a project administrator); run `plan` first and read it.
 
   permissions.py report                  print the project's current permissions (read-only)
@@ -125,6 +125,11 @@ def plan(pol, state):
         if have != want:
             add, rem = sorted(want - have), sorted(have - want)
             ops.append(("PERM", f"PERM|{store}|{g}|{','.join(sorted(want))}", f"{store} {g}: +{add} -{rem}"))
+    for g in sorted(names):                                   # a named group keeps nothing on stores its role does not cover
+        info = state["groups"].get(g)
+        if not info or info["admin"]: continue
+        for store in sorted(s for (s, g2) in state["perms"] if g2 == g and (s, g) not in want_p):
+            ops.append(("PERM", f"PERM|{store}|{g}|", f"{store} {g}: +[] -{sorted(state['perms'][(store, g)])} (the policy gives this group nothing on this store)"))
     if want_w and not state["workflows"]:
         notes.append("the report has no WORKFLOW lines (older report.bsh?); whether the policy's workflows exist is not checked")
     for (store, wf), want in sorted(want_w.items()):

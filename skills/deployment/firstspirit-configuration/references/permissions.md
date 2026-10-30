@@ -80,7 +80,7 @@ Output of a successful run is the script's `[INFO]` log lines `[observed]`; a sc
 | A person cannot do a task in a store | Store permission missing | `plan`, then `apply`; or set it by hand |
 | A workflow cannot be started | Workflow permission missing, or the store inherits | `plan` lists it; the tool sets inherit to false |
 | Everything was set, and after an import it is gone | Imported with a mode that did not carry it, or a branch export overrode main | Check `--permissionMode` on both sides; run `verify` after the import |
-| `plan` says a workflow is not in the Template Store | The module that provides it (BasicWorkflows) is not installed in this project, or the policy uses a name the project does not have (`request_release` is an example, not a BasicWorkflows workflow) | Install it first, or take the workflow out of the policy; `report` lists the project's workflows |
+| `plan` says a workflow is not in the Template Store | The module that provides it (BasicWorkflows) is not installed in this project, or the policy uses a name the project does not have (the example policy names `release`, the uid of the BasicWorkflows release package) | Install it first, or take the workflow out of the policy; `report` lists the project's workflows |
 | `apply` says a group does not exist | The group is not in the project and the policy has no external string for it | Add it to `policy.local.json` (not committed) |
 | The permissions are right and a script that sets them keeps regressing | The script is the only record | Keep the policy in Git and run `verify` in CI |
 

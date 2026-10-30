@@ -1,5 +1,5 @@
 {
-  "_comment": "Which group fills which role, and what each role may do. Copy to policy.json. No secrets here. External (Keycloak) strings go in policy.local.json, which is not committed. The workflow uids are examples: name only workflows the project has (BasicWorkflows imports release and delete, not request_release).",
+  "_comment": "Which group fills which role, and what each role may do. Copy to policy.json. No secrets here. External (Keycloak) strings go in policy.local.json, which is not committed. Name only workflows the project has: release is the uid of the BasicWorkflows release package; a project without BasicWorkflows has no workflow of that name and plan stops (report lists the project's workflows).",
   "version": 1,
 
   "protectedGroups": ["Everyone", "Administrators*"],
@@ -31,9 +31,9 @@
   },
 
   "workflows": [
-    { "store": "PAGESTORE",    "workflow": "request_release", "roles": ["editor", "chiefEditor", "projectAdmin"] },
-    { "store": "SITESTORE",    "workflow": "request_release", "roles": ["editor", "chiefEditor", "projectAdmin"] },
-    { "store": "MEDIASTORE",   "workflow": "request_release", "roles": ["editor", "chiefEditor", "projectAdmin"] }
+    { "store": "PAGESTORE",    "workflow": "release",         "roles": ["editor", "chiefEditor", "projectAdmin"] },
+    { "store": "SITESTORE",    "workflow": "release",         "roles": ["editor", "chiefEditor", "projectAdmin"] },
+    { "store": "MEDIASTORE",   "workflow": "release",         "roles": ["editor", "chiefEditor", "projectAdmin"] }
   ],
 
   "profiles": {

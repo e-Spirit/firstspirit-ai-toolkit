@@ -91,7 +91,7 @@ while IFS= read -r line || [ -n "$line" ]; do
   line="${line%$'\r'}"
   line="${line#"${line%%[![:space:]]*}"}"
   case "$line" in ''|'#'*) continue ;; esac
-  line="${line#export }"; line="${line#"${line%%[![:space:]]*}"}"
+  case "$line" in export[[:space:]]*) line="${line#export}"; line="${line#"${line%%[![:space:]]*}"}" ;; esac
   case "$line" in *=*) ;; *) continue ;; esac
   k="${line%%=*}"; v="${line#*=}"
   [[ "$k" =~ ^FS_[A-Z0-9_]+$ ]] || continue

@@ -14,8 +14,8 @@ description: >-
   "ValueService for a rule", "reject an upload", "run code when a page is saved",
   "connect from my IDE". Object model: firstspirit-api-reference.
 metadata:
-  source-commit: "e293e30"
-  published: "2026-10-28"
+  source-commit: "4a75bd0"
+  published: "2026-10-30"
   toolkit-version: "0.7.0"
 ---
 
