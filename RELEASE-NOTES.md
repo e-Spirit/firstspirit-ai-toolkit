@@ -1,5 +1,15 @@
 # Release Notes
 
+## 0.8.0
+
+- Toolkit: the DevCon variant of the session-end feedback note. `FIRSTSPIRIT_FEEDBACK=devcon`
+  writes the same local note as `=1`, with an event header on top (where the file goes at the
+  event, the issue form link), a line naming the DevCon hackathon environment as the reference,
+  an `Event` row in the facts table and four questions from the toolkit team inside the report.
+  The report content, the privacy rules and the hand-in script are unchanged; `=1` writes exactly
+  what it wrote before. Bash and PowerShell hooks; README section "At DevCon"; hook tests for the
+  header being present with `devcon`, absent with `1`, and nothing written when unset.
+
 ## 0.7.0 — 2026-10-28
 
 Skills in this release (each SKILL.md carries the same source commit in its `metadata:` block):
