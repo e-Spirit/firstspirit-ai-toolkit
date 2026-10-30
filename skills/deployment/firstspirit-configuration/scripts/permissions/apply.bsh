@@ -1,0 +1,92 @@
+// apply.bsh: applies a list of explicit permission operations to the project it runs in.
+//
+// It is deliberately simple. The thinking (which role gets what, what differs from now) is done outside by
+// permissions.py; this script only carries out the operations it is given, so it can be read in a minute.
+//
+// Input (bound by the REST call or by a menu dialog): the String variable `ops`, one operation per line:
+//   GROUP|<name>|<external name>                    create an external group, if it does not exist
+//   PERM|<STORETYPE>|<group>|<CAN_X,CAN_Y,...>      set the EXACT permission set of a group on a store root
+//   WFPERM|<STORETYPE>|<workflow>|<group,group,...> set the groups that may start a workflow on a store root. This also
+//                                                   switches the store to its OWN workflow permissions (inherit = false)
+// STORETYPE: PAGESTORE SITESTORE MEDIASTORE CONTENTSTORE GLOBALSTORE TEMPLATESTORE.
+//
+// Safety: groups named Everyone or Administrators* (the defaults of every project) are never touched. Each element is
+// locked, saved and unlocked. Every failure is collected; at the end the script throws with all of them, so a REST
+// caller gets a non-empty error body. On success it logs one line with the count: verify by reading the permissions back.
+import de.espirit.firstspirit.agency.StoreAgent;
+import de.espirit.firstspirit.agency.ProjectMembersAgent;
+import de.espirit.firstspirit.access.store.Store;
+import de.espirit.firstspirit.access.store.Permission;
+
+errors = new ArrayList();
+done = 0;
+storeAgent = context.requireSpecialist(StoreAgent.TYPE);
+members = context.requireSpecialist(ProjectMembersAgent.TYPE);
+
+boolean isProtected(String name) {
+    return name.equals("Everyone") || name.startsWith("Administrators");
+}
+
+int bit(String name) {
+    return Permission.class.getField(name.trim()).getInt(null);
+}
+
+lines = ops.split("\n");
+for (int i = 0; i < lines.length; i++) {
+    line = lines[i].trim();
+    if (line.length() == 0 || line.startsWith("#")) continue;
+    p = line.split("\\|", -1);
+    try {
+        if (p[0].equals("GROUP")) {
+            if (isProtected(p[1])) throw new Exception("group " + p[1] + " is protected");
+            if (members.getGroupByName(p[1]) == null) {
+                project = context.getProject();
+                project.lock();
+                try { project.createExternalGroup(p[1], p[2]); project.save(); } finally { project.unlock(); }
+            }
+        } else if (p[0].equals("PERM")) {
+            if (isProtected(p[2])) throw new Exception("group " + p[2] + " is protected");
+            group = members.getGroupByName(p[2]);
+            if (group == null) throw new Exception("group " + p[2] + " does not exist");
+            store = storeAgent.getStore(Store.Type.valueOf(p[1]));
+            store.setLock(true, false);
+            try {
+                perm = store.getPermission(group);
+                perm.forbid(Permission.CAN_EVERYTHING);
+                names = p[3].split(",");
+                for (int k = 0; k < names.length; k++) if (names[k].trim().length() > 0) perm.allow(bit(names[k]));
+                store.setPermission(group, perm);
+                store.save();
+            } finally { store.setLock(false, false); }
+        } else if (p[0].equals("WFPERM")) {
+            store = storeAgent.getStore(Store.Type.valueOf(p[1]));
+            workflow = storeAgent.getStore(Store.Type.TEMPLATESTORE).getWorkflowByName(p[2]);
+            if (workflow == null) throw new Exception("workflow " + p[2] + " does not exist");
+            gl = new ArrayList();
+            names = p[3].split(",");
+            for (int k = 0; k < names.length; k++) {
+                n = names[k].trim();
+                if (n.length() == 0) continue;
+                if (isProtected(n)) throw new Exception("group " + n + " is protected");
+                g = members.getGroupByName(n);
+                if (g == null) throw new Exception("group " + n + " does not exist");
+                gl.add(g);
+            }
+            store.setLock(true, false);
+            try {
+                store.setInheritWorkflowPermission(false);
+                wp = store.getCreateWorkflowPermission(workflow);
+                wp.setAllowedGroups(gl.toArray(new de.espirit.firstspirit.access.project.Group[0]));
+                store.setWorkflowPermission(wp);
+                store.save();
+            } finally { store.setLock(false, false); }
+        } else {
+            throw new Exception("unknown operation " + p[0]);
+        }
+        done++;
+    } catch (Throwable t) {
+        errors.add("line " + (i + 1) + " [" + line + "]: " + t);
+    }
+}
+context.logInfo("apply.bsh: " + done + " operation(s) done, " + errors.size() + " failed");
+if (errors.size() > 0) throw new RuntimeException(errors.size() + " operation(s) failed: " + errors);

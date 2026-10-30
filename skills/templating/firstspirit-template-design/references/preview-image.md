@@ -35,6 +35,6 @@ projects, not a documented requirement. The files are `PreviewImage.png` in the 
 ## In the build
 
 - Every template an editor chooses among others gets one, in proportion to the number of options (above).
-- Not creatable over REST `[verify]`: hand over the image together with the template name and the setting to make.
+- Whether it can be set over REST is open in the reference; until then hand over the image together with the template name and the setting to make.
 - In a review, a project with many or versioned templates and no preview images is a finding; a small project without
   them is a note.

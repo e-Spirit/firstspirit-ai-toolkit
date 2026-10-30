@@ -3,9 +3,9 @@ name: firstspirit-contentcreator-extensions
 description: >-
   Lookup reference for extending the FirstSpirit ContentCreator. Browser side: the WE_API JavaScript API (top.WE_API.Common / Dialog / Preview / Report, FSID, jumpTo, execute, showMessage, createDialog, preview reload / rescan / repaint, report shortcodes), the server→browser bridges ClientScriptOperation (sync vs async, callback-must-fire) and ClientResourceOperation, a "does not work in ContentCreator" list, MPP_API / JC_API (SiteArchitect). Java side: the ContentCreator plug-in interfaces a module implements (toolbar, inline edit, status notes, element status, timeline, translation) and the @WebAppComponent they need. Use whenever JavaScript in a ContentCreator preview or action must talk to the client, a BeanShell script or Executable must run JavaScript in the editor's browser, or a module adds ContentCreator UI — e.g. "reload only this section after my script ran", "open a report with a preset filter", "why does my ClientScriptOperation never return", "add a button to the ContentCreator toolbar".
 metadata:
-  source-commit: "92709aa"
-  published: "2026-10-21"
-  toolkit-version: "0.6.0"
+  source-commit: "1e54562"
+  published: "2026-10-30"
+  toolkit-version: "0.7.0"
 ---
 
 > **Beta.** Early public release. Feedback welcome; behaviour and structure may change.
@@ -84,6 +84,15 @@ from an `FS_BUTTON`, and the one observation that `WE_API.Common.execute` **did 
 its parameters** to the script. No parser or `javap` catches these; only the list does. The
 full SiteArchitect × ContentCreator matrix is
 `firstspirit-operations/references/client-capability-matrix.md`.
+
+## Scope, restrictions, customisation and preview editing (from the ODFS pages)
+
+| Question | File |
+| --- | --- |
+| What does ContentCreator support, what does it not, what must the project have in place; per-component restrictions; default-value and release limits | `references/restrictions-and-scope.md` |
+| Hide, disable or reorder ContentCreator's own functions (Tailored UI); `FS_BUTTON` handler classes `NewSection`, `NewPage`, `NewContent`, `NewListEntry`, `EditMenu`; LiveEdit; "Configure actions" | `references/customising-contentcreator.md` |
+| `editorId(...)` parameters, what to put where, InEdit components, metadata editing, drag-and-drop, hit marker, image cropping and `CropDialogOperation` | `references/editing-in-the-preview.md` |
+| Automatic and AI-assisted cropping, `fsai_*` metadata fields, Image Assistant setup | `references/automatic-cropping.md` |
 
 ## Test before you ask the editor to click
 

@@ -1,0 +1,47 @@
+{
+  "_comment": "Which group fills which role, and what each role may do. Copy to policy.json. No secrets here. External (Keycloak) strings go in policy.local.json, which is not committed. Name only workflows the project has: release is the uid of the BasicWorkflows release package; a project without BasicWorkflows has no workflow of that name and plan stops (report lists the project's workflows).",
+  "version": 1,
+
+  "protectedGroups": ["Everyone", "Administrators*"],
+
+  "groups": {
+    "projectAdmin": ["ProjectAdmin"],
+    "chiefEditor": ["ChiefEditor"],
+    "editor": ["Editor"]
+  },
+
+  "storeKinds": {
+    "content": ["PAGESTORE", "SITESTORE", "MEDIASTORE", "CONTENTSTORE"],
+    "design": ["TEMPLATESTORE", "GLOBALSTORE"]
+  },
+
+  "permissions": {
+    "projectAdmin": {
+      "content": ["ALL"],
+      "design": ["ALL"]
+    },
+    "chiefEditor": {
+      "content": ["CAN_SEE", "CAN_READ", "CAN_CHANGE", "CAN_APPEND_FOLDER", "CAN_APPEND_LEAF", "CAN_DELETE_FOLDER", "CAN_DELETE_LEAF", "CAN_RELEASE", "CAN_META_SEE", "CAN_META_CHANGE"],
+      "design": ["CAN_SEE", "CAN_READ"]
+    },
+    "editor": {
+      "content": ["CAN_SEE", "CAN_READ", "CAN_CHANGE", "CAN_APPEND_FOLDER", "CAN_APPEND_LEAF", "CAN_META_SEE", "CAN_META_CHANGE"],
+      "design": ["CAN_SEE", "CAN_READ"]
+    }
+  },
+
+  "workflows": [
+    { "store": "PAGESTORE",    "workflow": "release",         "roles": ["editor", "chiefEditor", "projectAdmin"] },
+    { "store": "SITESTORE",    "workflow": "release",         "roles": ["editor", "chiefEditor", "projectAdmin"] },
+    { "store": "MEDIASTORE",   "workflow": "release",         "roles": ["editor", "chiefEditor", "projectAdmin"] }
+  ],
+
+  "profiles": {
+    "developer": {
+      "groups": { "developer": ["Developer"] },
+      "permissions": {
+        "developer": { "content": ["CAN_SEE", "CAN_READ"], "design": ["ALL"] }
+      }
+    }
+  }
+}

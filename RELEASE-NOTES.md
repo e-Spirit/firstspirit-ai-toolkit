@@ -1,25 +1,85 @@
 # Release Notes
 
-## 0.6.0 — 2026-10-20
+## 0.7.0 — 2026-10-28
 
 Skills in this release (each SKILL.md carries the same source commit in its `metadata:` block):
 
-- `firstspirit-api-reference` @ 1c55549 (beta)
-- `firstspirit-templating-reference` @ 1c55549 (beta)
-- `firstspirit-scripting` @ 1c55549 (beta)
-- `firstspirit-rest-api` @ 1c55549 (beta)
-- `firstspirit-external-sync-export` @ 1c55549 (beta)
-- `firstspirit-operations` @ 1c55549 (beta)
-- `firstspirit-contentcreator-extensions` @ 1c55549 (beta)
-- `firstspirit-template-design` @ 1c55549 (beta)
-- `firstspirit-cloud` @ 1c55549 (beta)
-- `firstspirit-headless` @ 1c55549 (beta)
-- `firstspirit-module-development` @ 1c55549 (beta)
-- `firstspirit-ai-suite` @ 1c55549 (beta)
-- `firstspirit-smartsearch` @ 1c55549 (beta)
-- `firstspirit-collaboration` @ 1c55549 (beta)
-- `firstspirit-technical-product-knowledge` @ 1c55549 (beta)
-- `firstspirit-technical-tone-of-voice` @ 1c55549 (beta)
+- `firstspirit-api-reference` @ 1e54562 (beta)
+- `firstspirit-templating-reference` @ 1e54562 (beta)
+- `firstspirit-scripting` @ 1e54562 (beta)
+- `firstspirit-rest-api` @ 1e54562 (beta)
+- `firstspirit-external-sync-export` @ 1e54562 (beta)
+- `firstspirit-operations` @ 1e54562 (beta)
+- `firstspirit-contentcreator-extensions` @ 1e54562 (beta)
+- `firstspirit-template-design` @ 1e54562 (beta)
+- `firstspirit-cloud` @ 1e54562 (beta)
+- `firstspirit-headless` @ 1e54562 (beta)
+- `firstspirit-module-development` @ 1e54562 (beta)
+- `firstspirit-ai-suite` @ 1e54562 (beta)
+- `firstspirit-smartsearch` @ 1e54562 (beta)
+- `firstspirit-collaboration` @ 1e54562 (beta)
+- `firstspirit-technical-product-knowledge` @ 1e54562 (beta)
+- `firstspirit-technical-tone-of-voice` @ 1e54562 (beta)
+- `firstspirit-workflow-development` @ 1e54562 (beta)
+- `firstspirit-installation` @ 1e54562 (beta)
+- `firstspirit-configuration` @ 1e54562 (beta)
+
+Changes since 0.6.0 — three new setup skills, and the FragmentCreator-module facts in two existing skills.
+
+- **New: `firstspirit-installation`** — installing FirstSpirit on-premises (Java wrapper, ports,
+  launcher, licence file, update and backup) and installing, updating and activating modules per
+  server and project: BasicWorkflows, Development Tools, CaaS Connect, Navigation Service, OCM 3.0,
+  AI Suite, Collaboration, SmartSearch Connect, DQM Connect, Multisite Management,
+  VideoManagementPro, Connect for Commerce. Built from the product documentation; the steps marked
+  `[verify]` have not been run on a server yet.
+- **New: `firstspirit-configuration`** — configuring a project after it exists: groups and roles,
+  store and workflow permissions, external groups on FirstSpirit Cloud, ServerManager labels, and a
+  plan-apply-verify permissions tool (a role policy as JSON, applied and read back through the REST
+  API). First topic is permissions; module configuration is documented, not yet run.
+- **New: `firstspirit-workflow-development`** — building your own workflows: the workflow model,
+  building one in the Template Store or from a script, why a workflow is not offered on an element
+  (store authorisation, Start-transition rights, the ContentCreator flag, display logic, status
+  colours, stuck instances), server-side release options and `ReleaseOperation`, the BasicWorkflows
+  and ODFS examples as models. The "not offered" checklist's first two items are verified in
+  ContentCreator; the Hello World build is documented from the tutorial and marked `[verify]`.
+- **`firstspirit-technical-product-knowledge`** — FragmentCreator: maintenance mode since 2025.1,
+  not available from 2025.12, and the modules that went with it; the Markdown Editor module left
+  on a server breaks the SiteArchitect's form view on the 2026 releases.
+- **`firstspirit-module-development`** — a section on modules that stop linking after a server
+  update (why the JVM fails a class the module never calls, how to find the module from the
+  client's jar cache, the fix).
+- **`firstspirit-installation`** also carries the rule of thumb: deactivate modules of
+  discontinued products after a server update.
+- **`firstspirit-template-design`, `firstspirit-templating-reference`,
+  `firstspirit-contentcreator-extensions`** — the ContentCreator edit marker (`editorId` on a
+  section, a text field, a picture with its resolution) and the Snippet tab are named in the
+  descriptions and point at the one page that holds the parameters
+  (`editing-in-the-preview.md`); two pointers that led to files without it and one line that
+  called `editorId` a headless hook corrected.
+- Toolkit: README rows for the three skills; release-notes provenance and the session-end note
+  as data (polish before 0.7.0); an issue form for skill feedback.
+
+
+## 0.6.0 — 2026-10-21
+
+Skills in this release (each SKILL.md carries the same source commit in its `metadata:` block):
+
+- `firstspirit-api-reference` @ 92709aa (beta)
+- `firstspirit-templating-reference` @ 92709aa (beta)
+- `firstspirit-scripting` @ 92709aa (beta)
+- `firstspirit-rest-api` @ 92709aa (beta)
+- `firstspirit-external-sync-export` @ 92709aa (beta)
+- `firstspirit-operations` @ 92709aa (beta)
+- `firstspirit-contentcreator-extensions` @ 92709aa (beta)
+- `firstspirit-template-design` @ 92709aa (beta)
+- `firstspirit-cloud` @ 92709aa (beta)
+- `firstspirit-headless` @ 92709aa (beta)
+- `firstspirit-module-development` @ 92709aa (beta)
+- `firstspirit-ai-suite` @ 92709aa (beta)
+- `firstspirit-smartsearch` @ 92709aa (beta)
+- `firstspirit-collaboration` @ 92709aa (beta)
+- `firstspirit-technical-product-knowledge` @ 92709aa (beta)
+- `firstspirit-technical-tone-of-voice` @ 92709aa (beta)
 
 Changes since 0.5.0 — two new orientation skills, a session-end feedback hook, and content
 updates to nine existing skills.

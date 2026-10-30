@@ -77,7 +77,7 @@ Node fields: `id`, `label`, `seoRoute`, `seoRouteRegex`, `contentReference`,
 `customData`, `visible`, `permissions`, `_links`, `hasChildren`, `children`.
 
 ```json
-{ "id": "815c307c-2ca6-4f02-9653-fa3454988fc2",
+{ "id": "12345678-90ab-cdef-1234-567890abcdef",
   "label": "products", "seoRoute": "/products", "seoRouteRegex": null,
   "contentReference": "/Products/Sales/index.html",
   "visible": true, "permissions": null,

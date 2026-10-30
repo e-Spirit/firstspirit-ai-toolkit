@@ -188,6 +188,51 @@ component must **supply its own libraries as `<web-resources>`**. (A transitiona
 **2023.4**.) On deployment, web resources are reconciled by name across components
 and duplicates filtered — an unresolved conflict aborts the rollout.
 
+## When a module stops linking after a server update
+
+**Symptom.** A client or the server logs `java.lang.NoClassDefFoundError` naming a
+FirstSpirit API class, with a `ClassNotFoundException` from the module class loader
+as the cause, raised while reflecting on a module class or at its first use. The named
+class often still exists inside the client or server *implementation* jar, which makes
+it look like a server fault. It is not: the module class loader sees only the isolated
+Runtime API (above), and that class has left it. The module was compiled against an
+older `fs-isolated-runtime` that still exported it.
+
+**Why it fires without the class being called.** The JVM resolves every class named in
+a method signature, a `throws` clause, a `catch` block or the stack-map table when it
+verifies the class. Reflecting on the class is enough: the SiteArchitect's GOM form
+view does exactly that for every registered input component while painting, so a
+module in this state blocks the form view for every template, not only those using
+its component `[observed]` (2026-10-26, FirstSpirit 5.2.261119).
+
+**Example.** `DataAccessSessions.IllegalPluginException` is in `fs-isolated-runtime`
+5.2.240208 and absent from 5.2.261011 `[jar]` (both jars listed). The FirstSpirit
+Markdown module 1.29.20, part of the discontinued FragmentCreator set, catches it in its
+GOM element's `validate` method; on a 5.2.261119 server that produced the symptom above
+`[observed]` (2026-10-26). Deactivating the module cleared it immediately, with no
+restart `[observed]`.
+
+**Finding the module.** The SiteArchitect caches every module jar it loaded under
+`~/.firstspirit_<release>/jars/` (for 2026.11: `~/.firstspirit_5.2R2611/jars/`)
+`[observed]` (2026-10-26, macOS). Unzip the jars into a scratch directory and search the
+class files for the missing name:
+
+```bash
+grep -rlaF 'DataAccessSessions$IllegalPluginException' --include='*.class' scratch/
+```
+
+Hits inside `fs-client-impl-*.jar` are FirstSpirit itself; the one hit elsewhere is the
+module. `javap -p -v` on that class shows the method and whether the reference is a
+signature, a `throws` clause or a `catch`. Confirm the API change by listing the class
+in the two `fs-isolated-runtime` jars (`unzip -l … | grep`).
+
+**Fix.** Rebuild the module against the current `fs-isolated-runtime`; the compile
+error names what to replace. If the module belongs to a discontinued product, or has no
+maintainer, deactivate or uninstall it instead. The public release notes carry a
+*Deprecations* table (deprecated as of, removed as of) for products and features
+`[odfs]` (release notes 2025.12); API removals follow the stability policy in
+`best-practices.md`.
+
 ## Recognising an isolated server (brief)
 
 Mostly admin territory, but useful to know: an isolated server runs

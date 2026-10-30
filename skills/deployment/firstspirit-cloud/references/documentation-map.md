@@ -74,5 +74,5 @@ belongs to that future skill (and to the official docs linked above).
 ---
 
 *Sources: the FirstSpirit Cloud documentation pages; the docs and KB URLs listed
-above. First pass — URLs and the docs.firstspirit.com consolidation are in flux;
-not yet verified live.*
+above. URLs move with the docs.firstspirit.com consolidation; check a link before
+handing it on.*

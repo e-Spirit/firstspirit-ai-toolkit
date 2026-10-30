@@ -118,7 +118,7 @@ not appear in the response (live 2026-10-09).
 ```
 bsh % e = context.getElement();
 bsh % print(e);
-<SECTION editor="833847" id="835469" name="Text/Bild" ...>
+<SECTION editor="100042" id="100043" name="text_image" ...>
 ```
 
 ### `show()`

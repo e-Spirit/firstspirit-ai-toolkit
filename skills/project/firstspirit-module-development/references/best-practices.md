@@ -82,13 +82,14 @@ as an anti-pattern, with the replacement:
 | --- | --- | --- |
 | `de.espirit.common.StringUtil`, `de.espirit.firstspirit.common.StringUtil`, `de.espirit.common.tools.XmlDocuments`, `de.espirit.common.json.*` | Not in the Access API javadoc `[javadoc]` — no compatibility promise, even though official example modules use two of them | `String.isBlank()`, the JDK XML and a JSON library of your own |
 | `de.espirit.firstspirit.client.access.editor.lists.Catalog` | The concrete `FS_CATALOG` value implementation | `FormField` / `FormData` and the documented `Catalog` access in `firstspirit-api-reference` |
-| `de.espirit.firstspirit.web.ConnectionExtractor` | Web-internal; pulls the editor `Connection` out of an `HttpServletRequest` | The `SpecialistsBroker` the web-app component receives |
-| `de.espirit.firstspirit.server.event.*` (`EventListener`, `StoreEvent`, `StoreEventFilter`), `agency.EventAgent` | Server-internal event bus | `StoreListener` on the store `[jar]`; or react in the component that caused the change |
 | `de.espirit.firstspirit.access.AdminService` → `ProjectStorage` *just to test that a project exists* | Demands admin rights for a question the broker answers | `BrokerAgent.getBrokerByProjectId` and a null check. `AdminService.getScheduleStorage()` for listing or creating schedule entries is fine — `ScheduleStorage` `[jar]` is the intended API for that (verified 2026-09-18) |
-| `de.espirit.or.*` (`Session`, `Select`, `Equal`, `EntityList`) | Raw ORM layer | `QueryAgent` (`firstspirit-api-reference`, querying) |
 | `de.espirit.firstspirit.agency.LegacyModuleAgent` | Legacy (verified 2026-09-18) | `ModuleAdminAgent` `[jar]` for configuration and usages; `de.espirit.firstspirit.access.ModuleAgent` `[jar]` (`getComponents(Class)`, `getClassLoader()`) is *not* deprecated and is how the official examples discover other modules' components |
-| `de.espirit.firstspirit.store.access.contentstore.ContentOptionFactory` (`getTable()`) *to find the table template behind a database-backed combobox / radiobutton / checkbox* | `@ApiStatus.Internal` `[jar]`; `checkCompliance` fails on it | `gomSelect.getEntries().getIncludeConfiguration()` → `GomIncludeOptions.getOptionFactory().getOptionModel(broker, language, release)` → `instanceof TableTemplateProvider` → `getTableTemplate()` — all Access API `[jar]`; worked example in `firstspirit-api-reference` (values and data). The `Entity` alone is not enough: several table templates can share one table (verified 2026-09-30) |
-| `com.espirit.moddev.fcaf.*`, `com.espirit.ps.psci.*` | Internal frameworks, not FirstSpirit API | Only if you own them |
+
+The same rule holds for anything outside the documented API, whatever package it sits in:
+store events are observed with `StoreListener` on the store `[jar]` or handled in the component
+that caused the change; queries go through `QueryAgent` (`firstspirit-api-reference`,
+querying); a web-app component uses the `SpecialistsBroker` it receives, never one pulled out
+of the servlet request; frameworks that are not FirstSpirit API are used only by those who own them.
 
 Not in this table on purpose: **`de.espirit.common.base.Logging`** (`logInfo(String, Class)`,
 `logWarning`, `logError`, …) *is* part of the documented Access API `[javadoc]` and the

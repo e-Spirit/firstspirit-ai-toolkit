@@ -37,9 +37,8 @@
 # Every run keeps its (redacted) fs-cli output in results/firstspirit-external-sync-export/<run>/fs-cli.log
 # and appends one summary line to logs/firstspirit-external-sync-export.log — the portfolio's
 # shared output layout. Both live under the output root: $FS_OUT_ROOT if set, else the working
-# directory (inside the skills portfolio checkout, the checkout root, detected by its
-# tracked-skills.tsv). Add results/ and logs/ to .gitignore when running inside another repo;
-# the exported project itself goes where FS_SYNC_DIR says.
+# directory. Add results/ and logs/ to .gitignore when running inside another repo; the
+# exported project itself goes where FS_SYNC_DIR says.
 #
 # Note: we deliberately do NOT use `set -e`. This is a wrapper around a tool that
 # is expected to fail sometimes (bad identifier, auth, connection); `set -e` would
@@ -118,11 +117,6 @@ done
 # --- shared results/ + logs/ layout (see header) ------------------------------
 out_root() {
   if [ -n "${FS_OUT_ROOT:-}" ]; then printf '%s' "$FS_OUT_ROOT"; return; fi
-  d="$PWD"
-  while [ "$d" != / ]; do
-    if [ -f "$d/tracked-skills.tsv" ]; then printf '%s' "$d"; return; fi
-    d="$(dirname "$d")"
-  done
   printf '%s' "$PWD"
 }
 ROOT_OUT="$(out_root)"

@@ -170,4 +170,4 @@ folder redirects, allowed-paths section confirmed 2026-07-31; **the exact
 Cache-Control values and the ~15 wildcard limit were not surfaced in this pass —
 they rest on the Cloud-docs-home summary, still to confirm from the German
 source**); the reference architectures (static-deployment); the FirstSpirit Cloud
-documentation pages. Version- and release-dependent; not yet verified live.*
+documentation pages. Version- and release-dependent.*

@@ -25,7 +25,7 @@ ODFS: JavaScript APIs › ContentCreator › Preview; Content Highlighting › D
 3. If there is none, the **whole** preview reloads. [odfs]
 
 So to get a cheap partial reload, pass the container that carries the `editorId`, or a child
-of it. `editorId(...)` syntax: `firstspirit-templating-reference/references/gom/references-links.md`.
+of it. `editorId(...)` parameters and placement: `editing-in-the-preview.md` in this skill.
 
 ```javascript
 // After a server-side script changed content, reload only the affected container.

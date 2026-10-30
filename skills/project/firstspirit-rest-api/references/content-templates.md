@@ -13,7 +13,7 @@
 
 ### Section Template
 ```bash
-curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
+curl -s -K "$FS_CURLRC" \
   -X POST -H "Content-Type: application/json" \
   -d '{"uid":"hero_teaser","name":"Hero Teaser","description":"A hero section with headline and image."}' \
   "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/templates/section-templates/"
@@ -21,7 +21,7 @@ curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
 
 ### Page Template
 ```bash
-curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
+curl -s -K "$FS_CURLRC" \
   -X POST -H "Content-Type: application/json" \
   -d '{"uid":"standard_page","name":"Standard Page","description":"Default page layout",
        "bodies":[{"name":"content","allowedTemplates":["hero_teaser","text"]},
@@ -72,7 +72,7 @@ exercised on a server yet:
 
 ### Format Template
 ```bash
-curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
+curl -s -K "$FS_CURLRC" \
   -X POST -H "Content-Type: application/json" \
   -d '{"uid":"bold_format"}' \
   "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/templates/format-templates/"
@@ -80,7 +80,7 @@ curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
 
 ### Link Template
 ```bash
-curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
+curl -s -K "$FS_CURLRC" \
   -X POST -H "Content-Type: application/json" \
   -d '{"uid":"internal_link"}' \
   "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/templates/link-templates/"
@@ -94,14 +94,14 @@ The GOM defines what input components (editors) a template has. Sent and receive
 
 ### Read GOM
 ```bash
-curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
+curl -s -K "$FS_CURLRC" \
   -H "Accept: application/xml" \
   "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/templates/section-templates/hero_teaser/gom"
 ```
 
 ### Write GOM
 ```bash
-curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
+curl -s -K "$FS_CURLRC" \
   -X PUT -H "Content-Type: application/xml" \
   -d '<CMS_MODULE>
     <CMS_INPUT_TEXT name="st_headline" hFill="yes" singleLine="yes" useLanguages="yes">
@@ -151,7 +151,7 @@ curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
 ### Read Parsed Form Summary (read-only)
 Returns JSON list of editors with name, type, description — no content values:
 ```bash
-curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
+curl -s -K "$FS_CURLRC" \
   "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/templates/section-templates/hero_teaser/gom/form"
 ```
 Response:
@@ -294,14 +294,14 @@ Rules define validation, visibility, and computed behavior. Sent and received as
 
 ### Read Rules
 ```bash
-curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
+curl -s -K "$FS_CURLRC" \
   -H "Accept: application/xml" \
   "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/templates/section-templates/hero_teaser/rules"
 ```
 
 ### Write Rules
 ```bash
-curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
+curl -s -K "$FS_CURLRC" \
   -X PUT -H "Content-Type: application/xml" \
   -d '<RULES>
     <RULE when="ONSAVE">
@@ -324,7 +324,7 @@ curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
 
 ### Empty Rules
 ```bash
-curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
+curl -s -K "$FS_CURLRC" \
   -X PUT -H "Content-Type: application/xml" \
   -d '<RULES/>' \
   "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/templates/section-templates/hero_teaser/rules"
@@ -341,7 +341,7 @@ Channel-Sources contain the HTML/output template code. Sent and received as **ra
 
 ### Read Channel-Source
 ```bash
-curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
+curl -s -K "$FS_CURLRC" \
   -H "Accept: text/plain" \
   "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/templates/section-templates/hero_teaser/channel-sources/html"
 ```
@@ -367,7 +367,7 @@ $CMS_END_IF$
 ```
 
 ```bash
-curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
+curl -s -K "$FS_CURLRC" \
   -X PUT -H "Content-Type: text/plain" \
   --data-binary @hero_teaser.html \
   "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/templates/section-templates/hero_teaser/channel-sources/html"
@@ -392,13 +392,13 @@ only be listed).
 
 ### List Available Channel-Sources
 ```bash
-curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
+curl -s -K "$FS_CURLRC" \
   "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/templates/section-templates/hero_teaser/channel-sources/"
 ```
 
 ### Determine Template-Set UID
 ```bash
-curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
+curl -s -K "$FS_CURLRC" \
   "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/template-sets/"
 ```
 Use the `uid` value (e.g., `html`) as `{templateSetUid}`.
@@ -415,18 +415,18 @@ Steps 3–5 are independent and **must be sent as parallel tool calls**.
 source .env
 
 # 1. Create template
-curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
+curl -s -K "$FS_CURLRC" \
   -X POST -H "Content-Type: application/json" \
   -d '{"uid":"cta_button","name":"CTA Button","description":"Call-to-action button"}' \
   "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/templates/section-templates/"
 
 # 2. Verify the template exists (HTTP 200) before calling any sub-endpoints.
 #    The listing alone is not a reliable existence proof — always confirm with a direct GET.
-curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
+curl -s -K "$FS_CURLRC" \
   "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/templates/section-templates/cta_button"
 
 # 3. Set GOM (∥ with 4 and 5 — send as parallel tool calls)
-curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
+curl -s -K "$FS_CURLRC" \
   -X PUT -H "Content-Type: application/xml" \
   -d '<CMS_MODULE>
     <CMS_INPUT_TEXT name="st_label" hFill="yes" singleLine="yes" useLanguages="yes">
@@ -446,7 +446,7 @@ curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
   "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/templates/section-templates/cta_button/gom"
 
 # 4. Set Rules (∥ with 3 and 5)
-curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
+curl -s -K "$FS_CURLRC" \
   -X PUT -H "Content-Type: application/xml" \
   -d '<RULES>
     <RULE when="ONSAVE">
@@ -462,7 +462,7 @@ curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
   "$FS_REST_BASE_URL/projects/$FS_PROJECT_ID/templates/section-templates/cta_button/rules"
 
 # 5. Set Channel-Source HTML (∥ with 3 and 4)
-curl -s -u "$FS_USERNAME:$FS_PASSWORD" \
+curl -s -K "$FS_CURLRC" \
   -X PUT -H "Content-Type: text/plain" \
   -d '<a href="$CMS_VALUE(st_url)$" class="btn btn--$CMS_VALUE(st_style)$">
     $CMS_VALUE(st_label)$

@@ -1,11 +1,11 @@
 ---
 name: firstspirit-templating-reference
 description: >-
-  Concrete lookup reference for FirstSpirit template development: template language ($CMS_VALUE$, $CMS_IF$, $CMS_FOR$, $CMS_REF$, $CMS_RENDER$, system objects, string operations, Navigation and PageGroup functions, content projection), GOM input components (CMS_INPUT_*, FS_REFERENCE, FS_CATALOG, FS_INDEX, FS_DATASET) and the datatype each yields, database schemas (table templates, column types, foreign keys, KEY column, queries, Remote Data), Rules (validation, visibility, editability, value), identifier and casing rules, deprecated components. Use whenever you need exact template syntax, the right input component, what a component produces and how to read it in the output channel, whether something is deprecated, or how a page becomes a PDF (template set, Apache FOP) — e.g. "syntax for CMS_FOR", "which component for a single choice", "what datatype does FS_REFERENCE produce", "is FS_LIST still supported", "review my Ruleset.xml". Explains GomSource.xml / Ruleset.xml / ChannelSource files.
+  Concrete lookup reference for FirstSpirit template development: template language ($CMS_VALUE$, $CMS_IF$, $CMS_FOR$, $CMS_REF$, $CMS_RENDER$, system objects, string operations, Navigation and PageGroup, content projection), GOM input components (CMS_INPUT_*, FS_REFERENCE, FS_CATALOG, FS_INDEX, FS_DATASET) and the datatype each yields, database schemas (table templates, queries, Remote Data), Rules, identifiers and casing, deprecated components, the Snippet tab (label, extract, thumbnail expressions), where the editorId call goes, PDF output (template set, Apache FOP). Use whenever you need exact template syntax, the right input component, what a component produces and how to read it in the output channel, or whether something is deprecated — e.g. "syntax for CMS_FOR", "which component for a single choice", "is FS_LIST still supported", "review my Ruleset.xml", "what goes in the snippet of a section template", "editorId parameters for a picture". Explains GomSource.xml / Ruleset.xml / ChannelSource.
 metadata:
-  source-commit: "92709aa"
-  published: "2026-10-21"
-  toolkit-version: "0.6.0"
+  source-commit: "1e54562"
+  published: "2026-10-30"
+  toolkit-version: "0.7.0"
 ---
 
 > **Beta.** Early public release. Feedback welcome; behaviour and structure may change.
@@ -19,7 +19,7 @@ something is deprecated.
 
 This skill states **facts about the language**. Design judgement (what good looks like, naming
 conventions/prefixes) lives in `firstspirit-template-design`; scripting (BeanShell, Access API)
-in `firstspirit-scripting`; export structure in downstream analysis.
+in `firstspirit-scripting`; the export's folder structure is a project-analysis topic (downstream analysis).
 
 ## How to use this skill
 
@@ -48,8 +48,8 @@ $CMS_RENDER(template:"…")$              include another (format) template
 
 ## Interpreting a sync-export file
 
-This skill explains what is **inside** an export's files; downstream analysis owns
-the export **structure** (store folders, `StoreElement.xml`, UID/`templateid` semantics).
+This skill explains what is **inside** an export's files; the export **structure** is a
+project-analysis topic (downstream analysis) (store folders, `StoreElement.xml`, UID/`templateid` semantics).
 
 | Export file | Holds | Interpret with |
 |---|---|---|
@@ -91,6 +91,8 @@ Loaded on demand — read the file that matches the question.
 | `editability.md` | editable / locked |
 | `value-manipulation.md` | set / calculate values |
 | `real-world.md` | production rule shapes |
+| `form-properties.md` | `BODY`, `CONTAINERTYPE`, `PRESET`, `TRANSLATED`, `GID` / `ID` / `UID`, `FOCUS`, `SECTION`, `SELECT` / `DESELECT`, `COPY`, `EDIT` |
+| `contains.md` | `<CONTAINS/>`: does a checkbox, list, catalog or index hold a value |
 
 ### Template language (`references/templates/`)
 | File | Covers |
@@ -98,15 +100,18 @@ Loaded on demand — read the file that matches the question.
 | `variables-conditionals.md` | `$CMS_VALUE$` / `$CMS_SET$` / `$CMS_IF$` / `$CMS_SWITCH$` |
 | `loops-lists.md` | `$CMS_FOR$` |
 | `composition.md` | `$CMS_RENDER$` (include a format template / script / channel), `$CMS_TRIM$` |
-| `system-objects.md` | `#global` / `#nav` / `#row` / page / section / dataset context |
+| `system-objects.md` | `#global` / `#nav` / `#row` / page / section / dataset context; `#cs` (multiple pages), `#docGroup` / `#docNode`, `#mathContext`, `#startdate`, `#tr` |
 | `string-operations.md` | string methods + output escaping / XSS safety |
 | `dom-media.md` | DOM output; format templates in their DOM-styling role; `$CMS_REF$` media |
 | `snippets.md` | the Snippet tab: thumbnail, label and extract, where they show, expression syntax, restrictions |
+| (no file) `editorId(...)` | the ContentCreator edit marker is not a template-language page here: parameters and placement in the `firstspirit-contentcreator-extensions` skill (its `editing-in-the-preview.md`), the default of setting it on every section, text field and picture in the `firstspirit-template-design` skill (its `output-conventions.md`) |
 | `preview-image.md` | the template's preview image (Properties tab), shown when the template is chosen; not the snippet |
 | `pdf-fop.md` | PDF output through a second template set and the Apache FOP module: setup, page sequences, bookmarks, table of contents, format templates for lists and tables in XSL-FO |
 | `navigation-function.md` | the `Navigation` header function: the six hooks and their order, `expansionVisibility` values, `wholePathSelected`, `#nav`, breadcrumb |
 | `page-group.md` | the `PageGroup` header function: previous/next/first/last fragments, table of contents, `groupSize` |
 | `content-projection.md` | datasets rendered as pages: PageRef → page → content section → table template, entries per page, `#global.pageParams`, detail pages |
+| `expressions.md` | arithmetic operators and precedence; constants (string, number, boolean, list, range, map, set) |
+| `small-functions.md` | `$CMS_INCLUDE$`, header functions `define`, `Table`, `Font`, instruction functions `font(...)`, `dataAssociation(...)` |
 | `real-world.md` | production output shapes |
 
 > Scripting is covered in `firstspirit-scripting`; `references/common-patterns.md` keeps a few
