@@ -1,9 +1,9 @@
 ---
 name: firstspirit-template-design
 description: >-
-  Design principles and review guidance for FirstSpirit template development. Use whenever creating, generating, reviewing or auditing FirstSpirit templates: page, section, format and link templates, input components and forms (GOM), CMS tags and output, headless and CaaS projects, content modelling and datasets, naming and coding conventions, reuse, editorial usability, localisation, documenting a created template set, and cutting an HTML example, wireframe or design into templates. Trigger it for any FirstSpirit template task (ContentCreator, SiteArchitect, ODFS, CaaS, AI Suite), even without "design principles" — e.g. "build a section template", "review this FirstSpirit template", "which input component should I use", "turn this HTML page into FirstSpirit templates", "what do customers mean by component". References: components, tags, naming, common wording to FirstSpirit terms, cutting an artifact. Pair with firstspirit-technical-tone-of-voice for written deliverables.
+  Design principles and review guidance for FirstSpirit template development. Use whenever creating, generating, reviewing, fixing or auditing FirstSpirit templates and their output channels: page, section, format and link templates, input components and forms (GOM), CMS tags and output, headless and CaaS, content modelling, naming, reuse, editorial usability (editorId so editors can select a section, edit text in place and crop a picture in the ContentCreator preview; snippets so lists show content, not the template name), localisation, cutting HTML into templates. Trigger it for any FirstSpirit template task, also when the prompt hands over a channel to correct — e.g. "build a section template", "review this FirstSpirit template", "which input component should I use", "turn this HTML page into FirstSpirit templates", "editors cannot select the section or crop the picture", "the catalog shows every entry under the template name". Pair with firstspirit-technical-tone-of-voice for written deliverables.
 metadata:
-  source-commit: "4a75bd0"
+  source-commit: "1e54562"
   published: "2026-10-30"
   toolkit-version: "0.7.0"
 ---

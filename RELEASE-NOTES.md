@@ -4,25 +4,25 @@
 
 Skills in this release (each SKILL.md carries the same source commit in its `metadata:` block):
 
-- `firstspirit-api-reference` @ 4a75bd0 (beta)
-- `firstspirit-templating-reference` @ 4a75bd0 (beta)
-- `firstspirit-scripting` @ 4a75bd0 (beta)
-- `firstspirit-rest-api` @ 4a75bd0 (beta)
-- `firstspirit-external-sync-export` @ 4a75bd0 (beta)
-- `firstspirit-operations` @ 4a75bd0 (beta)
-- `firstspirit-contentcreator-extensions` @ 4a75bd0 (beta)
-- `firstspirit-template-design` @ 4a75bd0 (beta)
-- `firstspirit-cloud` @ 4a75bd0 (beta)
-- `firstspirit-headless` @ 4a75bd0 (beta)
-- `firstspirit-module-development` @ 4a75bd0 (beta)
-- `firstspirit-ai-suite` @ 4a75bd0 (beta)
-- `firstspirit-smartsearch` @ 4a75bd0 (beta)
-- `firstspirit-collaboration` @ 4a75bd0 (beta)
-- `firstspirit-technical-product-knowledge` @ 4a75bd0 (beta)
-- `firstspirit-technical-tone-of-voice` @ 4a75bd0 (beta)
-- `firstspirit-workflow-development` @ 4a75bd0 (beta)
-- `firstspirit-installation` @ 4a75bd0 (beta)
-- `firstspirit-configuration` @ 4a75bd0 (beta)
+- `firstspirit-api-reference` @ 1e54562 (beta)
+- `firstspirit-templating-reference` @ 1e54562 (beta)
+- `firstspirit-scripting` @ 1e54562 (beta)
+- `firstspirit-rest-api` @ 1e54562 (beta)
+- `firstspirit-external-sync-export` @ 1e54562 (beta)
+- `firstspirit-operations` @ 1e54562 (beta)
+- `firstspirit-contentcreator-extensions` @ 1e54562 (beta)
+- `firstspirit-template-design` @ 1e54562 (beta)
+- `firstspirit-cloud` @ 1e54562 (beta)
+- `firstspirit-headless` @ 1e54562 (beta)
+- `firstspirit-module-development` @ 1e54562 (beta)
+- `firstspirit-ai-suite` @ 1e54562 (beta)
+- `firstspirit-smartsearch` @ 1e54562 (beta)
+- `firstspirit-collaboration` @ 1e54562 (beta)
+- `firstspirit-technical-product-knowledge` @ 1e54562 (beta)
+- `firstspirit-technical-tone-of-voice` @ 1e54562 (beta)
+- `firstspirit-workflow-development` @ 1e54562 (beta)
+- `firstspirit-installation` @ 1e54562 (beta)
+- `firstspirit-configuration` @ 1e54562 (beta)
 
 Changes since 0.6.0 — three new setup skills, and the FragmentCreator-module facts in two existing skills.
 
@@ -50,6 +50,12 @@ Changes since 0.6.0 — three new setup skills, and the FragmentCreator-module f
   client's jar cache, the fix).
 - **`firstspirit-installation`** also carries the rule of thumb: deactivate modules of
   discontinued products after a server update.
+- **`firstspirit-template-design`, `firstspirit-templating-reference`,
+  `firstspirit-contentcreator-extensions`** — the ContentCreator edit marker (`editorId` on a
+  section, a text field, a picture with its resolution) and the Snippet tab are named in the
+  descriptions and point at the one page that holds the parameters
+  (`editing-in-the-preview.md`); two pointers that led to files without it and one line that
+  called `editorId` a headless hook corrected.
 - Toolkit: README rows for the three skills; release-notes provenance and the session-end note
   as data (polish before 0.7.0); an issue form for skill feedback.
 

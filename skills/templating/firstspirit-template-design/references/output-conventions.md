@@ -2,8 +2,10 @@
 
 Three habits for HTML output channels that make a template testable and editable in ContentCreator without
 later rework. They are practice from template development, not product rules; each says what to do unless the
-project asks otherwise `[verify]`. Syntax of `$CMS_VALUE$` and `editorId` is in the
-`firstspirit-templating-reference` skill (`templates/variables-conditionals.md`, `datatypes.md`).
+project asks otherwise `[verify]`. Syntax of `$CMS_VALUE$` is in the
+`firstspirit-templating-reference` skill (`templates/variables-conditionals.md`); the parameters of `editorId(...)` and
+which element gets the call per component, dataset and content area are in the `firstspirit-contentcreator-extensions`
+skill (its `editing-in-the-preview.md`).
 
 ## 1. Give every output a default, unless a condition surrounds it
 

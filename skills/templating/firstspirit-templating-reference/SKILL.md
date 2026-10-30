@@ -1,9 +1,9 @@
 ---
 name: firstspirit-templating-reference
 description: >-
-  Concrete lookup reference for FirstSpirit template development: template language ($CMS_VALUE$, $CMS_IF$, $CMS_FOR$, $CMS_REF$, $CMS_RENDER$, system objects, string operations, Navigation and PageGroup functions, content projection), GOM input components (CMS_INPUT_*, FS_REFERENCE, FS_CATALOG, FS_INDEX, FS_DATASET) and the datatype each yields, database schemas (table templates, column types, foreign keys, KEY column, queries, Remote Data), Rules (validation, visibility, editability, value), identifier and casing rules, deprecated components. Use whenever you need exact template syntax, the right input component, what a component produces and how to read it in the output channel, whether something is deprecated, or how a page becomes a PDF (template set, Apache FOP) — e.g. "syntax for CMS_FOR", "which component for a single choice", "what datatype does FS_REFERENCE produce", "is FS_LIST still supported", "review my Ruleset.xml". Explains GomSource.xml / Ruleset.xml / ChannelSource files.
+  Concrete lookup reference for FirstSpirit template development: template language ($CMS_VALUE$, $CMS_IF$, $CMS_FOR$, $CMS_REF$, $CMS_RENDER$, system objects, string operations, Navigation and PageGroup, content projection), GOM input components (CMS_INPUT_*, FS_REFERENCE, FS_CATALOG, FS_INDEX, FS_DATASET) and the datatype each yields, database schemas (table templates, queries, Remote Data), Rules, identifiers and casing, deprecated components, the Snippet tab (label, extract, thumbnail expressions), where the editorId call goes, PDF output (template set, Apache FOP). Use whenever you need exact template syntax, the right input component, what a component produces and how to read it in the output channel, or whether something is deprecated — e.g. "syntax for CMS_FOR", "which component for a single choice", "is FS_LIST still supported", "review my Ruleset.xml", "what goes in the snippet of a section template", "editorId parameters for a picture". Explains GomSource.xml / Ruleset.xml / ChannelSource.
 metadata:
-  source-commit: "4a75bd0"
+  source-commit: "1e54562"
   published: "2026-10-30"
   toolkit-version: "0.7.0"
 ---
@@ -104,6 +104,7 @@ Loaded on demand — read the file that matches the question.
 | `string-operations.md` | string methods + output escaping / XSS safety |
 | `dom-media.md` | DOM output; format templates in their DOM-styling role; `$CMS_REF$` media |
 | `snippets.md` | the Snippet tab: thumbnail, label and extract, where they show, expression syntax, restrictions |
+| (no file) `editorId(...)` | the ContentCreator edit marker is not a template-language page here: parameters and placement in the `firstspirit-contentcreator-extensions` skill (its `editing-in-the-preview.md`), the default of setting it on every section, text field and picture in the `firstspirit-template-design` skill (its `output-conventions.md`) |
 | `preview-image.md` | the template's preview image (Properties tab), shown when the template is chosen; not the snippet |
 | `pdf-fop.md` | PDF output through a second template set and the Apache FOP module: setup, page sequences, bookmarks, table of contents, format templates for lists and tables in XSL-FO |
 | `navigation-function.md` | the `Navigation` header function: the six hooks and their order, `expansionVisibility` values, `wholePathSelected`, `#nav`, breadcrumb |

@@ -172,7 +172,7 @@ resolution: `$CMS_RENDER(template:"internal_link_render", ref:lt_pageRef)$`, whi
 ### Guarding and preview hooks
 
 - **Null/empty guards differ by type:** `CMS_INPUT_LINK` → `!st_x.isNull()`; `FS_REFERENCE` / `FS_INDEX` / `FS_CATALOG` → `!st_x.isEmpty()`. `.isEmpty` and `.isEmpty()` (with parens) are both accepted.
-- **ContentCreator/TPP inline-edit hooks** appear alongside edited values: `previewId(element:st_x)` (emit as a `data-preview-id`) and `editorId(reloadPreview:true)`. These are the headless-preview counterparts to `fsbutton(...)`; detail belongs to `firstspirit-headless`.
+- **Edit markers** appear alongside edited values. Classic preview: `editorId(...)` on the section wrapper (no argument), on a text field (`editorName:`) and on a picture (`editorName:` plus `resolution:`); parameters and placement per component in the `firstspirit-contentcreator-extensions` skill (its `editing-in-the-preview.md`), the default of putting it everywhere in the `firstspirit-template-design` skill (its `output-conventions.md`). Headless preview: `previewId(element:st_x)` emitted as `data-preview-id`; detail in the `firstspirit-headless` skill (its `preview-and-editing.md`).
 
 ### FS_BUTTON — two use cases
 
