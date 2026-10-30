@@ -64,6 +64,9 @@ When the task involves FirstSpirit, check whether one of the skills below fits b
 
 If the person wants to report a problem with a toolkit skill, or asks you to hand in a feedback note from `.firstspirit-feedback/`, follow the note's own "For an AI assistant" section: fill the note in the person's words without project content, customer names, addresses or credentials; run `scripts/submit-feedback.sh <note>` without `--yes` and show the person the preview; post with `--yes` only after the person says yes. Issues on the toolkit's GitHub repository are public. If the GitHub CLI is missing or not signed in, give the manual route and never ask for a token. Do not raise feedback unprompted.
 
+### Diagnostics (`skills/diagnostics/`)
+- **firstspirit-verify-api-contracts** — Use when you need to know what a FirstSpirit API actually returns before writing a module or script against it — measuring signatures and live behaviour against a running server with `javap`, a compiled probe, the Access API, or a throwaway schedule-task script.
+
 ## Platform Tool Mappings
 
 If you are running on a harness listed below, read the corresponding reference for how abstract operations map to that harness's real tool names:
