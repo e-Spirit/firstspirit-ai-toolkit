@@ -133,6 +133,7 @@ ships these (the `skills/` tree is the authoritative list):
 | `firstspirit-installation` | `deployment/` | Installing FirstSpirit on-premises and installing, updating and activating modules per server and project (BasicWorkflows, CaaS Connect, Navigation Service, OCM, AI Suite, SmartSearch, Multisite Management, VideoManagementPro and more) |
 | `firstspirit-configuration` | `deployment/` | Configuring a project after it exists: groups, roles, store and workflow permissions, external groups on Cloud, a plan-apply-verify permissions tool, per-module project configuration |
 | `firstspirit-headless` | `deployment/` | Headless delivery: CaaS Platform (REST and GraphQL), CaaS Connect, preview vs release, custom JSON output |
+| `firstspirit-caastomize` | `deployment/` | Caastomize (experimental, pre-release): the lean, template-customisable CaaS JSON — the `CaastomizeJSON` output channel and `leanJSON`, the lean JSON format, service and project app, full sync and eventing, coexistence with CaaS Connect |
 | `firstspirit-cloud` | `deployment/` | FirstSpirit Cloud (the managed SaaS): what the platform does differently or does not allow, and how to build and run a project on it |
 | `firstspirit-external-sync-export` | `deployment/` | Running FS-CLI / FSDevTools to export and import a project as an external-sync tree on disk, for git-based workflows |
 

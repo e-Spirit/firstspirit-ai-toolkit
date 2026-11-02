@@ -3,9 +3,9 @@ name: firstspirit-contentcreator-extensions
 description: >-
   Lookup reference for extending the FirstSpirit ContentCreator. Browser side: the WE_API JavaScript API (top.WE_API.Common / Dialog / Preview / Report, FSID, jumpTo, execute, showMessage, createDialog, preview reload / rescan / repaint, report shortcodes), the server→browser bridges ClientScriptOperation (sync vs async, callback-must-fire) and ClientResourceOperation, a "does not work in ContentCreator" list, MPP_API / JC_API (SiteArchitect). Java side: the ContentCreator plug-in interfaces a module implements (toolbar, inline edit, status notes, element status, timeline, translation) and the @WebAppComponent they need. Use whenever JavaScript in a ContentCreator preview or action must talk to the client, a BeanShell script or Executable must run JavaScript in the editor's browser, or a module adds ContentCreator UI — e.g. "reload only this section after my script ran", "open a report with a preset filter", "why does my ClientScriptOperation never return", "add a button to the ContentCreator toolbar".
 metadata:
-  source-commit: "1e54562"
-  published: "2026-10-30"
-  toolkit-version: "0.7.0"
+  source-commit: "17f78f9"
+  published: "2026-11-02"
+  toolkit-version: "0.8.0"
 ---
 
 > **Beta.** Early public release. Feedback welcome; behaviour and structure may change.
@@ -16,10 +16,11 @@ metadata:
 > `[verify]` are not yet confirmed live. Every `WE_API` member is tagged
 > **[javadoc]** (FirstSpirit Access API Javadoc, package
 > `de.espirit.firstspirit.webedit.client.api`) or **[odfs]** (the ODFS "JavaScript APIs ›
-> ContentCreator" pages, FirstSpirit 2026.9). The `WE_API` interfaces are GWT client classes and
+> ContentCreator" pages, FirstSpirit 2026.9; re-read against the 2026.5 documentation on 2026-10-30, same text). The `WE_API` interfaces are GWT client classes and
 > are **not in `fs-isolated-runtime.jar`**, so they could not be `javap`-checked; only
 > `ClientScriptOperation.perform(String, boolean)`, `MPPWebControl` (`top.MPP_API`) and
-> `JavaClientApi` (`top.JC_API`) are **[jar]**-verified (FS 5.2.240208).
+> `JavaClientApi` (`top.JC_API`) are **[jar]**-verified on FS 5.2.240208; the plug-in interfaces of
+> `references/java-plugins.md` and the operations of `editing-in-the-preview.md` on 5.2.261011.
 > **[observed]** = live test 2026-09-11 (one session, one project) — strong evidence,
 > not yet reproduced. Other behaviour notes are **[verify]**.
 
@@ -103,7 +104,7 @@ a string: `references/client-resource-operation.md`.
 
 ## How the pieces fit — a typical round trip
 
-Button in the preview → `WE_API.Common.execute("script:editcontent", {id: 12345}, cb)` →
+Button in the preview → `WE_API.Common.execute("script:editContent", {id: 12345}, cb)` →
 BeanShell runs on the server, returns a value → `cb(result)` runs in the browser →
 `WE_API.Preview.reload(containerElement)` re-renders just the section that carries an
 `editorId`. That is the ODFS "Dynamic content" reload example, and it is the pattern to reach
@@ -119,8 +120,11 @@ action, a workflow script) and needs the browser's answer before it can continue
   `firstspirit-operations/references/operations-catalogue.md`.
 - **Which script context you are in** and `Env.WEBEDIT`:
   `firstspirit-scripting/references/script-contexts.md`.
-- **`FS_BUTTON` / `fsbutton(...)` / `editorId(...)`** template syntax:
-  `firstspirit-templating-reference/references/gom/references-links.md`.
+- **`FS_BUTTON`** form syntax: `firstspirit-templating-reference/references/gom/references-links.md`;
+  the **`fsbutton(...)`** output call: `firstspirit-templating-reference/references/datatypes.md` (FS_BUTTON row). The `editorId(...)` call form and the
+  rule to put it on every section, text field and picture are `firstspirit-templating-reference/references/templates/editorid.md`
+  and `firstspirit-template-design/references/output-conventions.md`; its parameters and the pattern per object are
+  here (`references/editing-in-the-preview.md`).
 - **Shipping JavaScript, an `Executable` or a plug-in class in a module** — `web-app`
   components, `fsWebCompile`, `cxt-cc-api` as `compileOnly`:
   `firstspirit-module-development/references/component-types.md` and

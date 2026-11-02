@@ -72,7 +72,7 @@ The agents you reach for most (all via `requireSpecialist(X.TYPE)`):
 | `FormsAgent` | Access to form definitions / `FormData` handling |
 | `RuleValidationAgent` / `ValidationAgent` | Run rule/element validation from code. `RuleValidationAgent` on 5.2.261011, not on 5.2.240208 `[jar]` |
 | `ModuleAdminAgent` | Install/configure modules and components (admin) |
-| `ScheduleTaskAgent` | Look up the registered `ScheduleTaskFactory`s only: `getTaskFactories()`, `getTaskFactory(Class)` `[jar]`. It does **not** start or inspect schedule entries — for that use `AdminService.getScheduleStorage()` (`firstspirit-scripting`, "Trigger a schedule") |
+| `ScheduleTaskAgent` | Look up the registered `ScheduleTaskFactory`s only: `getTaskFactories()`, `getTaskFactory(Class)` `[jar]` (the ODFS page *Schedule Management (API)*, 2026.5, shows the same `requireSpecialist` + `getTaskFactory(MyTask.class)` lookup `[odfs]`). It does **not** start or inspect schedule entries — for that use `AdminService.getScheduleStorage()` (`firstspirit-scripting`, "Trigger a schedule") |
 | `ScriptAgent` | Execute a project script by identifier from code |
 | `ServerInformationAgent` | Server version / build info |
 | `MaintenanceModeAgent`, `RunLevelAgent` | Server state (admin) |

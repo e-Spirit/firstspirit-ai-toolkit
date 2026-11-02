@@ -219,17 +219,16 @@ context.doTransition("release");              // by reference name
 // context.gotoErrorState("could not release", someThrowable);
 ```
 
-> **Language-dependent release & permissions (recent — verify).** As of FirstSpirit
-> **2026.4** release is language-aware — an element can be approved/published for
-> **specific project languages**, not only all-or-nothing — and **2026.7** adds
-> **language-dependent user permissions** (editing gated per project language). So a
-> release transition or a permission check may now carry a `Language` dimension;
-> don't assume a single global release/permission state. The API entry points are
-> `IDProvider.release(Language...)` and, for events, `IDProviderChange#getChangedLanguages()`
-> delivered via `IDProviderEventAgent` — both `@since 5.2.250102`, `@ApiStatus.Experimental`
-> `[jar]` (present in the 5.2.261011 jar, absent in 5.2.240208), plus `LanguageDataProvider#getFormData`.
-> `IDProviderEventAgent` itself has no language-specific API. Guard with the server version
-> before scripting against them.
+> **Language-dependent release.** An element can be released for specific project languages
+> instead of all-or-nothing (a per-project setting; `[odfs]` *Advanced topics → Server-side release →
+> Language-Dependent Release*, 2026.5). From a script the documented entry is
+> `ReleaseOperation.languages(Language...)` on the operation from `OperationAgent` `[jar]` (5.2.261011
+> only; absent on 5.2.240208); the other entry points (`IDProvider.release(Language...)`,
+> `IDProviderChange.getChangedLanguages()` on the `IDProviderEventAgent` events,
+> `LanguageDataProvider.getFormData(Language)`) and their version notes are listed in
+> `firstspirit-api-reference/references/values-and-data.md` (*Language-dependent release*). So a
+> release transition may carry a `Language` dimension; don't assume a single global release state,
+> and guard with the server version before scripting against it.
 
 ## Call a script from a template (`$CMS_RENDER$`)
 

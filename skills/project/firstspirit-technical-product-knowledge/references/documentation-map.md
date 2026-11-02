@@ -77,7 +77,7 @@ it rather than restating its content here.
 - **ODFS** = the Online Documentation FirstSpirit (the templating/developer
   manual). Much template/scripting/API detail lives there.
 - **Version drift.** Module docs cite component versions (e.g. CaaS Platform
-  v16.18.2, CaaS Connect v3.32.3) and FirstSpirit 2026.8 — always confirm against
+  v16.18.2, CaaS Connect v3.32.3) and the FirstSpirit release they were written for — always confirm against
   the live version before quoting version-specific behaviour.
 
 ---

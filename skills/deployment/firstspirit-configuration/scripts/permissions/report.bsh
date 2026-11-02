@@ -2,7 +2,8 @@
 //
 // Output (one line per fact, in the same format apply.bsh reads), through context.logInfo:
 //   GROUP|<name>|<external|local>|<admin|->
-//   WORKFLOW|<name>                             every workflow in the Template Store (TemplateStoreRoot.getWorkflows() [jar]);
+//   WORKFLOW|<name>                             every workflow in the Template Store (TemplateStoreRoot.getWorkflows() [jar]),
+//                                               workflows inside workflow folders included (WFPERM lists them, so must this);
 //                                               permissions.py refuses a policy that names a workflow not listed here
 //   PERM|<STORETYPE>|<group>|<CAN_X,...>        every group that has any permission on the store root
 //   WFINHERIT|<STORETYPE>|<true|false>          whether the store root inherits its workflow permissions
@@ -13,6 +14,7 @@ import de.espirit.firstspirit.agency.ProjectMembersAgent;
 import de.espirit.firstspirit.access.store.Store;
 import de.espirit.firstspirit.access.store.Permission;
 import de.espirit.firstspirit.access.store.templatestore.Workflow;
+import de.espirit.firstspirit.access.store.templatestore.WorkflowFolder;
 
 storeAgent = context.requireSpecialist(StoreAgent.TYPE);
 members = context.requireSpecialist(ProjectMembersAgent.TYPE);
@@ -24,11 +26,15 @@ for (int i = 0; i < groups.size(); i++) {
     g = groups.get(i);
     context.logInfo("GROUP|" + g.getName() + "|" + (g.isExternal() ? "external" : "local") + "|" + (g.isAdmin() ? "admin" : "-"));
 }
-wfIt = storeAgent.getStore(Store.Type.TEMPLATESTORE).getWorkflows().getChildren().iterator();
-while (wfIt.hasNext()) {
-    wf = wfIt.next();
-    if (wf instanceof Workflow) context.logInfo("WORKFLOW|" + wf.getName());
+void listWorkflows(folder) {
+    it = folder.getChildren().iterator();
+    while (it.hasNext()) {
+        el = it.next();
+        if (el instanceof Workflow) context.logInfo("WORKFLOW|" + el.getName());
+        else if (el instanceof WorkflowFolder) listWorkflows(el);
+    }
 }
+listWorkflows(storeAgent.getStore(Store.Type.TEMPLATESTORE).getWorkflows());
 stores = new String[] {"PAGESTORE", "SITESTORE", "MEDIASTORE", "CONTENTSTORE", "GLOBALSTORE", "TEMPLATESTORE"};
 for (int s = 0; s < stores.length; s++) {
     store = storeAgent.getStore(Store.Type.valueOf(stores[s]));

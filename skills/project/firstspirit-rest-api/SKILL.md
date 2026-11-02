@@ -1,17 +1,19 @@
 ---
 name: firstspirit-rest-api
 description: >
-  FirstSpirit REST API expert for performing CMS operations via curl. Use this skill whenever working with the
-  FirstSpirit REST API — creating/editing templates (GOM, Rules, Channel-Sources), managing pages and sections,
-  writing form field values (all editor types including FS_CATALOG, FS_REFERENCE, CMS_INPUT_DOM), uploading media,
-  searching content, or any other REST API interaction with FirstSpirit. Triggers on: REST API calls to FirstSpirit,
-  curl commands against /rest/v1/, template development, page/section management, form field PATCH operations,
-  media upload, content search. Also use when the user mentions "FirstSpirit REST API" or asks how to read/write
-  content via the API.
+  FirstSpirit REST API expert for CMS operations via curl against /rest/v1/ (REST module, open beta). Use whenever working with the FirstSpirit REST API: creating or editing templates (GOM, Rules,
+  Channel-Sources, page-template content areas), pages, sections, page references and folders, writing form
+  field values (every editor type including FS_CATALOG, FS_REFERENCE, CMS_INPUT_DOM with lists and links),
+  media upload and resolutions, data sources and datasets, Global Content Area pages, release or delete
+  through /actions, revisions, running a BeanShell script through /scripts/{name}/execute, search and
+  by-uid, pagination, the OpenAPI document, the .env and curl setup, error codes, and what is not available
+  over REST. Triggers on: REST API calls to FirstSpirit, curl against /rest/v1/, page/section management,
+  form field PATCH, media upload, content search, "run a script over REST", "curl returns 401 although the
+  credentials are right". Also for reading or writing content via the API.
 metadata:
-  source-commit: "1e54562"
-  published: "2026-10-30"
-  toolkit-version: "0.7.0"
+  source-commit: "17f78f9"
+  published: "2026-11-02"
+  toolkit-version: "0.8.0"
 ---
 
 > **Beta.** Early public release. Feedback welcome; behaviour and structure may change.

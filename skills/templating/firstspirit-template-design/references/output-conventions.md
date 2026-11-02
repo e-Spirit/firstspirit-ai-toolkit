@@ -13,7 +13,7 @@ A variable that can be empty or null belongs either inside an `$CMS_IF$` that ha
 `$CMS_VALUE(var, default:"")$`. A bare `$CMS_VALUE(var)$` outside a condition is the case to avoid: whether it
 prints nothing, "null" or breaks the markup depends on the type. Use `default:""` when empty should print
 nothing, or a meaningful default text where the page needs one. Remember that a field with `preset="COPY"`
-counts as filled (`.isEmpty` is false), so a guard on emptiness does not catch it.
+counts as filled (`.isEmpty` is false), so a guard on emptiness does not catch it (practice, `[verify]`).
 
 ## 2. Set `editorId` on HTML output by default
 
@@ -22,14 +22,18 @@ and edit in place, lets tests find the element, and avoids a dedicated change to
 places, all in the first build, not added afterwards `[verify]`:
 
 - **Section level.** The outer element of each section template carries `$CMS_VALUE(editorId())$` (no
-  arguments: it resolves against the section). A section without it cannot be selected in ContentCreator.
+  arguments: it resolves against the section). A section without it cannot be selected in ContentCreator (`[observed]` 2026-10-16).
 - **Text fields.** The element that shows a `CMS_INPUT_TEXT`, `CMS_INPUT_TEXTAREA` or `CMS_INPUT_DOM` value
-  carries `editorId` with the component variable (`editorId(editorName: st_title)`), so the value is edited
-  in place.
+  carries `editorId` with the component's name as a string (`editorId(editorName:"st_title")`), so the value is
+  edited in place. The quotes matter: `editorName:` takes the name of the component; a bare `st_title` would pass the
+  field's value. Only a render template that receives the name in a parameter passes that variable (the
+  `prm_inputName` example in `firstspirit-templating-reference`, `templates/real-world.md`). Give the element a
+  fallback (a non-breaking space) when the field can be empty, or no frame is drawn (fact in
+  `firstspirit-contentcreator-extensions`, `editing-in-the-preview.md`).
 - **Pictures.** An `FS_REFERENCE` limited to pictures always gets `editorId` with its name and, if the
-  template uses one, the resolution (`editorId(editorName: prm_inputName, resolution: ...)`, a list of
-  resolutions when several are rendered; example in `firstspirit-templating-reference`,
-  `templates/real-world.md`). Without it the editor cannot crop in ContentCreator.
+  template uses one, the resolution (`editorId(editorName:"st_picture", resolution:"teaser")`, a list of
+  resolutions when several are rendered; the render-template form with parameters is in
+  `firstspirit-templating-reference`, `templates/real-world.md`). Without it the editor cannot crop in ContentCreator.
 
 When no HTML element carries the value (a small template that outputs a bare value, or a section without a
 surrounding element), do not skip it silently. Put a comment in the output channel that states the editorId is
@@ -50,10 +54,10 @@ default.
 
 ## 4. Readable output: indentation and line breaks
 
-Render with line breaks and indentation, one tab per level (SiteArchitect shows a tab as four spaces), not on a single line.
+Render with line breaks and indentation, one tab per level (SiteArchitect shows a tab as four spaces, `[observed]`), not on a single line.
 Single-line output is hard to read in the preview, in a diff and in a test failure.
 
-- **Empty lines** left by `$CMS_IF$` and `$CMS_FOR$` are an issue only when they matter; then wrap the block in
+- **Empty lines** left by `$CMS_IF$` and `$CMS_FOR$` are an issue only when they matter (the documentation recommends `$CMS_TRIM$` with level 2 or higher in every project `[odfs]`; the judgement here is narrower); then wrap the block in
   `$CMS_TRIM(level:1)$` (consecutive blank rows become one) or `level:2` (blank rows removed). Levels 3 and 4
   also remove the indentation, and level 4 breaks JavaScript `[odfs]`; keep them for values, JSON or PDF, not for HTML.
 - **Finicky formats** (Markdown tables, YAML, and others where a line break changes the meaning): let a

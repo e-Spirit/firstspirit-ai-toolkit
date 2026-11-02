@@ -184,7 +184,8 @@ say, not what you infer from the folder names.
   [navigation-service.md](navigation-service.md) for the node fields.
 - **Internal links** are rendered from the navigation item, not from a hand-built path.
 - **Preview editing**: the TPP script (`snap.js` from the FirstSpirit server, `https://<server>/fs5webedit/snap.js`;
-  the guides advise against the CDN copy because the versions can differ) is loaded only in preview mode; the
+  the guides advise against the CDN copy because the versions can differ; that is OCM 2, under OCM 3 the frontend
+  loads `live.js` instead) is loaded only in preview mode; the
   client plugin implements the minimum hooks `onRequestPreviewElement`, `onRerenderView` and `onNavigationChange`.
   Elements carry `data-preview-id="#<field>"`, items of a list `#<index>`, and `data-inedit` on editable nodes.
   The hooks and attributes are described in [preview-and-editing.md](preview-and-editing.md).

@@ -28,11 +28,11 @@ $CMS_VALUE(#global.section.name)$  $-- section name --$
 ```
 $CMS_VALUE(#global.node)$                   $-- current page ref --$
 $CMS_VALUE(#global.language.abbreviation)$  $-- "DE", "EN" etc. --$
-$CMS_VALUE(#global.isPreview())$            $-- true in preview (method) --$
+$CMS_VALUE(#global.preview)$                $-- true in preview [odfs]; #global.is("PREVIEW") as well --$
 $CMS_VALUE(#global.canonicalUrl)$           $-- canonical URL --$
 $CMS_VALUE(#global.gca("gca_page"))$        $-- insert a Global Content Area page's output [odfs] --$
-$CMS_SET(void, #global.logError("message"))$ $-- write to the generation log --$
-$CMS_SET(void, #global.stopGenerate)$       $-- stop page generation (fail-fast guard) --$
+$CMS_SET(void, #global.logError("message"))$ $-- write to the generation log; also logInfo, logDebug, logWarning [odfs] Template development → Debugging 2026.5 (firstspirit-scripting, logging-and-debugging.md) --$
+$CMS_SET(#global.stopGenerate, true)$       $-- stop page generation [odfs] --$
 ```
 
 ## Global content area (GCA)

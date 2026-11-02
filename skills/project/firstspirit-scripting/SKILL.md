@@ -1,11 +1,11 @@
 ---
 name: firstspirit-scripting
 description: >-
-  Concrete lookup reference for FirstSpirit scripting with BeanShell: the script types and their bound `context` objects (menu, context-menu, workflow, Content2/dataset, FS_BUTTON, template/generation, schedule, PermissionService), BeanShell language essentials, logging and debugging, and the safe Access-API patterns (lock/save/unlock, iteration, store navigation, form data, transitions). Use whenever you write, review or debug a FirstSpirit script — e.g. "which context object do I get in a workflow script", "how do I lock and save an element in BeanShell", "how do I log from a script", "how do I read a form field", "call a script from a template with $CMS_RENDER$", "open a dialog or an element's form from a client script" (operations via OperationAgent). Also use it whenever the user asks for a BeanShell ("Bean Shell") script or a `.bsh` file, even without naming FirstSpirit — outside FirstSpirit, BeanShell is almost never used.
+  Lookup reference for FirstSpirit scripting with BeanShell: the script types and their bound `context` objects (menu, context-menu, workflow, Content2/dataset, FS_BUTTON, template/generation, schedule, PermissionService), BeanShell essentials, logging and debugging, and the safe Access-API patterns (lock/save/unlock, iteration, store navigation, form data, transitions). Use whenever you write, review or debug a FirstSpirit script — e.g. "which context object do I get in a workflow script", "how do I lock and save an element in BeanShell", "how do I log from a script", "how do I read a form field", "call a script from a template with $CMS_RENDER$", "open a dialog or an element's form from a client script", "where does this template error come from" or "the preview is slow" (Template Inspector, Template Debugger, #global.debugMode, /showLog=profile). Also use it for any BeanShell ("Bean Shell") script or `.bsh` file, even without naming FirstSpirit — outside FirstSpirit, BeanShell is almost never used.
 metadata:
-  source-commit: "1e54562"
-  published: "2026-10-30"
-  toolkit-version: "0.7.0"
+  source-commit: "17f78f9"
+  published: "2026-11-02"
+  toolkit-version: "0.8.0"
 ---
 
 > **Beta.** Early public release. Feedback welcome; behaviour and structure may change.
@@ -74,7 +74,7 @@ Loaded on demand — read the file that matches the question.
 | --- | --- | --- |
 | [references/script-contexts.md](references/script-contexts.md) | Every script type, where it runs, and the concrete `context` interface it binds — `GuiScriptContext`, `WorkflowScriptContext`, `Content2ScriptContext`, `ClientScriptContext` (FS_BUTTON in a SiteArchitect form; other clients differ), `GenerationContext` (`gc`), `ScheduleContext`, `PermissionServiceScriptContext` — with their key methods | You need to know which object `context` is, or which methods are available in a given script type |
 | [references/beanshell-language.md](references/beanshell-language.md) | BeanShell basics: `//!BeanShell` header, dynamic typing, imports, the convenience commands (`print`, `show`, `javap`; `getMethods()` is plain reflection, not a command), and the BeanShell console | You need the language syntax, an import rule, or a console/debug helper |
-| [references/logging-and-debugging.md](references/logging-and-debugging.md) | The four log levels, `print()` vs logging, extended logging, and how to find/trace errors | You need to emit log output or debug a failing script |
+| [references/logging-and-debugging.md](references/logging-and-debugging.md) | The four log levels, `print()` vs logging, extended logging, how to find/trace errors, and the SiteArchitect template tools (Display preview errors, Template Inspector, Template Debugger, `/showLog=profile`) | You need to emit log output or debug a failing script |
 | [references/common-patterns.md](references/common-patterns.md) | Copy-paste Access-API patterns: lock/save/unlock, safe iteration, store navigation via `SpecialistsBroker`/`UserService`, reading `FormData`, FS_BUTTON variables, `$CMS_RENDER(script:…)$` (`gc`/`result`), workflow `doTransition`, schedule variables, `Executable` classes | You need working code for a concrete scripting task |
 | [references/real-world.md](references/real-world.md) | Fuller task-shaped getting-started examples: the IDE-to-script workflow, change a field value, create page+section, dynamic form dialog (`FormsAgent` + `ShowFormDialogOperation`), read a data source (iterate + `de.espirit.or` query), trigger a schedule | You want an end-to-end worked example, not just a snippet |
 | [references/conventions.md](references/conventions.md) | Code style (blocks, indentation, comments) and the Dos & Don'ts (imports in header, correct locking, iterators over lists, log instead of print, script-vs-module) | You are writing or reviewing a script for maintainability |

@@ -8,7 +8,7 @@ ODFS: JavaScript APIs › ContentCreator › Scripts [odfs]
 | `TYPE` | `static final OperationType<ClientScriptOperation>` | [jar] FS 5.2.240208 |
 | `perform` | `Serializable perform(String script, boolean asynchronous)` | [jar] — `@Nullable` return [javadoc] |
 
-**ContentCreator only**, available since FirstSpirit 5.1.37 per the ODFS Javadoc page. [odfs]
+**ContentCreator only**, available since FirstSpirit 5.1.37 per the Javadoc `@since`. [javadoc]
 `getOperation(ClientScriptOperation.TYPE)` in a SiteArchitect,
 schedule or generation context has no browser to talk to — expect `null`; test for it. [odfs] [verify]
 

@@ -25,7 +25,7 @@ editor-facing text.
 
 ### By template and component type
 
-- **Link templates — always `useLanguages="no"`.** Links are not translated.
+- **Link templates — always `useLanguages="no"`.** Input components in link templates are language-independent `[odfs]` (the reference's `gom/references-links.md`).
 - **Format templates — language-neutral.** They have no form input. The one exception is a format
   template used as a *render* template whose output channel branches on `#global.language` (the
   current preview or generation language); that is the only place language enters a format
@@ -70,7 +70,7 @@ each language its own independent set of entries, which is only what you want wh
 genuinely need different lists.
 
 **The modern default enforces the rule by flattening, not by erroring.** With
-`forbidPolyglotDataHierarchy="yes"` (the default in new projects since 5.2R5), a
+`forbidPolyglotDataHierarchy="yes"` (the parameter defaults to `no`; projects created with 5.2R5 or later disallow the nesting through a project setting, and the parameter counts only where that setting is enabled `[odfs]`), a
 language-dependent input component nested inside a language-dependent catalog is interpreted as
 language-independent automatically — its own `useLanguages="yes"` is ignored. A
 two-level configuration does not fail to save; no error is raised and it is treated as one level. So design for a

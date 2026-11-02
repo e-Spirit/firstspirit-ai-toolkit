@@ -53,6 +53,40 @@ trace a problem, then off again without touching the script.
    depending on where they run; server-context scripts (generation, schedule) log
    to the server / schedule logs.
 
+## Template debugging tools in SiteArchitect
+
+When the error or the slowness sits in a *template* rather than in a script, SiteArchitect has
+its own tools (`[odfs]` *Template development → Debugging*, pages *Are there errors?*, *Where is
+the error?*, *Template Inspector*, *FirstSpirit Debugger*, *Performance analysis*; 2026.5). The
+template syntax itself is `firstspirit-templating-reference`'s; this list is the tooling:
+
+- **Display preview errors** (context menu of a page or page reference) lists the syntax errors
+  of the templates behind it and jumps to the spot; during generation the same errors land in
+  `fs-schedule.*.log`. `$CMS_SET(#global.debugMode, true)$` adds the stack trace to those logs
+  (costly with many errors; switch it off again). `$CMS_VALUE(#global.logError("…"))$` (also
+  `logInfo`, `logDebug`, `logWarning`) sets a marker in the log from inside a template; in a
+  script the equivalent is `context.logError(...)`.
+- **Template Inspector**: right-click in the integrated preview; shows the template structure and
+  the HTML tag structure of the page and jumps to the line in the template's output tab. It adds
+  control characters to the output, so switch it off where that breaks the markup: per template
+  set (*ServerManager → Project properties → Template sets*) or in the template with
+  `$CMS_SET(#global.htmlMode, false)$`; the API side is `GenerationContext.isHtmlMode()` /
+  `setHtmlMode(boolean)` and `TemplateSet.isTemplateInspectionEnabled()` /
+  `setTemplateInspectionEnabled(boolean)` `[jar]` `[odfs]`.
+- **Template Debugger** (toolbar icon): steps through the generation of the previewed page one
+  FirstSpirit expression at a time, across page, section, table, format and link templates;
+  breakpoints are set on the line numbers of the output tab, the *Variables* and *Watches* tabs
+  show every variable in scope with its value and evaluate expressions (`Ctrl+Space` completes
+  names and methods), *Settings* fixes `#global.language`, `#global.templateSet` and
+  `#global.preview` for the run, *Break on error* stops at the first error.
+- **Permissions**: Inspector and Debugger share one switch, the project component
+  `FS-TemplateDebuggerProjectPermissions` (ServerManager → *Project components*; pick the groups).
+  Without it the toolbar icon is hidden.
+- **Log and timing of a preview page**: append `/showLog=1` to the preview URL to show its log output, and
+  `/showLog=profile` for a per-template timing table (milliseconds, totals include the nested
+  elements; *remote duration* is the time spent waiting for external calls such as database
+  queries) — the first stop when "the preview is slow".
+
 ## Running a script over REST — output capture (live)
 
 When a script is executed **over the REST API** (`POST …/scripts/{name}/execute`) rather than in

@@ -14,7 +14,7 @@ map 1:1 onto these (`references/we-api-preview.md`). [javadoc]
 
 | Member | Signature | Verified | Note |
 | --- | --- | --- | --- |
-| `IDENTIFIER` | `static final String` | [jar] | the injection name, `"MPP_API"` [verify value] |
+| `IDENTIFIER` | `static final String` | [jar] | the injection name, `"MPP_API"` [jar] (javap -constants, 5.2.261011) |
 | `isParameterized` | `boolean isParameterized()` | [jar] | `true` when the MPP toolbar is shown / parameterisation active [odfs] |
 | `getTimeParameter` | `Object getTimeParameter()` | [jar] | the date/time set in the MPP timeline; ODFS types it `JavaScriptObject` (a JS `Date`) [odfs] |
 | `setTimeParameter` | `void setTimeParameter(Object date)` | [jar] | sets the timeline; pass a JS `Date` [odfs] |

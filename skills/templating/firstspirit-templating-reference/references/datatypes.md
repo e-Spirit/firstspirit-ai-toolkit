@@ -26,7 +26,7 @@ go from *a component in a form* (or in a sync export) to *how its value is acces
 |---|---|---|---|
 | `CMS_INPUT_TEXT` | `String` | `$CMS_VALUE(st_x)$` | single-line text |
 | `CMS_INPUT_TEXTAREA` | `String` | `$CMS_VALUE(st_x)$` | multi-line, plain text |
-| `CMS_INPUT_DOM` | `DomElement` | `$CMS_VALUE(st_x)$` | renders HTML via the assigned format templates; `st_x.toText(false)` = plain text, `st_x.toText(true)` = HTML; `st_x.normalize` fixes list/table nesting |
+| `CMS_INPUT_DOM` | `DomElement` | `$CMS_VALUE(st_x)$` | renders HTML via the assigned format templates; `st_x.toText(false)` = plain text, `st_x.toText(true)` = HTML; `st_x.normalize` keeps lists and tables out of the section format's wrapper tags (`templates/dom-media.md`) |
 | `CMS_INPUT_DOMTABLE` | `Table` | `$CMS_VALUE(st_x)$` | DOM table |
 | `CMS_INPUT_NUMBER` | `Number` (`Long`/`Double` per `type`) | `$CMS_VALUE(st_x)$` | arithmetic; display format via `<LANGINFO format="…">` |
 | `CMS_INPUT_DATE` | `GregorianCalendar` | `$CMS_VALUE(st_x.format("dd.MM.yyyy"))$` | `.format(pattern)` for display; `.after`/`.before` for comparison |

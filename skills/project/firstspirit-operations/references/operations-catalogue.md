@@ -2,7 +2,7 @@
 
 Per operation: package · `TYPE` · **exact `perform` signature** · configuration setters ·
 return · client availability. Verification key: **[jar]** = `javap` against
-`fs-isolated-runtime.jar` FS 5.2.240208 (2026-09-14); **[javadoc]** = FirstSpirit Access API
+`fs-isolated-runtime.jar` FS 5.2.240208 (2026-09-14), re-checked against 5.2.261011 (2026-10-30, identical); **[javadoc]** = FirstSpirit Access API
 Javadoc; **[verify]** = not yet
 confirmed — read the Javadoc, then the jar, before relying on it.
 
@@ -63,12 +63,12 @@ if (answer != null && answer.equals(yes)) {
 }
 ```
 
-### `OpenMergeDialogOperation` — `de.espirit.firstspirit.ui.operations` [javadoc]
+### `OpenMergeDialogOperation` — `de.espirit.firstspirit.ui.operations` [jar]
 
 Three-column merge view of two texts (original · merged · modified).
-`setDialogTitle(String)`, `setOriginalHeader(String)`, `setModifiedHeader(String)`;
-**`String perform(String originalText, String modifiedText)`** returns the merged text.
-(From the Javadoc's own script example.)
+`setDialogTitle(String)`, `setOriginalHeader(String)`, `setModifiedHeader(String)` [jar];
+**`String perform(String originalText, String modifiedText)`** returns the merged text [jar]
+(semantics from the Javadoc's own script example [javadoc]).
 
 ### `ShowFormDialogOperation` — `de.espirit.firstspirit.ui.operations` [jar]
 
@@ -108,7 +108,7 @@ Opens the **data** form of a page-store data element.
 | `setLanguage` | `void setLanguage(Language)` | which language's data to show |
 | `setField` | `void setField(String name)` | field to focus; ignored if absent / not focusable |
 | `setFormData` | `void setFormData(FormData)` | overriding values; unset fields keep the element's values |
-| `setOpenEditable` | `void setOpenEditable(boolean)` | request edit mode; **silently** read-only if refused |
+| `setOpenEditable` | `void setOpenEditable(boolean)` | request edit mode; **silently** read-only if refused. Without it the form opens read-only with a *Close* button only [odfs] |
 | **`perform`** | **`RemoteFormData perform(pagestore.DataProvider element)`** `throws OperationSetupException` | **asynchronous** — returns at once; calls on the `RemoteFormData` block until the form is open, and may time out if made from the event-dispatch thread |
 
 `DataProvider` is `de.espirit.firstspirit.access.store.pagestore.DataProvider` — pages,
@@ -128,11 +128,15 @@ Opens the **meta-data** form of any element that has one.
 | `setOpenEditable` | `void setOpenEditable(boolean)` | |
 | **`perform`** | **`RemoteFormData perform(store.IDProvider element)`** `throws OperationSetupException` | accepts a `Media`; **no `setLanguage`** |
 
+In ContentCreator the operation works for a store element type only if the project's ContentCreator
+settings in ServerManager define a **named metadata entry** for that type (a section, a page reference, …) [odfs]
+(ODFS "Working With Store Elements", 2026.5).
+
 ## Preview
 
 ### `PreviewOperation` — `de.espirit.firstspirit.ui.operations` [jar]
 
-"Control the preview in the original client." [javadoc]
+"Control the preview in the original client." [javadoc] — obtainable via the `OperationAgent` in both ContentCreator and SiteArchitect [odfs] (ODFS "Working With Store Elements", 2026.5).
 
 | Member | Signature | Note |
 | --- | --- | --- |
@@ -194,8 +198,18 @@ Fluent-style, on the jar, not yet described beyond the signature:
 | `CropDialogOperation` | `setMedia(Media)`, `setLanguage(Language)`, `setResolutions(List<Resolution>)` | `void perform()` |
 | `ComparisonDialogOperation` | `baseRevision(Revision)`, `compareToRevision(Revision)`, `languages(List<Language>)` — each returns the operation | `void perform(pagestore.DataProvider)` |
 
-`ShowReportOperation` (`ui.operations`, "open and refresh a plugin based report") exists in
-the Javadoc; not yet read [verify].
+### `ShowReportOperation` — `de.espirit.firstspirit.ui.operations` [jar]
+
+"Open and refresh a plugin based report" [javadoc]. Signatures from `javap` (5.2.240208 and 5.2.261011, 2026-10-30):
+
+| Member | Signature | Note |
+| --- | --- | --- |
+| `TYPE` | `static final OperationType` | |
+| `setParameter` | `<T> void setParameter(Parameter<T> parameter, T value)` | a report parameter and its value [jar] |
+| **`perform`** | **`void perform(Class<?> reportPluginClass)`** | the report plug-in class to open [jar] |
+| `perform` | `default void perform(Class<?> reportPluginClass, boolean refresh)` | `refresh` is only in the signature; what it does for an already open report is not read [verify] |
+
+Semantics beyond the names are [verify]: read the Javadoc of `ShowReportOperation` and `Parameter` before using it.
 
 Client availability for all of the above: `references/client-capability-matrix.md`.
 

@@ -89,7 +89,7 @@ unsure, mark it `[verify]` rather than guessing.
 
 | Term | Casing note | One-line gloss | Owner |
 |---|---|---|---|
-| CaaS (Content as a Service) | acronym in caps | Released content exposed as JSON over a REST API for headless delivery. | firstspirit-headless |
+| CaaS (Content as a Service) | acronym in caps | Content exposed as JSON over REST and GraphQL for headless delivery, in a preview and a release state. | firstspirit-headless |
 | generation | lowercase | Rendering project content into deployable output. | ODFS |
 | deployment | lowercase | Publishing generated output to a target. | ODFS |
 | schedule | lowercase | A configured, runnable job (e.g. generation + deployment). (DE: Auftrag.) | ODFS |

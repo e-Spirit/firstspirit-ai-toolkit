@@ -14,10 +14,10 @@ Which client you are in: `context.is(Env.WEBEDIT)` / `Env.PREVIEW`
 | --- | --- | --- | --- |
 | `RequestOperation` | yes | yes | ODFS "Message Boxes" shows both [odfs] |
 | `OpenElementDataFormOperation` | yes | yes — the ContentCreator implementation is `WebeditOpenElementDataFormOperation` | [observed] (error text names the class) |
-| `OpenElementMetaFormOperation` | yes | yes | `ui.operations` package [verify] |
+| `OpenElementMetaFormOperation` | yes | yes, if the project's ContentCreator settings define a named metadata entry for the element type | ODFS "Working With Store Elements" [odfs] |
 | `OpenMergeDialogOperation` | yes | ? | [verify] |
 | `ShowFormDialogOperation` | yes | ? — `setUiStyle(Store.Type)` suggests a client-neutral form dialog | [verify] |
-| `PreviewOperation` | yes ("the original client") | ? | Javadoc wording [javadoc] [verify] |
+| `PreviewOperation` | yes | yes | "obtainable via the OperationAgent in both ContentCreator and SiteArchitect", ODFS "Working With Store Elements" [odfs] |
 | `ClientScriptOperation` | **no** | yes | "only available in ContentCreator" [odfs]; package `webedit.server` [jar] |
 | `ClientResourceOperation` | **no** | yes | package `webedit.server` [jar] [verify] |
 | `SelectOptionOperation` | **no** | yes | package `webedit.server` [jar] [verify] |

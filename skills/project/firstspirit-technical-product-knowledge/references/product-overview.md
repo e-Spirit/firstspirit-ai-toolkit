@@ -34,7 +34,7 @@ performance and failure isolation.
 
 ## Version & release model
 
-- **Current release: FirstSpirit 2026.8.** Naming is **calendar-based**
+- **Current release: FirstSpirit 2026.11** (October 2026 patch day, `hosting-and-deployment.md`; the documentation set read for this skill is 2026.8). Naming is **calendar-based**
   (`YYYY.N`), shipped on a roughly 4-week cadence. Always confirm the live
   version before quoting version-specific behaviour.
 - **History — why legacy names persist.** FirstSpirit used **major.minor**
@@ -210,7 +210,7 @@ Enough to route; depth is owned elsewhere.
 | Surface | State | What it's for | Owner skill |
 | --- | --- | --- | --- |
 | **Access API** (Java) | GA, stable | The primary programmatic interface to the object model | `firstspirit-api-reference` |
-| **REST API** (`/rest/v1/`) | **Open beta** (current version `0.0.25`, confirmed by the REST skill; docs at `docs.crownpeak.com/restapi/`), updated each release — **not GA**. Module `com.crownpeak.firstspirit.modules:fs-rest-service`. On-premise: request it via a support ticket, download from the Download Portal and install it yourself. SaaS: support ticket; **DEV and QA only, not PROD**, no client downtime | Read/write content in FirstSpirit over HTTP | `firstspirit-rest-api` |
+| **REST API** (`/rest/v1/`) | **Open beta** (`0.0.25-beta` on 2026-10-23; the current version and its behaviour are tracked in `firstspirit-rest-api`; docs at `docs.crownpeak.com/restapi/`), updated each release — **not GA**. Module `com.crownpeak.firstspirit.modules:fs-rest-service`. On-premise: request it via a support ticket, download from the Download Portal and install it yourself. SaaS: support ticket; **DEV and QA only, not PROD**, no client downtime | Read/write content in FirstSpirit over HTTP | `firstspirit-rest-api` |
 | **CaaS REST + GraphQL** | GA (licensed) | Read delivered JSON from the headless repository (GraphQL is read-only) | `firstspirit-headless` |
 | **Change Streams** | GA (licensed) | WebSocket push of content changes (Mongo change-event format) | `firstspirit-headless` |
 | **Navigation Service** | GA (licensed) | Site structure as routing JSON | `firstspirit-headless` |

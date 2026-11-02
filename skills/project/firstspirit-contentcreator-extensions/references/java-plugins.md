@@ -162,9 +162,9 @@ public interface WebeditStatusNoteContext extends BaseContext {
 //   visibleOnLoad(boolean) addItem(WebeditStatusNoteItem) setItems(Collection<? extends WebeditStatusNoteItem>) create()
 ```
 
-`WebeditColor` (`de.espirit.firstspirit.webedit.WebeditColor`) **[jar]** is an enum of fifteen named colours: `BLUEBERRY`, `BUBBLEGUM`,
+`WebeditColor` (`de.espirit.firstspirit.webedit.WebeditColor`) **[jar]** is an enum of sixteen named colours: `BLUEBERRY`, `BUBBLEGUM`,
 `PEPPERMINT`, `ARUGULA`, `BASIL`, `KIWI`, `VANILLA`, `CARAMEL`, `MILKCHOCOLATE`,
-`DARKCHOCOLATE`, `CHERRY`, `STRAWBERRY`, `LAVENDER`, `PLUM`, `SHARK`. Notes appear in the
+`DARKCHOCOLATE`, `CHERRY`, `STRAWBERRY`, `LAVENDER`, `PLUM`, `SHARK`, `LICORICE` (javap, 5.2.261011 and 5.2.240208). Notes appear in the
 flyout of the page-status display; `visibleOnLoad(true)` additionally shows the note below
 the status display right after navigating to the page (default `false`) **[odfs]**. The
 icon is an `Image<?>` from `ImageAgent` **[odfs]**. A note carries `WebeditStatusNoteItem`s
@@ -196,7 +196,7 @@ public interface WebeditElementStatusProviderPlugin extends Plugin {
                                     boolean releaseStateDetection);
     }
 }
-enum State { RELEASED, CHANGED, IN_WORKFLOW }
+enum State { RELEASED, CHANGED, NEVER_RELEASED, IN_WORKFLOW }  // NEVER_RELEASED on 5.2.261011, not on 5.2.240208 [jar]
 public interface WorkflowGroup {
     String getDisplayName();
     List<IDProvider> getElements();

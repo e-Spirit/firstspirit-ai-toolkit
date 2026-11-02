@@ -14,9 +14,9 @@ description: >-
   click-to-edit with TPP_SNAP", "how does a frontend authenticate to CaaS", "fetchByFilter", "fsxa-api remotes". Template
   structure for headless: firstspirit-template-design.
 metadata:
-  source-commit: "1e54562"
-  published: "2026-10-30"
-  toolkit-version: "0.7.0"
+  source-commit: "17f78f9"
+  published: "2026-11-02"
+  toolkit-version: "0.8.0"
 ---
 
 > **Beta.** Early public release. Feedback welcome; behaviour and structure may change.
@@ -65,9 +65,11 @@ Point at these; do not restate them.
 - **Name preview vs release.** Almost everything here exists twice — separate CaaS
   collections (`*.preview.*` / `*.release.*`), separate navigations, a preview-only
   editing bridge. Say which state you mean.
-- **The JSON is `toJson`, not templated.** CaaS Connect produces a fixed,
+- **CaaS Connect's JSON is `toJson`, not templated.** CaaS Connect produces a fixed,
   standardised JSON shape; you change the delivered data by changing the *model*
-  (GOM form), not an output channel. See [caas-connect.md](references/caas-connect.md).
+  (GOM form), not an output channel. If the collection's documents do not look like
+  this, another delivery module wrote them; this skill does not cover it. See
+  [caas-connect.md](references/caas-connect.md).
 
 ## Quick answers
 
@@ -84,7 +86,8 @@ Point at these; do not restate them.
 - **Authenticate a browser frontend to CaaS:** mint a short-lived secure token
   from an API key — `GET /_logic/securetoken?tenant=<db>&ttl=<s>` with
   `Authorization: Bearer <api-key>` — then read with `?securetoken=…`. Read-only =
-  a key whose `methods` are just `GET`/`HEAD`.
+  a key whose `methods` are only reading ones (`GET`/`HEAD`, plus `OPTIONS` as on
+  the keys CaaS Connect generates).
 - **CaaS document id:** FirstSpirit **GID + locale**, e.g. `<gid>.en_GB`.
   Collections encode state: `<project-GID>.preview.content` /
   `.release.content` (+ `.files` for media). → [caas-connect.md](references/caas-connect.md)
@@ -97,7 +100,9 @@ Point at these; do not restate them.
 - **OCM vs TPP vs SNAP:** OCM = the product (Omnichannel Manager, real-time
   headless preview editing); TPP = ThirdPartyPreview, the mechanism; `TPP_SNAP`
   (via `snap.js` / `live.js`) = the JS API. Click-to-edit binds DOM nodes with
-  `data-preview-id`. → [preview-and-editing.md](references/preview-and-editing.md)
+  `data-preview-id`. OCM 3: `live.js` from the FirstSpirit server, no
+  `enableCaasMode`; OCM 2: `snap.js`. →
+  [preview-and-editing.md](references/preview-and-editing.md)
 - **Read it from JavaScript:** the official client `fsxa-api`: `FSXARemoteApi` on the server (holds the key),
   `FSXAProxyApi` in the browser; `fetchNavigation`, `fetchElement`, `fetchByFilter`. →
   [fsxa-api.md](references/fsxa-api.md)
@@ -115,7 +120,7 @@ Loaded on demand — read the file that matches the question.
 | [caas-connect.md](references/caas-connect.md) | The delivery module: the `toJson` document shape (fields, FormData, sections, references, media/rendition URLs), preview vs release, sync, and the "JSON isn't templated" constraint | You need to know what the delivered JSON looks like or how it's produced |
 | [navigation-service.md](references/navigation-service.md) | Site structure as JSON: the REST endpoints, default vs `caas` format (`idMap`/`seoRouteMap`/`structure`), route resolution, customData, security | You're resolving routes or consuming navigation |
 | [fsxa-api.md](references/fsxa-api.md) | The official JavaScript client: the two classes and the recommended server/browser setup, configuration, the fetch methods and filter operators, the value each input component maps to, remote projects and their locale rules, own aggregations, frontend rules | You read headless content from JavaScript, or build a frontend |
-| [preview-and-editing.md](references/preview-and-editing.md) | OCM/TPP/SNAP: the `TPP_SNAP` API (methods, events, dialogs), `data-preview-id` decoration, common flows, OCM button attributes, and the non-headless ODFS JS APIs | You're wiring click-to-edit / on-page editing into a headless frontend |
+| [preview-and-editing.md](references/preview-and-editing.md) | OCM/TPP/SNAP: OCM 2 (`snap.js`) vs OCM 3 (`live.js`), the `TPP_SNAP` API (methods, events, dialogs), `data-preview-id` decoration and GID-based ids, common flows, getting current content after an edit (Preview Rendering Plugin or waiting for CaaS), OCM button attributes | You're wiring click-to-edit / on-page editing into a headless frontend |
 | [configuration-and-install.md](references/configuration-and-install.md) | Install, configuration and admin pointers for CaaS Platform, CaaS Connect, Navigation Service and OCM | You need setup pointers |
 
 <!-- feedback-footer:v1 -->

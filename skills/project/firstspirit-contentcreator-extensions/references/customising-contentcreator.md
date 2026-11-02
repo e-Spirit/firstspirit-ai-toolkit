@@ -74,7 +74,8 @@ Editor** combo box set on its Properties tab). In the form, the abbreviation is 
 `…server.executables` classes are **not on the Access API jar** (checked against 5.2.261011), so
 the handler names and their parameters rest on the documentation alone. [odfs] [verify]
 How the button is rendered into the preview: `fsbutton(...)`
-(`firstspirit-templating-reference/references/gom/references-links.md`).
+(`firstspirit-templating-reference/references/datatypes.md`, the FS_BUTTON row; the form definition is in
+`gom/references-links.md` there).
 
 | Abbreviation | Click | Drop | Parameters (passed in `fsbutton(parameter:{...})`) |
 | --- | --- | --- | --- |

@@ -68,8 +68,8 @@ never quote a customer's actual entitlements from here):
 > module. On Cloud there is no licence file, so these flags do not apply.
 
 **Decision takeaway:** *whether* a requirement needs a licence is answered the same
-way (requirements → modules); *how it's provisioned* differs — **Cloud:** the
-no licence file to manage; **self-hosted:** an `fs-license.conf`. Binding
+way (requirements → modules); *how it's provisioned* differs — **Cloud:** no
+licence file to manage; **self-hosted:** an `fs-license.conf`. Binding
 scope and terms are with Sales and the Governance Center.
 
 ## How to reason about a licensing decision

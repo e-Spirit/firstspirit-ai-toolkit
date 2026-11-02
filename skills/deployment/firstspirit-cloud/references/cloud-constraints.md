@@ -82,8 +82,8 @@ From the same two docs — plan around these:
 - **Archives aren't directly accessible.** Archiving runs **automatically
   (~weekly)**; retrieving an archive is a **Support** request.
 - **Backup retention is limited.** Platform backups exist but **retention is
-  limited** — factor this into any recovery expectation (and remember **CaaS is
-  not backed up at all** — below). See
+  limited** — factor this into any recovery expectation; the CaaS backup has its
+  own scope (*Headless / CaaS constraints* below). See
   [operations-and-maintenance.md](operations-and-maintenance.md).
 - **Module availability differs by model.** Some modules are **Cloud-exclusive**
   (Navigation Service, S3 Deployment, URL Redirect, SmartSearch Connect, Connect

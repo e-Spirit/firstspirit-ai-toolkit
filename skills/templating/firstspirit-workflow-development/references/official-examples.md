@@ -2,18 +2,19 @@
 
 Two sets, both free to read and import. The BasicWorkflows source is public (Apache licence) at the e-Spirit GitHub organisation, repository `basicworkflows`; the packages are the
 ContentTransport exports the module's project app imports `[odfs]`. The ODFS tutorial ships its demos as `DEVB_workflows.zip` on the Workflows tutorial page `[odfs]`.
-What follows was read from the package files (`StoreElement.xml`, `ExternalAttributes.xml`) `[verify]`.
+What follows was read from the package files (`StoreElement.xml`, `ExternalAttributes.xml`) and read back through the Access API on a project that has the three workflows imported (observed 2026-10-30 on FirstSpirit 2026.11 (5.2.261119), a development project) `[observed]`.
 
-## BasicWorkflows (module 1.6.2) `[verify]`
+## BasicWorkflows (module 1.6.2) `[observed]`
 
 | Package | Workflow uid | Scripts | Start transition | Display logic excludes |
 |---|---|---|---|---|
-| `basicworkflows-export-basic-delete` | `delete` | nine `wf_delete_*` scripts in a folder `delete_workflow_scripts` | named `Start`, fixed rights, `Everyone` | content-store folders, project properties, datasources |
-| `basicworkflows-export-basic-release` | `release` | `wf_release`, `wf_release_find_releated_objects`, `wf_release_show_not_released`, `wf_release_show_warning`, `wf_release_test` | no name, fixed rights, `Everyone` | content-store folders |
-| `basicworkflows-export-basic-release-with-ai-review` | `release_with_ai_review` | `wf_ai_review`, `wf_ai_review_configuration`, `wf_show_ai_review_results` | no name, fixed rights, `Everyone` | content-store folders |
+| `basicworkflows-export-basic-delete` | `delete` | nine `wf_delete_*` scripts in the script folder `basic_workflows` | reference name `start`, display name `Start`, fixed rights, `Everyone` | content-store folders, project properties, datasources |
+| `basicworkflows-export-basic-release` | `release` | `wf_release`, `wf_release_find_releated_objects`, `wf_release_show_not_released`, `wf_release_show_warning`, `wf_release_test`, in `basic_workflows` | reference name `start`, **empty display name**, fixed rights, `Everyone` | content-store folders, datasources |
+| `basicworkflows-export-basic-release-with-ai-review` | `release_with_ai_review` | `wf_ai_review`, `wf_ai_review_configuration`, `wf_show_ai_review_results`, in `ai_review_workflow_scripts` (menu scripts, type 1) | reference name `start`, **empty display name**, fixed rights, `Everyone` | content-store folders, datasources |
 
-Common to all three: `webedit="1"`, `contextfree="0"`, `alwaysActive="0"` on the workflow, an error state, German and English display names, scripts with `alwaysActive="1"`.
-The delete workflow models `Check`, `Check references`, `Show faulty objects`, `Delete decision`, an error-handling state and a final `End delete`; most transitions are fixed to `Everyone`, one (`Trigger check`) is not fixed and lists `Administrators` with store-element rights 64 (meaning of the number: `workflow-model.md`) `[verify]`.
+Common to all three: `webedit="1"`, `contextfree="0"`, `alwaysActive="0"` on the workflow, an error state, a display logic, German and English display names `[observed]`; scripts with `alwaysActive="1"` `[verify]`.
+The delete workflow models `Check`, `Check references`, `Show faulty objects`, `Delete decision`, an error-handling state and a final `End delete`; most transitions are fixed to `Everyone`; the ones an administrator takes (`Trigger check`, `Delete`, `Direct delete`, `Reject`) are not fixed and list `Administrators` with store-element rights 64, the folder variants 32; in `release` and `release_with_ai_review` the same kind of transition (`Trigger check`, `Release`, `Direct Release`, `Force`, `Reject`) lists `Administrators` with 256 (meaning of the numbers: `workflow-model.md`) `[observed]`.
+The release display logic excludes content-store folders **and datasources** (`instanceof Content2`), as the 1.4.1 release note says; the delete one also excludes project properties `[observed]`. The transition out of the error state is unnamed in all three `[observed]`.
 Installing, importing, authorising and the one-delete-workflow rule: `firstspirit-installation/references/basicworkflows.md`, `firstspirit-configuration/references/workflows.md`.
 
 Use them as models for: a Start transition with rights, a display-logic script, scripts split per step and called by name from activities, an error state, forms (`release` has a form with the language and media options `[odfs]`),

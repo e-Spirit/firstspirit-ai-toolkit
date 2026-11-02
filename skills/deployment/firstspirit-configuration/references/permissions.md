@@ -1,6 +1,6 @@
 # Permissions
 
-Everything here is `[observed]` once on a development server (FirstSpirit 5.2.261116, 2026-10-07 and 2026-10-09) unless a tag says otherwise.
+Everything here is `[observed]` on a development server (FirstSpirit 5.2.261116, 2026-10-07 and 2026-10-09; the report and an offline plan re-run on 5.2.261119, 2026-10-30) unless a tag says otherwise.
 
 ## The model
 
@@ -8,9 +8,8 @@ Everything here is `[observed]` once on a development server (FirstSpirit 5.2.26
   has access to it. A server admin sees it in the ServerManager only. A project imported without its access group is
   invisible to everyone else `[observed]`.
 - **Groups** are local or external. External groups are matched with a string from the identity provider (on Cloud:
-  Keycloak). A project gets these on creation (Cloud): `Administrators` (local), `Everyone` (local, not changeable),
-  and three admin groups `Administrators (CloudServices)`, `Administrators (Services)`, `Administrators (Techsupport)`
-  `[verify]` (not stated in the Cloud documentation). Other groups are the customer's.
+  Keycloak). Every project has `Administrators` (local) and `Everyone` (local, not changeable); a FirstSpirit Cloud project
+  also carries the platform's own administrator groups, which the tool never touches (`Administrators*`). Other groups are the customer's.
 - **Store permissions**: a bit set per group on a store element. `CAN_SEE` 1, `CAN_READ` 2, `CAN_CHANGE` 4,
   `CAN_APPEND_FOLDER` 8, `CAN_APPEND_LEAF` 16, `CAN_DELETE_FOLDER` 32, `CAN_DELETE_LEAF` 64, `CAN_CHANGE_PERMISSION` 128,
   `CAN_RELEASE` 256, `CAN_META_SEE` 512, `CAN_META_CHANGE` 1024, `CAN_EVERYTHING` 2047 `[jar]`

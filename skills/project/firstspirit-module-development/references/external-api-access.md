@@ -43,7 +43,9 @@ Key points:
 - **Connection mode:** `ConnectionManager.HTTP_MODE` (also SOCKET/HTTPS variants).
 - **`connection.getBroker()` is project-less** — trying to get a
   `StoreElementAgent`/`StoreAgent` from it throws. Always resolve a project broker
-  with `BrokerAgent.getBrokerByProjectName(...)` (or `getBroker(id)`).
+  with `BrokerAgent.getBrokerByProjectName(...)` or `getBrokerByProjectId(id)` `[jar]`. Not
+  `getBroker(long)`: that overload takes a *revision*, not a project id
+  (`firstspirit-api-reference/references/agents.md`, BrokerAgent).
 - **Close the connection** in a `finally` — sessions are limited
   (`MaximumNumberOfSessionsExceededException` if leaked).
 

@@ -89,7 +89,7 @@ and configured Resolutions) across stages; it requires membership in the
 **Template Distribution** group on the target project.
 
 ### Identity & permissions
-- **Keycloak** at `accounts.e-spirit.cloud`, **one realm per customer**.
+- **Keycloak**, **one realm per customer**; the realm's SSO endpoint and the account activation page have different hosts (`firstspirit-cloud/references/identity-and-access.md`).
 - Permissions are assigned **exclusively via groups** (not roles). External
   groups in a FirstSpirit project map to Keycloak groups by **matching
   (case-sensitive) name**.

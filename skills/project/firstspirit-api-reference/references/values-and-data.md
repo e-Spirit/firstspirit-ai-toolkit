@@ -54,19 +54,24 @@ langAgent = context.requireSpecialist(LanguageAgent.TYPE);
 Always resolve a `Language` before reading language-dependent values; defaulting
 to the master language is the common fallback.
 
-> **Language-dependent release & permissions (recent — verify against the current
-> Javadoc).** As of FirstSpirit **2026.4** the **release** state is language-aware
-> (an element can be approved/published per project language, not all-or-nothing),
-> and **2026.7** adds **language-dependent user permissions** (editing restricted
-> per project language). Entry points, all on the 5.2.261011 jar and none on 5.2.240208 `[jar]`:
+> **Language-dependent release.** A product feature, on by default and activated per project in
+> ServerManager → *Project settings*: an element can be released for individual project languages
+> instead of all-or-nothing; hierarchies are excluded, only language-dependent media take part, and
+> the feature is not backward compatible with versions before 2025.1 `[odfs]` (*Advanced topics →
+> Server-side release → Language-Dependent Release*, 2026.5). The documented API entry is the
+> `ReleaseOperation` from `OperationAgent.getOperation(ReleaseOperation.TYPE)` with
+> `ReleaseOperation.languages(Language...)`; no language given means all languages, as before
+> `[odfs]` `[jar]` (5.2.261011 only; not on 5.2.240208). Further entry points, all on the
+> 5.2.261011 jar and none on 5.2.240208 `[jar]`:
 > `LanguageDataProvider.getFormData(Language)` (the `Page`, `Section` and `Dataset` interfaces
 > do not declare it `[jar]`; the elements the API hands you implement it, so cast to
 > `LanguageDataProvider` `[core]`),
-> `IDProvider.release(Language...)`, `IDProviderChange.getChangedLanguages()` /
-> `isFirstRelease(Language...)` (`@ApiStatus.Experimental`). `IDProviderEventAgent` itself has
-> no language-specific API; the languages arrive on the `IDProviderChange` it delivers. Guard
-> with the server version; the concept (release/permissions carry a `Language` dimension) is
-> the durable part.
+> `IDProvider.release(Language...)` `[jar]` (5.2.261011), `IDProviderChange.getChangedLanguages()` /
+> `isFirstRelease(Language...)` `[jar]` (5.2.261011, `@ApiStatus.Experimental`). `IDProviderEventAgent`
+> itself has no language-specific API; the languages arrive on the `IDProviderChange` it delivers.
+> Whether *user permissions* can also be restricted per project language is not on the
+> *Language-Dependent Release* page and not on the jar `[verify]`: check against your server version.
+> The concept (release carries a `Language` dimension) is the durable part.
 
 ## `TemplateSet` — output channels
 

@@ -13,7 +13,8 @@ module ([caas-connect.md](caas-connect.md)); frontends read it directly.
 > **Engine.** The REST interface (`caas-rest-api`) is **RESTHeart** over
 > **MongoDB** (`caas-mongo`). Much of the query/write/index/change-stream
 > behaviour is standard RESTHeart that the CaaS docs reference rather than
-> restate. Where a feature is RESTHeart's, it is flagged as such.
+> restate. Where a feature is RESTHeart's, it is flagged as such. `[observed]` lines: live
+> probes against a FirstSpirit Cloud development server, 2026-10-05 and 2026-10-29, seen once.
 
 Sources:
 [Product](https://docs.e-spirit.com/module/caas-platform/CaaS_Platform_Product_Documentation_EN.html) ·
@@ -78,8 +79,9 @@ Default write mode is `upsert` (RESTHeart).
 - Operators are delegated to MongoDB: `$gt`,`$lt`,`$gte`,`$lte`,`$and`,`$or`,
   `$in`,`$regex`,`$exists`,`$text`. Multiple `filter` params AND together
   (RESTHeart behaviour).
-- **`np` is auto-appended** by CaaS to filter queries, so collection metadata is
-  omitted from the response by default (disable on-prem).
+- **`np` is auto-appended** by CaaS to filter queries, so the collection's own
+  properties are omitted from the response by default (disable on-prem). Sending
+  `np=false` does not bring them back `[observed]`.
 - **An empty filter `{}` answers `400`** `[observed]`. Leave `filter` out when there is
   nothing to filter on.
 
@@ -104,14 +106,19 @@ its `fetchByFilter` (`additionalParams: { keys: { identifier: 0 } }`,
   (keyed by the referenced URL). For collection responses a synthetic
   `_resolvedRefs` document is appended to the array.
 
-### Response envelope (HAL)
-Collection queries return a HAL envelope; single-document queries return the raw
-document JSON.
+### Response envelope
+Collection queries return an envelope; single-document queries return the raw
+document JSON. The documents are in **`_embedded["rh:doc"]`** `[observed]`:
 ```json
-{ "_size": 5, "_total_pages": 1, "_returned": 3,
-  "_embedded": { "...": "payload" }, "_links": { "...": "navigation" } }
+{ "_returned": 2,
+  "_embedded": { "rh:doc": [ { "_id": "<gid>.en_GB", "...": "..." }, { "...": "..." } ] } }
 ```
-(`np` suppresses this metadata on filter queries by default — see above.)
+- `_returned` (documents on this page) is always there. **`_size` and
+  `_total_pages` only with `?count`**, with or without `filter`; without `count`,
+  page until a page holds fewer than `pagesize` documents `[observed]`.
+- Without `filter` the collection's own `_id` and `_etag` come along; with `filter`
+  they do not (`np`, see above) `[observed]`. No `_links` was returned
+  `[observed]`.
 
 ### Media / binaries
 - Bucket collections use a **`.files`** suffix (e.g. `images.files`).
@@ -163,7 +170,7 @@ property of the collection, written with `PUT`/`PATCH` on the collection:
   `@skip`, `@limit` as predefined variables; a pipeline pages itself with
   `{ "$skip": { "$var": "@skip" } }, { "$limit": { "$var": "@limit" } }` and
   the caller sends `?page=&pagesize=`.
-- mapReduce is not available (disabled in CaaS 14.6.1 for security reasons, release notes); `type` is always `"pipeline"` `[odfs]`.
+- mapReduce is not available; `type` is always `"pipeline"` `[odfs]`.
   JavaScript operators (`$where`, `$function`, `$accumulator`) are blocked by
   RESTHeart as well.
 - `$out` / `$merge` write the result into a collection the key must be allowed

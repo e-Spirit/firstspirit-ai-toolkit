@@ -101,6 +101,10 @@ Key points:
 - `<FOLDER name="images" store="MEDIASTORE"/>` restricts the file browser to that folder
 - `sections="no"` disables section anchoring in the selection dialog
 
+## Input components in link templates
+
+Input components in link templates are always language-independent (`useLanguages="no"`); the setting is not evaluated there `[odfs]` 2026.5 (*FS_CATALOG*, Background). A catalog of links is therefore made language-independent as well (`firstspirit-template-design`, `localisation.md`).
+
 ## FS_DATASET -- Dataset Reference in Link Templates
 
 References datasets for linking to detail pages.
