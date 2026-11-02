@@ -66,23 +66,37 @@ if grep -q '_(Write here' "$BODY"; then
   exit 2
 fi
 
-# The DevCon questions are optional: a question still holding its `_(your answer)_` placeholder is
-# left out of the issue, and the heading goes with the last of them. Nothing else in the body moves.
+# The DevCon questions are optional. The `_(your answer)_` placeholder line is never posted; a
+# question with nothing else under it is left out, and the heading goes with the last of them. The
+# section is cut only on the exact lines the hook writes (the heading, the four questions, the next
+# heading), so a numbered list or a `## ` line inside an answer is kept as typed.
 if grep -q '_(your answer)_' "$BODY"; then
   awk '
+    BEGIN {
+      q["1. Where did the assistant get FirstSpirit wrong, with the toolkit or without it?"] = 1
+      q["2. What did you ask that no skill covered?"] = 1
+      q["3. What should the toolkit do next: which topic, which assistant, which kind of help?"] = 1
+      q["4. Would you use it on a customer project? What would have to change first?"] = 1
+    }
     function flushblock() {
-      if (isblock) { if (index(buf, "_(your answer)_") == 0) { out = out buf; kept++ } else { dropped++ } }
+      if (isblock) { if (answered) { out = out buf; kept++ } else { dropped++ } }
       else { out = out buf }
-      buf = ""; isblock = 0
+      buf = ""; isblock = 0; answered = 0
     }
     function endsection() {
       flushblock()
       if (kept) { printf "%s", head; printf "%s", out }
       inq = 0; kept = 0; out = ""; head = ""
     }
-    inq && /^## / { endsection() }
-    /^## Four questions from the toolkit team/ { inq = 1; head = $0 "\n"; next }
-    inq { if ($0 ~ /^[0-9]+\. /) { flushblock(); isblock = 1 }; buf = buf $0 "\n"; next }
+    inq && $0 == "## Category and severity (optional)" { endsection() }
+    $0 == "## Four questions from the toolkit team" { inq = 1; head = $0 "\n"; next }
+    inq {
+      if ($0 in q) { flushblock(); isblock = 1; buf = $0 "\n"; next }
+      line = $0; sub(/^[ \t]+/, "", line); sub(/[ \t]+$/, "", line)
+      if (line == "_(your answer)_") next
+      if (isblock && line != "") answered = 1
+      buf = buf $0 "\n"; next
+    }
     { print }
     END { if (inq) endsection(); if (dropped) printf "Left out: %d unanswered DevCon question(s).\n", dropped > "/dev/stderr" }
   ' "$BODY" > "$BODY.tmp" && mv "$BODY.tmp" "$BODY"

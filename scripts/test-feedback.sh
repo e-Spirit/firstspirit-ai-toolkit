@@ -207,16 +207,32 @@ import sys
 p = sys.argv[1]; s = open(p).read()
 q2 = "2. What did you ask that no skill covered?\n\n   _(your answer)_"
 assert q2 in s
-s = s.replace(q2, "2. What did you ask that no skill covered?\n\n   Nothing about the Navigation Service.")
+# question 2: the answer typed ABOVE the placeholder, which is left in; a numbered list and a `## ` line inside it
+s = s.replace(q2, "2. What did you ask that no skill covered?\n\n   Nothing about the Navigation Service.\n\n   1. first point\n   2. second point\n\n   ## my own heading\n\n   _(your answer)_")
 open(p, "w").write(s)
 PY3
 out="$("$SUBMIT" "$DN" 2>&1)"; rc=$?
 assert_eq "note with one answered question previews" "0" "$rc"
 assert_contains     "the answered question stays, with the heading" "$out" "$DEVCON_Q"
 assert_contains     "its text is in the preview"                   "$out" "Nothing about the Navigation Service."
+assert_contains     "a numbered list inside the answer is kept"      "$out" "   2. second point"
+assert_contains     "a ## line inside the answer is kept"            "$out" "   ## my own heading"
+assert_contains     "the heading after the questions still follows" "$out" "## Category and severity (optional)"
 assert_not_contains "the unanswered ones are gone"                 "$out" "1. Where did the assistant get FirstSpirit wrong"
 assert_not_contains "no placeholder is left"                       "$out" "_(your answer)_"
 assert_contains     "three were left out"                          "$out" "Left out: 3 unanswered DevCon question(s)."
+
+echo "== the hand-in script splits on the exact question lines the hook writes =="
+for needle in "1. Where did the assistant get FirstSpirit wrong, with the toolkit or without it?" \
+  "2. What did you ask that no skill covered?" \
+  "3. What should the toolkit do next: which topic, which assistant, which kind of help?" \
+  "4. Would you use it on a customer project? What would have to change first?"; do
+  if grep -qF -- "$needle" "$HOOK" && grep -qF -- "$needle" "$SUBMIT" && grep -qF -- "$needle" "$REPO_ROOT/hooks/session-end.ps1"; then
+    pass "hook, .ps1 and submit script agree on: ${needle:0:40}"
+  else
+    fail "hook, .ps1 and submit script agree on: ${needle:0:40}" "a question line differs"
+  fi
+done
 
 echo "== the switch is read case-insensitively, like the PowerShell hook =="
 W="$(make_workdir devcon-case)"; T="$(make_transcript devcon-case)"
