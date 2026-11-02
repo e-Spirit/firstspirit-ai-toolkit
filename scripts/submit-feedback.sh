@@ -66,6 +66,28 @@ if grep -q '_(Write here' "$BODY"; then
   exit 2
 fi
 
+# The DevCon questions are optional: a question still holding its `_(your answer)_` placeholder is
+# left out of the issue, and the heading goes with the last of them. Nothing else in the body moves.
+if grep -q '_(your answer)_' "$BODY"; then
+  awk '
+    function flushblock() {
+      if (isblock) { if (index(buf, "_(your answer)_") == 0) { out = out buf; kept++ } else { dropped++ } }
+      else { out = out buf }
+      buf = ""; isblock = 0
+    }
+    function endsection() {
+      flushblock()
+      if (kept) { printf "%s", head; printf "%s", out }
+      inq = 0; kept = 0; out = ""; head = ""
+    }
+    inq && /^## / { endsection() }
+    /^## Four questions from the toolkit team/ { inq = 1; head = $0 "\n"; next }
+    inq { if ($0 ~ /^[0-9]+\. /) { flushblock(); isblock = 1 }; buf = buf $0 "\n"; next }
+    { print }
+    END { if (inq) endsection(); if (dropped) printf "Left out: %d unanswered DevCon question(s).\n", dropped > "/dev/stderr" }
+  ' "$BODY" > "$BODY.tmp" && mv "$BODY.tmp" "$BODY"
+fi
+
 # A public issue must not carry credentials or local paths. Report line numbers, never the text.
 SECRET_RE='-----BEGIN [A-Z ]*PRIVATE KEY|ghp_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|gho_[A-Za-z0-9]{20,}|AKIA[0-9A-Z]{16}|xox[baprs]-[A-Za-z0-9-]{10,}|authorization:[[:space:]]*(bearer|basic)|(password|passwd|secret|api[_-]?key|token)[[:space:]]*[=:][[:space:]]*[^[:space:]]{6,}'
 PATH_RE='(^|[^A-Za-z0-9:/._~-])(/(Users|home|var|opt|srv|mnt|private|tmp|root|etc)/[A-Za-z0-9._-]+|~/[A-Za-z0-9._-]+)|[A-Za-z]:\\[A-Za-z0-9._ -]+|\\\\[A-Za-z0-9._-]+\\[A-Za-z0-9$._-]+'

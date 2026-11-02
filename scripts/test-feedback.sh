@@ -197,8 +197,38 @@ PY2
 out="$("$SUBMIT" "$DN" 2>&1)"; rc=$?
 assert_eq "filled devcon note previews" "0" "$rc"
 assert_contains "preview carries the devcon header"  "$out" "$DEVCON_MARK"
-assert_contains "preview carries the four questions" "$out" "$DEVCON_Q"
+assert_not_contains "unanswered questions are left out of the preview" "$out" "_(your answer)_"
+assert_not_contains "the questions heading goes with them"             "$out" "$DEVCON_Q"
+assert_contains     "the preview says how many were left out"         "$out" "Left out: 4 unanswered DevCon question(s)."
+assert_contains     "the sections after the questions stay"           "$out" "## Category and severity"
 assert_not_contains "preview still cuts the hand-in section" "$out" "For an assistant"
+python3 - "$DN" <<'PY3'
+import sys
+p = sys.argv[1]; s = open(p).read()
+q2 = "2. What did you ask that no skill covered?\n\n   _(your answer)_"
+assert q2 in s
+s = s.replace(q2, "2. What did you ask that no skill covered?\n\n   Nothing about the Navigation Service.")
+open(p, "w").write(s)
+PY3
+out="$("$SUBMIT" "$DN" 2>&1)"; rc=$?
+assert_eq "note with one answered question previews" "0" "$rc"
+assert_contains     "the answered question stays, with the heading" "$out" "$DEVCON_Q"
+assert_contains     "its text is in the preview"                   "$out" "Nothing about the Navigation Service."
+assert_not_contains "the unanswered ones are gone"                 "$out" "1. Where did the assistant get FirstSpirit wrong"
+assert_not_contains "no placeholder is left"                       "$out" "_(your answer)_"
+assert_contains     "three were left out"                          "$out" "Left out: 3 unanswered DevCon question(s)."
+
+echo "== the switch is read case-insensitively, like the PowerShell hook =="
+W="$(make_workdir devcon-case)"; T="$(make_transcript devcon-case)"
+run_hook "$W" "$T" FIRSTSPIRIT_FEEDBACK=Devcon CLAUDE_PLUGIN_ROOT=/plugin
+N="$(note_of "$W")"
+if [ -n "$N" ]; then pass "Devcon writes a note"; else fail "Devcon writes a note" "none written"; fi
+assert_contains "Devcon gets the devcon header" "$(cat "$N")" "$DEVCON_MARK"
+W="$(make_workdir true-case)"; T="$(make_transcript true-case)"
+run_hook "$W" "$T" FIRSTSPIRIT_FEEDBACK=True CLAUDE_PLUGIN_ROOT=/plugin
+N="$(note_of "$W")"
+if [ -n "$N" ]; then pass "True writes a note"; else fail "True writes a note" "none written"; fi
+assert_not_contains "True gets no devcon header" "$(cat "$N")" "$DEVCON_MARK"
 
 echo "== the PowerShell twin writes the same marker and uses the same hand-in script =="
 for needle in '<!-- end of report: everything below stays on your machine -->' 'submit-feedback.sh' \

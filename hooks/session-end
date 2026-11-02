@@ -25,10 +25,12 @@
 #
 set -uo pipefail
 
+# The switch is read case-insensitively (Devcon, DEVCON, True ...), as the PowerShell hook does.
 DEVCON=0
-case "${FIRSTSPIRIT_FEEDBACK:-}" in
-  1|true|TRUE|yes|YES) ;;
-  devcon|DevCon|DEVCON) DEVCON=1 ;;
+FLAG="$(printf '%s' "${FIRSTSPIRIT_FEEDBACK:-}" | tr '[:upper:]' '[:lower:]')"
+case "$FLAG" in
+  1|true|yes) ;;
+  devcon) DEVCON=1 ;;
   *) exit 0 ;;
 esac
 
