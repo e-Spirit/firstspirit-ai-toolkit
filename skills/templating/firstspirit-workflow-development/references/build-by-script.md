@@ -18,7 +18,7 @@ What works and what does not was observed 2026-10-13 on FirstSpirit 2026.11, on 
 - **Set the Start transition's rights:** `m.setProperty(start, Transition.PROPERTY_FIXED_RIGHTS, Boolean.TRUE)` and `m.setProperty(start, Transition.PROPERTY_GROUPS, list)` with `list = ["Everyone"]` (group names as strings), then `wf.setWorkflowModel(m); wf.save(...)`. Read back with `t.useFixedRights()` and `t.getAllowedGroups()`: `fixed=true groups=[Everyone]` `[observed]`. The workflow then listed and ran in ContentCreator `[observed]`.
 - **Read back the activity:** `getScript()` and `isAutomatic()` returned what `m.setProperty(act, Activity.PROPERTY_SCRIPT / PROPERTY_AUTOMATIC, ...)` set `[observed]`.
 - **Delete:** `wf.setLock(true, false); wf.delete()`; the delete worked after the authorisation was removed.
-- **A new workflow made by script has `contextfree` on** (`isContextFree()` true) and `alwaysActive` on; the BasicWorkflows packages have `contextfree` off `[verify]`. Set `wf.setContextFree(false)` before relying on it `[observed]`; whether a UI-created workflow has the same defaults is `[verify]`.
+- **A new workflow made by script has `contextfree` on** (`isContextFree()` true) and `alwaysActive` on; the BasicWorkflows packages have `contextfree` off `[observed]`. Set `wf.setContextFree(false)` before relying on it `[observed]`; whether a UI-created workflow has the same defaults is `[verify]`.
 
 ## What did not work
 
@@ -28,7 +28,7 @@ What works and what does not was observed 2026-10-13 on FirstSpirit 2026.11, on 
 
 ## Not tried
 
-- Display names per language on a new workflow (`createWorkflow(String, String)` takes one string; the Map variant `createWorkflow(String, Map<Language,String>, boolean)` is in `WorkflowContainer` `[jar]` `[verify]`).
+- Display names per language on a new workflow: `WorkflowContainer` has `createWorkflow(String, String)` and `createWorkflow(String, String, boolean)` only, one display name each; the `Map<Language,String>` variant exists for `createWorkflowFolder` alone `[jar]` (5.2.261011, javap 2026-10-30). Setting the other languages afterwards with `IDProvider.setDisplayName(Language, String)` `[jar]` is not tried `[verify]`.
 - Setting the display logic with `setViewScript`.
 - The effect of the Start transition's rights for a user who is **not** an administrator (the administrator test already failed on the default, see `not-offered.md`).
 - Removing a running instance by script (`removeTask`) `[verify]`.

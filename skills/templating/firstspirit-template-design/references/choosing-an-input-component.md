@@ -14,7 +14,7 @@ for this need. Where the ODFS states the reason, it is tagged.
 
 | The editor has to… | Use | Returns | Consider or avoid |
 |---|---|---|---|
-| type a short text (title, label, alt text) | `CMS_INPUT_TEXT` | String | Set `singleLine="NO"` for a uniform layout `[odfs]`. Not for text that needs formatting. |
+| type a short text (title, label, alt text) | `CMS_INPUT_TEXT` | String | `singleLine="NO"` shows the field over two rows with a frame `[odfs]`; use it for a uniform layout. Not for text that needs formatting. |
 | type several lines of plain text | `CMS_INPUT_TEXTAREA` | String | Editors cannot choose formatting. For formatted text use `CMS_INPUT_DOM` `[odfs]`. |
 | write formatted running text | `CMS_INPUT_DOM` | DomElement | Allow only the formats the design uses (`FORMATS`) and the link types it needs (`LINKEDITORS`). Output depends on format templates. |
 | edit a table | `CMS_INPUT_DOMTABLE` | Table | Section format templates cannot be used in a table `[odfs]`. For structured records used in several places, use a dataset instead. |
@@ -27,13 +27,13 @@ for this need. Where the ODFS states the reason, it is tagged.
 | choose many of a long list | `CMS_INPUT_LIST` | Set of Option | Shows at most 100 entries; above that use `FS_INDEX` `[odfs]`. |
 | give a link (internal, external, media, mail) | `CMS_INPUT_LINK` | Link | Restrict the link types with `LINKEDITORS`; the output is whatever the link template produces. |
 | select a page, image, file or any store object | `FS_REFERENCE` | TargetReference | Always add a `FILTER` so only valid object types are offered; `ALLOW` wins over `HIDE` `[odfs]`. |
-| upload and select an image or file in one step | `FS_REFERENCE` with `upload="YES"` | TargetReference | Needs an upload folder on the source; in ContentCreator media can only be uploaded into folders where selection is allowed `[odfs]`. |
+| upload and select an image or file in one step | `FS_REFERENCE` with `upload="YES"` | TargetReference | `uploadFolder` is optional; in ContentCreator media can only be uploaded into folders where selection is allowed `[odfs]`. |
 | repeat a group of fields (cards, accordion entries) | `FS_CATALOG` of section templates | Catalog | Restrict the allowed templates; in a headless project keep the nesting flat (principles 4 and 7). Not `forbidPolyglotDataHierarchy="YES"` on existing content without a backup `[odfs]`. |
-| maintain a list of links in one field | `FS_CATALOG` of link templates | Catalog | Replaces the deprecated `CMS_INPUT_LINKLIST` (`deprecated.md`). Link templates are single-language and cannot be translated, so make the catalog language-independent (`useLanguages="NO"`) and do not rely on per-language entries (practice, `[verify]`). |
+| maintain a list of links in one field | `FS_CATALOG` of link templates | Catalog | Replaces the deprecated `CMS_INPUT_LINKLIST` (`firstspirit-templating-reference`, `deprecated.md`). Input components in link templates are always language-independent `[odfs]` (the reference's `gom/references-links.md`), so make the catalog language-independent too (`useLanguages="NO"`) and do not rely on per-language entries. |
 | order records of a data source (related items) | `FS_INDEX` | Index of records | 1:n, editor order kept. Each element can be added once; a limit needs a save-scope rule, the `ADD` rule is ignored in the ContentCreator preview `[odfs]`. |
 | choose one record of a data source | `FS_DATASET` | DatasetContainer | A relation (n:1) if the database should know the link; the column otherwise only records it for editors (see the dependency table in `components-and-tags.md`). |
 | offer an in-page navigation from existing sections | `CMS_INPUT_SECTIONLIST` | List of entries (anchor name, text, section name) | Builds on sections that already exist on the page; see its entry in `firstspirit-templating-reference`. |
-| run a script or a class from the form | `FS_BUTTON` | none | Either `onClick` or `onDrop` must be set; a class implements `Executable` `[odfs]`. Not for content. |
+| run a script or a class from the form | `FS_BUTTON` | none | `onClick` and `onDrop` are both optional; a referenced class implements `Executable` `[odfs]`. Not for content. |
 | limit who sees something | `CMS_INPUT_PERMISSION` | Permissions | User permissions, evaluated with the DynamicPersonalization tags, not editorial rights. Do not set default values `[odfs]`. |
 
 ## The output channel does not decide the component
@@ -74,7 +74,7 @@ These apply to every row above.
 | `CMS_INPUT_CONTENTLIST`, `CMS_INPUT_TABLIST` | `FS_INDEX` |
 | `CMS_INPUT_OBJECTCHOOSER` | `FS_DATASET` |
 
-The full list with versions is `deprecated.md`.
+The full list with versions is `firstspirit-templating-reference/references/deprecated.md`.
 
 ## When the need is not on the list
 

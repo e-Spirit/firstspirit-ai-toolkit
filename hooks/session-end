@@ -3,6 +3,9 @@
 # SessionEnd hook: write a local feedback note when a session used the toolkit.
 #
 # Off by default. Turn it on with FIRSTSPIRIT_FEEDBACK=1 (also true/yes).
+# FIRSTSPIRIT_FEEDBACK=devcon writes the same note with an event header on top: where
+# to hand the file in at DevCon, the issue form, the reference environment and the
+# event's four questions. The report content is the same; nothing else changes.
 #
 # What it writes: .firstspirit-feedback/firstspirit-feedback-<date>-<time>.md in the
 # session's working directory, with the toolkit version, the assistant, the names of
@@ -22,8 +25,12 @@
 #
 set -uo pipefail
 
-case "${FIRSTSPIRIT_FEEDBACK:-}" in
-  1|true|TRUE|yes|YES) ;;
+# The switch is read case-insensitively (Devcon, DEVCON, True ...), as the PowerShell hook does.
+DEVCON=0
+FLAG="$(printf '%s' "${FIRSTSPIRIT_FEEDBACK:-}" | tr '[:upper:]' '[:lower:]')"
+case "$FLAG" in
+  1|true|yes) ;;
+  devcon) DEVCON=1 ;;
   *) exit 0 ;;
 esac
 
@@ -111,6 +118,53 @@ else
   FILE_LIST="- (none read by name)"
 fi
 
+# --- The DevCon variant ---------------------------------------------------------
+# One header block above the facts table and one section of questions inside the
+# report. Both are fixed text; nothing from the session reaches them.
+
+DEVCON_HEADER=""
+DEVCON_QUESTIONS=""
+DEVCON_ROW=""
+if [ "$DEVCON" -eq 1 ]; then
+  DEVCON_HEADER="$(cat <<'HDR'
+> **DevCon feedback.** Thank you for trying the toolkit at the event. When you have filled in
+> the sections below, hand this file to the FirstSpirit AI Toolkit team on site, or open an
+> issue with it: https://github.com/e-Spirit/firstspirit-ai-toolkit/issues/new?template=skill-feedback.yml
+> Reference environment: the DevCon hackathon environment (the shared FirstSpirit Cloud
+> project of the guided track). Say if you worked on your own project instead.
+HDR
+)"
+  DEVCON_HEADER="
+$DEVCON_HEADER
+"
+  DEVCON_ROW="| Event | DevCon |
+"
+  DEVCON_QUESTIONS="$(cat <<'QST'
+## Four questions from the toolkit team
+
+1. Where did the assistant get FirstSpirit wrong, with the toolkit or without it?
+
+   _(your answer)_
+
+2. What did you ask that no skill covered?
+
+   _(your answer)_
+
+3. What should the toolkit do next: which topic, which assistant, which kind of help?
+
+   _(your answer)_
+
+4. Would you use it on a customer project? What would have to change first?
+
+   _(your answer)_
+
+QST
+)"
+  DEVCON_QUESTIONS="$DEVCON_QUESTIONS
+
+"
+fi
+
 # --- Write the note -----------------------------------------------------------
 
 DIR="$WORKDIR/.firstspirit-feedback"
@@ -125,14 +179,14 @@ cat > "$OUT" 2>/dev/null <<EOF || exit 0
 
 Written on your machine by the toolkit's session-end hook. Nothing has been sent anywhere.
 It holds no prompts, no answers, no file contents and no project names.
-
+$DEVCON_HEADER
 | | |
 |---|---|
 | Toolkit version | $VERSION |
 | Assistant | $HARNESS |
 | Date | $DAY |
 | Session ended | ${REASON:-unknown} |
-
+$DEVCON_ROW
 ## Skills this session used
 
 $SKILL_LIST
@@ -149,7 +203,7 @@ _(Write here what was wrong, unclear or missing, in your own words. One sentence
 
 _(Write here what you expected instead.)_
 
-## Category and severity (optional)
+$DEVCON_QUESTIONS## Category and severity (optional)
 
 Category: wrong, unclear, missing, skill did not trigger, other
 Severity: blocker, major, minor

@@ -9,7 +9,7 @@ ODFS: JavaScript APIs › ContentCreator › Preview; Content Highlighting › D
 | --- | --- | --- |
 | `reload` | `void reload()` | regenerate and reload the **entire** preview page [odfs] |
 | `reload` | `void reload(Element element)` | partial reload — see the rule below [odfs] |
-| `reload` | `void reload(String htmlId)` | reload the element with that HTML `id` — **Javadoc only**, not on the ODFS page [javadoc] |
+| `reload` | `void reload(String htmlId)` | reload the element with that HTML `id`; the ODFS *Functions in the preview* page shows `WE_API.Preview.reload("container")` for a `<div id="container">` [odfs] [javadoc] |
 | `addElementReloadListener` | `void addElementReloadListener(ElementReloadListener)` | callback `function(element)` — called with the DOM element ContentCreator just reloaded [odfs] |
 | `rescan` | `void rescan(Element element)` | scan `element` and its children for editor identifiers and enable highlighting on them [odfs] |
 | `repaint` | `void repaint()` | resize/reposition the currently visible highlight frames [odfs] |

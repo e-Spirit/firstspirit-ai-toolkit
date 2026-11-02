@@ -15,7 +15,7 @@ Sources:
 
 ---
 
-## The load-bearing constraint: the JSON is not template-driven
+## The load-bearing constraint: the CaaS Connect JSON is not template-driven
 
 **You cannot shape the CaaS JSON through a template output channel or transform.
 There is no "CaaS Connect" output channel.** The JSON is generated automatically

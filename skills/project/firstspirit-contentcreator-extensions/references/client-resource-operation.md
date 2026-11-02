@@ -2,13 +2,13 @@
 
 Interface: `de.espirit.firstspirit.webedit.server.ClientResourceOperation` [jar] FS 5.2.240208
 Javadoc: "Operation providing means to load resources on the client-side." [javadoc]
-Not on the six ODFS "JavaScript APIs" pages — Javadoc + jar only.
+Documented on the ODFS page *Loading client resources* (plug-in development → ContentCreator → management extensions) [odfs]; signatures from Javadoc and jar.
 
 | Member | Signature | Verified | Note |
 | --- | --- | --- | --- |
 | `TYPE` | `static final OperationType<ClientResourceOperation>` | [jar] | |
-| `addScriptUrl` | `void addScriptUrl(String url)` | [jar] | JavaScript to load; relative URLs resolve against the **ContentCreator web-app context path** (e.g. `/fs5webedit/`) [javadoc] |
-| `addStylesheetUrl` | `void addStylesheetUrl(String url)` | [jar] | CSS to load; same base URL rule [javadoc] |
+| `addScriptUrl` | `void addScriptUrl(String url)` | [jar] | JavaScript to load; relative URLs resolve against the **project-specific ContentCreator directory**, `[SERVER_ROOT]/web/fs5webedit_[PROJECT_ID]` [odfs]; the order in which several resources load is not guaranteed [odfs] |
+| `addStylesheetUrl` | `void addStylesheetUrl(String url)` | [jar] | CSS to load; same base URL rule as `addScriptUrl` [odfs] |
 | `perform` | `void perform(boolean waitForResources)` | [jar] | `true` → block until loading has completed; `false` → return immediately, loading continues [javadoc] |
 
 **ContentCreator only** — it lives in `webedit.server` and loads into the ContentCreator

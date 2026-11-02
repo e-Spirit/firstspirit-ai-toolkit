@@ -1,6 +1,6 @@
 # Rules: Editability Patterns
 
-Correct, tested patterns for FirstSpirit editability rules.
+Correct, tested patterns for FirstSpirit editability rules. The `EDITABLE` property: ODFS 2026.5 *Rules → Form properties → EDITABLE* `[odfs]` (re-read 2026-10-30).
 
 ---
 

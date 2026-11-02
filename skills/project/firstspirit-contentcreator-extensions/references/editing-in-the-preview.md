@@ -2,9 +2,10 @@
 
 How a template makes the preview editable in ContentCreator (EasyEdit, InEdit, LiveEdit) and
 highlighted in SiteArchitect (Content Highlighting). All **[odfs]** — *Template development ›
-Content Highlighting and EasyEdit › Use in projects*, FirstSpirit 2026.5; Java types
-**[jar]** (`fs-isolated-runtime` 5.2.261011). Not re-tested live **[verify]**.
-Dynamic reload from JavaScript: `we-api-preview.md`. Where `editorId` belongs in a template
+Content Highlighting and EasyEdit › Use in projects* and *Template syntax › Functions › in instructions › editorId*,
+FirstSpirit 2026.5; Java types **[jar]** (`fs-isolated-runtime` 5.2.261011). Not re-tested live **[verify]**.
+Dynamic reload from JavaScript: `we-api-preview.md`. The call form as template syntax:
+`firstspirit-templating-reference/references/templates/editorid.md`. Where `editorId` belongs in a template
 set, and why it is the default: `firstspirit-template-design/references/output-conventions.md`.
 
 ## The principle
@@ -22,7 +23,9 @@ ContentCreator alike. Put the call **inside the opening tag of a block element**
 ```
 
 Highlighting needs content: an empty input component cannot be highlighted, so guard the
-output with `$CMS_IF(!IDENTIFIER.isEmpty)$`. [odfs]
+output with `$CMS_IF(!IDENTIFIER.isEmpty)$`. [odfs] The element that carries the identifier must
+not end up empty either, or no frame is drawn: output a substitute such as `&nbsp;` in the
+`$CMS_ELSE$` branch (the *editorId* function page's example). [odfs]
 
 ## Parameters
 

@@ -16,14 +16,14 @@ Work through the list top to bottom; each item says where the evidence comes fro
    Each store has its own list (Site Store, Page Store, Media Store, ...). A new workflow is not authorised anywhere. The entry may be visible to project administrators only `[odfs]`.
    Scripted: `firstspirit-configuration/references/permissions.md` (`WorkflowPermission`) `[jar]`.
 2. **Rights on the Start transition.** Open the diagram, select the transition leaving Start, enable *Fixed permissions* and add the group `Everyone` (or the groups that should start it) `[odfs]`.
-   The default new transition has fixed rights off and no group `[jar]`; the BasicWorkflows packages have `Everyone` `[verify]`.
+   The default new transition has fixed rights off and no group `[jar]`; the BasicWorkflows packages have `Everyone` `[observed]`.
    **Verified in ContentCreator:** with the workflow authorised and the default Start transition (fixed rights off, store-element rights 4 = `CAN_CHANGE`), the user got an error that the necessary rights were missing and the status provider turned red, **although the user is a server administrator and a project administrator**. The store permissions of the element still apply to them. After the Start transition was set to *Fixed permissions* with `Everyone`, the workflow was listed and the popup showed `[observed]` (one reload between the two states; the rights change is the only change to the definition).
    The REST/API user (same login) did **not** hit this: `isWorkflowAllowed` was `true` and the user held every permission on the page ref. Do not use an API check to prove what the UI will allow `[observed]`.
    A transition without fixed rights takes its rights from the target element's permissions `[odfs]`, so the default is not always fatal; what decides it is the rights of the person on the element. Fixed rights `Everyone` take that out of the equation.
 3. **Workflow available in ContentCreator** ticked on the *Properties* tab (`webedit`), if the editor works in ContentCreator `[odfs]` `[jar]`.
-4. **Display logic** (`Use display logic`): the script must return `true` for the element in question, **and** the user must be allowed to take the Start transition; both are checked `[odfs]`. *Display always* skips the script. A script copied from `release` excludes content-store folders and is right for pages;
+4. **Display logic** (`Use display logic`): the script must return `true` for the element in question, **and** the user must be allowed to take the Start transition; both are checked `[odfs]`. *Display always* skips the script. A script copied from `release` excludes content-store folders and datasources and is right for pages;
    one that returns `false` or throws hides the workflow without a message `[verify]` (what the client does on an exception is not checked).
-   The `delete` workflow's logic excludes content folders, project properties and datasources `[verify]`.
+   The `delete` workflow's logic excludes content folders, project properties and datasources; the `release` one content folders and datasources `[observed]` (read back 2026-10-30).
 5. **ContentCreator needs more for BasicWorkflows only.** The *BasicWorkflows Status Provider* and the web component are for the module's own workflows `[odfs]`; a home-made workflow should not need them, `[verify]` on a server.
 6. **Element type.** The workflow dialog is offered for elements the client supports; BasicWorkflows lists the types per client `[odfs]` (release in ContentCreator: page references, datasets, document groups).
 7. **Reload.** After changing authorisation or settings, reload the client; whether a new login is needed as well is `[verify]`.
@@ -55,8 +55,8 @@ By script: `Workflowable.hasTask()`, `getTask()`, `removeTask()` and `UserServic
 
 ## Not the cause (so far)
 
-- **The Start transition's name.** Naming it did not make the workflow appear (2026-10-12 `[verify]`); in the BasicWorkflows `release` package it has no name `[verify]`, and that workflow is offered.
-- **The script type** (for example a menu script). The BasicWorkflows scripts are mostly type 0 (`Script.TEMPLATE` `[jar]`) `[verify]`, but a script is called by name from an activity; `[verify]` that the type does not matter.
+- **The Start transition's name.** Naming it did not make the workflow appear (2026-10-12 `[verify]`); in the BasicWorkflows `release` package it has the reference name `start` and an empty display name `[observed]`, and that workflow is offered.
+- **The script type** (for example a menu script). The BasicWorkflows release and delete scripts are type 0 (`Script.TEMPLATE` `[jar]`), the AI review ones type 1 (`Script.MENUE` `[jar]`), and both kinds are wired to activities `[observed]`; a script is called by name from an activity, so the type does not stop that. Whether the type changes anything else at run time is `[verify]`.
 
 ## Proof
 

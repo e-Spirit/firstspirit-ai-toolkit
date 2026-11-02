@@ -82,11 +82,16 @@ chmod 600 ~/.fs-cli-creds.env
 ```bash
 # at run time: source it, use the vars, redact on the way out
 . ~/.fs-cli-creds.env            # shell-local; passed to fs-cli per call below, not exported
-fsuser="$FS_USER" fspwd="$FS_PWD" fs-cli … 2>&1 | sed -E "s/$(printf '%s' "$FS_PWD" | sed 's/[][\.*^$\/+?(){}|]/\\&/g')/***/g"
+redact=$(mktemp); chmod 600 "$redact"
+printf 's/%s/***/g\n' "$(printf '%s' "$FS_PWD" | sed 's/[][\.*^$\/+?(){}|]/\\&/g')" > "$redact"
+fsuser="$FS_USER" fspwd="$FS_PWD" fs-cli … 2>&1 | sed -E -f "$redact"
+rm -f "$redact"
 ```
 
 Notes:
 - The `<<'EOF'` (quoted heredoc) stops the shell expanding `$` in the password.
+- The redaction pattern goes to `sed` through a mode-600 file (`-f`), not on its command line, where every user of the
+  machine could read it in the process list for as long as the export runs.
 - Any pre-existing project `.env` with a different variable naming
   (`FS_USERNAME` / `FS_PASSWORD`, `FS_REST_BASE_URL`, `FS_PROJECT_ID`) is fine —
   map its names onto `fsuser` / `fspwd`. Confirm its **non-secret** fields (base URL,

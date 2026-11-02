@@ -2,16 +2,16 @@
 name: firstspirit-workflow-development
 description: Building your own FirstSpirit workflows, the definitions and not only their scripts. Use it to model a workflow (states, activities, transitions, who may start and switch, error state, forms), to make it appear in SiteArchitect and ContentCreator, to build it in the Template Store UI or from a script, to release from a script (server-side release options, ReleaseOperation), and to find out why a workflow is not offered ("my workflow does not appear next to Release", "Hello World workflow", "workflow button missing in ContentCreator", "Runnable in ContentCreator", "Authorized checkbox", "Start transition", "missing rights error"). Also for reading the BasicWorkflows and ODFS sample workflows as models. Script contexts: firstspirit-scripting; installing BasicWorkflows: firstspirit-installation.
 metadata:
-  source-commit: "1e54562"
-  published: "2026-10-30"
-  toolkit-version: "0.7.0"
+  source-commit: "17f78f9"
+  published: "2026-11-02"
+  toolkit-version: "0.8.0"
 ---
 
 > **Beta.** Early public release. Feedback welcome; behaviour and structure may change.
 
 # Building FirstSpirit workflows
 
-> **Beta.** Built from the product documentation, the Access API and one live run, checked where a tag says so: `[odfs]` product
+> **Beta.** Built from the product documentation, the Access API and live runs, checked where a tag says so: `[odfs]` product
 > documentation, `[jar]` javap-verified against the FirstSpirit runtime jar (5.2.261011), `[observed]` seen in a live run (dated,
 > versioned), `[verify]` not yet checked on a server. Treat a `[verify]` statement as a lead, not a fact.
 
@@ -45,10 +45,10 @@ Most "my workflow does not show up" cases are that third thing, not the definiti
 
 - **Two steps make it appear, and both are needed** (ContentCreator, administrator user, observed 2026-10-13 on FirstSpirit 2026.11 `[observed]`):
   1. *Authorise per store.* Not authorised: not listed. A workflow is offered only when it is *Authorized* in the store's Workflow permissions `[odfs]`.
-  2. *Fixed rights on the Start transition.* Authorised with the default Start transition (fixed rights off): the user got a missing-rights error and a red status, **even as server and project administrator**, because the element's store permissions still apply. With *Fixed permissions* `Everyone` it was listed and ran. The BasicWorkflows packages are built this way `[verify]`, and so is the tutorial `[odfs]`.
+  2. *Fixed rights on the Start transition.* Authorised with the default Start transition (fixed rights off): the user got a missing-rights error and a red status, **even as server and project administrator**, because the element's store permissions still apply. With *Fixed permissions* `Everyone` it was listed and ran. The BasicWorkflows packages are built this way (read back 2026-10-30 `[observed]`), and so is the tutorial `[odfs]`.
 - **An API check is not a UI check.** The same login passed `isWorkflowAllowed` and held every permission through REST while the UI refused it `[observed]`. Prove it in the client.
 - **Red means "in workflow", not "stuck"** (ContentCreator status colours; blue never released, green released, orange modified, purple historic). A red element after a failed start has a running instance: resolve it in the client or, if that fails, abort it in SiteArchitect (`references/not-offered.md`).
-- **ContentCreator is a setting, not a given.** The workflow must be *Runnable in ContentCreator* (`isWebedit()` `[jar]`, `webedit="1"` in the BasicWorkflows packages `[verify]`) and the element types it applies to must make sense in that client (display logic).
+- **ContentCreator is a setting, not a given.** The workflow must be *Runnable in ContentCreator* (`isWebedit()` `[jar]`, true on the three BasicWorkflows workflows `[observed]`) and the element types it applies to must make sense in that client (display logic).
 - **Edit in the UI, verify by reading back.** Reopen the workflow after saving; check the page's workflow list, not the absence of an error.
 - **Test on a development or demo project.** Never on a production project.
 - **Do not copy script facts here.** Point at `firstspirit-scripting`.

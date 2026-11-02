@@ -69,8 +69,8 @@ it still renders is not stated **[verify]**. Component semantics:
 
 ## Stores in ContentCreator
 
-- Global settings (project and user settings), the store restrictions and the template store
-  are not displayed. [odfs]
+- Project and user settings (Global Settings) are not displayed. [odfs] The page's table then lists
+  the per-store restrictions.
 - **Page store:** sections based on table templates (content projection) cannot be created;
   create them in SiteArchitect. [odfs]
 - **Data store:** data sources and data-source folders cannot be created. Not every input

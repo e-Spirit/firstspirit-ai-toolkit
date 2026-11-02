@@ -1,7 +1,8 @@
 # Development Tools for ContentCreator
 
 Source: *Installation and Configuration* of the Development Tools in ContentCreator documentation, 2026.11 `[odfs]`, read 2026-10-13.
-What the tools do is not covered here.
+What the tools do is not covered here. Not the same thing: the ODFS page *Tools for developers* (template development basics) describes SiteArchitect's
+code completion, Template Inspector and Debugger and the browser developer tools, which need no installation `[odfs]`.
 
 ## Cloud or on-prem
 

@@ -1,5 +1,7 @@
 # GOM: Numeric, Date, and Boolean Components
 
+Defaults and value lists on this page: ODFS 2026.5 pages *CMS_INPUT_NUMBER*, *CMS_INPUT_DATE*, *CMS_INPUT_TOGGLE* `[odfs]` (re-read 2026-10-30).
+
 ---
 
 ## CMS_INPUT_NUMBER -- Numeric input

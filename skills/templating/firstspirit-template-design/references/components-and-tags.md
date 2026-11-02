@@ -64,7 +64,7 @@ Every input component returns a value of a defined type (a Java class or interfa
 | `FS_DATASET` | Select a single dataset from the content store. |
 | `FS_BUTTON` | Icon, button or link attached to a script or class. |
 
-Note: `FS_LIST` was deprecated in 5.2R3 and removed in FirstSpirit 2020-07 (ODFS's planned date was "from 2020-01"). Prefer `FS_CATALOG` or `FS_INDEX`.
+Note: `FS_LIST` is removed (versions and the migration note in `firstspirit-templating-reference/references/deprecated.md`). Prefer `FS_CATALOG` or `FS_INDEX`.
 
 ## Datatype and dependency mapping
 
@@ -89,7 +89,7 @@ this view is the design side.
 | `NUMBER` | Long, Integer or Double (per `type`) | none |
 | `DATE` | Date, or Long (timestamp) | none |
 | `DOM` / `DOMTABLE` | FirstSpirit editor | none |
-| `LIST` | FirstSpirit editor | foreign key dependency to n; above 100 rows the ODFS recommends `FS_INDEX` |
+| `LIST` | FirstSpirit editor | foreign key dependency to n (`[verify]`; the reference lists `Set<Option>` as its datatype); above 100 rows the ODFS recommends `FS_INDEX` |
 
 ## Reading variables
 
@@ -116,7 +116,7 @@ Defined in the source, within `<CMS_HEADER>`, valid XML, named via `<CMS_FUNCTIO
 - `<CMS_VALUE_PARAM name="..." value="variableName"/>` for a variable
 - `<CMS_CDATA_PARAM name="...">...</CMS_CDATA_PARAM>` for non-XML-compatible text
 
-The three parameter types are interchangeable.
+`CMS_PARAM` passes a constant, `CMS_VALUE_PARAM` a constant expression, `CMS_CDATA_PARAM` a template fragment `[odfs]` 2026.5 (*Template syntax → Functions*).
 
 Available header functions:
 
@@ -125,6 +125,6 @@ Available header functions:
 - **MenuGroup:** link folders of the same level (previous, next).
 - **Navigation:** build navigation from the site structure.
 - **PageGroup:** link merged pages, also used between detail pages from content projections.
-- **Font:** multiline captions for background images; the inline `font()` function also exists.
+- **Font:** renders text as an image (font, width, media and text are mandatory) `[odfs]` 2026.5; the inline `font()` function also exists (both in `firstspirit-templating-reference`, `templates/small-functions.md`).
 
 CDATA hides non-XML-compatible content from the parser: `<![CDATA[ ... ]]>`. It cannot contain `]]>`, so CDATA sections cannot nest.

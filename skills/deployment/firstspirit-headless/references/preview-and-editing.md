@@ -21,7 +21,8 @@ So: **OCM is the capability, TPP the mechanism, `TPP_SNAP` (via `snap.js` /
 
 Sources:
 [TPP/SNAP API](https://docs.e-spirit.com/tpp/snap/) (~v2.4.9) ·
-[OCM](https://docs.crownpeak.com/firstspirit/ocm/) (v3.0).
+[OCM](https://docs.crownpeak.com/firstspirit/ocm/) (v3.0). `[observed]` lines: an OCM 3.0
+frontend on a FirstSpirit Cloud development server, 2026-10-28, seen once.
 
 > **Not headless?** For a page rendered by FirstSpirit's *own* integrated preview
 > use the ODFS JS APIs (`WE_API`/`JC_API`/`MPP_API`) — see the last section; they
@@ -31,19 +32,26 @@ Sources:
 
 ## Architecture
 
-The external frontend is loaded in ContentCreator; `snap.js` performs a
-**handshake**, then communicates with ContentCreator via **`postMessage`**. Only
+The external frontend is loaded in ContentCreator; the bridge script (`snap.js` in
+OCM 2, `live.js` in OCM 3) performs a **handshake**, then communicates with
+ContentCreator via **`postMessage`**. Only
 active inside ContentCreator (preview) — on the live site `TPP_SNAP` is absent /
 disconnected, so decoration and editing are inert.
 
 Detect the preview context with `TPP_SNAP.isConnected` (`Promise<boolean>`).
 
-Script inclusion (the handshake origin secures it):
-```html
-<script src="path/to/fs-tpp-api/snap.js"
-        data-firstspirit-origin="http://firstspirit:8000"></script>
-<!-- load your app scripts AFTER this so window.TPP_SNAP exists -->
-```
+Script inclusion depends on the OCM version:
+
+- **OCM 2 (`snap.js`)** — the handshake origin secures it:
+  ```html
+  <script src="path/to/fs-tpp-api/snap.js"
+          data-firstspirit-origin="http://firstspirit:8000"></script>
+  <!-- load your app scripts AFTER this so window.TPP_SNAP exists -->
+  ```
+- **OCM 3 (`live.js`)** — load `https://<FS-HOST>/fs5webedit/live/live.js` from the
+  FirstSpirit server `[observed]`, only when the page runs inside the ContentCreator frame. It
+  exposes `window.TPP_SNAP` (and `window.ContentCreator`) `[observed]`; register the
+  handlers once `TPP_SNAP.isConnected` resolves to `true`.
 
 ---
 
@@ -51,9 +59,12 @@ Script inclusion (the handshake origin secures it):
 
 **Connection / mode**
 - `isConnected` → `Promise<boolean>` · `isLegacyCC` → boolean
-- `enableCaasMode(previewCollectionUrl, apiKey, options?)` — makes SNAP wait for
-  updated content to land in the CaaS `preview.content` collection before firing
-  rerender handlers (needs CaaS Platform v3.0.3+ and CaaS Connect v3.4.0+).
+- `enableCaasMode(previewCollectionUrl, apiKey, options?)` — **OCM 2 only.** Makes SNAP
+  wait for updated content to land in the CaaS `preview.content` collection before
+  firing rerender handlers (needs CaaS Platform v3.0.3+ and CaaS Connect v3.4.0+).
+  OCM 3 has no CaaS dependency any more; its `live.js` only logs
+  `enableCaasMode is not supported in LiveEdit.` `[observed]`. See *Waiting for CaaS
+  under OCM 3* below.
 
 **Events** (register with the `on…` methods)
 - `onInit(success, isLegacyCC)` — after the handshake completes.
@@ -73,6 +84,8 @@ Script inclusion (the handshake origin secures it):
 **Rendering / content**
 - `renderElement(previewId)` · `triggerChange(previewId, content)` ·
   `triggerRerenderView()` · `getElementStatus(previewId, refresh)` → `Status`
+- In OCM 3, `triggerChange` has ContentCreator render the element first and passes the
+  result to the `onContentChange` handlers, parsed when it looks like JSON `[observed]`.
 
 **Dialogs**
 - `showEditDialog(previewId)` · `showMetaDataDialog(previewId)` ·
@@ -128,12 +141,19 @@ them slightly differently; use the forms of the version you run:
 
 > Write the locale as `en_GB`, not `EN`, and use `/` as the catalog separator.
 
+In OCM 3 the preview ids are **GID based** by default (`gidPreviewIdEnabled`,
+`setGidPreviewIdEnabled`): `<gid>.<locale>`, the same as the CaaS document id
+`[observed]`, so a frontend can use a document's `_id` as its preview id.
+
 ---
 
 ## Common flows
 
 ```javascript
-// init + CaaS mode
+// OCM 3 (live.js): register the handlers once the bridge is connected
+TPP_SNAP.isConnected.then((connected) => { if (connected) registerHandlers(); });
+
+// OCM 2 (snap.js) only: init + CaaS mode
 TPP_SNAP.onInit(async (success) => {
   if (!success) return;
   TPP_SNAP.enableCaasMode("https://caas-host/<tenant>/<uuid>.preview.content", "<api-key>");
@@ -159,8 +179,31 @@ TPP_SNAP.showMessage("Saved", "info", "Confirmation");
 
 Rerender flow: an edit → `onContentChange` (with new `content`) → if the handler
 returns a value that node updates in place, otherwise SNAP falls back to
-`onRerenderView`. `enableCaasMode` makes SNAP wait for the fresh CaaS document
-first, so the app re-fetches current data rather than stale content.
+`onRerenderView`. Under OCM 2, `enableCaasMode` makes SNAP wait for the fresh CaaS
+document first, so the app re-fetches current data rather than stale content.
+
+### Waiting for CaaS under OCM 3
+
+CaaS Connect ships a **Preview Rendering Plugin** (selected in the project's preview
+configuration, see [configuration-and-install.md](configuration-and-install.md)):
+ContentCreator renders the changed element with it, and the result reaches the
+`onContentChange` handlers (see `triggerChange` above), so the frontend does not have
+to wait for CaaS.
+
+Without it, the handlers fire when the editor saves. Whether the changed document is in the
+preview collection by then depends on the delivery module: with one that writes
+asynchronously, a frontend that re-reads CaaS at once gets the old document
+`[observed]`. Check how your delivery module behaves; if it writes asynchronously, the
+frontend waits itself:
+
+1. Note the document's `_etag` (an object `{ "$oid": "…" }`; CaaS sets a new one on
+   every write; compare the `$oid`) when the page renders.
+2. In `onContentChange` (return a value, so no full rerender fires) or `onRerenderView`,
+   poll the document by id with `keys={"_etag":1}` until `_etag` differs.
+3. Then drop the frontend's cached data and re-render the route.
+
+Set a time limit and tell the editor when nothing arrived (`showMessage`): an edit that
+the delivery module does not send at once shows only after its next sync.
 
 ### Supporting objects
 - **`Status`** (`getElementStatus`): `{ previewId, elementType

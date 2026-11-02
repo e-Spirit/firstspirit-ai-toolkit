@@ -15,9 +15,9 @@ description: >-
   firstspirit-api-reference, firstspirit-template-design, firstspirit-scripting,
   firstspirit-module-development and firstspirit-rest-api.
 metadata:
-  source-commit: "1e54562"
-  published: "2026-10-30"
-  toolkit-version: "0.7.0"
+  source-commit: "17f78f9"
+  published: "2026-11-02"
+  toolkit-version: "0.8.0"
 ---
 
 > **Beta.** Early public release. Feedback welcome; behaviour and structure may change.
@@ -34,7 +34,7 @@ platform internals — those live in dedicated skills it points at. Treat it as
 the map, not the territory.
 
 FirstSpirit is an **enterprise, hybrid-headless CMS**. Current release:
-**FirstSpirit 2026.8** — calendar versioning `YYYY.N`. It serves content from one repository to any channel two
+**FirstSpirit 2026.11** (the October 2026 patch day; the documentation read for this skill is the 2026.8 set) — calendar versioning `YYYY.N`. It serves content from one repository to any channel two
 ways at once: **classic** template-based delivery (the server pre-generates
 output) and **headless** delivery (Content as a Service — clean JSON over
 REST/GraphQL). A project is organised into **stores** — Page, Media, Site
@@ -107,7 +107,7 @@ generation, release vs. preview, versioning, certifications) read
 
 ## Quick answers
 
-- **What version?** FirstSpirit **2026.8**, calendar naming `YYYY.N`, released on
+- **What version?** FirstSpirit **2026.11** (see `references/hosting-and-deployment.md` for the patch day), calendar naming `YYYY.N`, released on
   a monthly-ish cadence. → [product-overview.md](references/product-overview.md)
 - **Which hosting?** Default is **FirstSpirit Cloud** (managed SaaS on AWS, with
   DEV/QA/PROD stages, Keycloak identity, ~4-week patch days). **Self-hosted**

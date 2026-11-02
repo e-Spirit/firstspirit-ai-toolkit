@@ -654,6 +654,28 @@ Pitfalls from the PS universal-input-component example `[observed]`:
   `SerializingValueHolder<T, S extends Serializable>` `[jar]`
   (`getSerializedValue`/`setSerializedValue`) next to `getValue`/`setValue`.
 
+## Start-page launcher button — `ApplicationPlugin` — `<web-app>` in `fs5root`
+
+A button on the FirstSpirit start page that opens a URL (your own tool, a dashboard) `[odfs]`
+(*Plug-In Development → Universal Extensions → Launching Applications*, 2026.5). The component
+implements `de.espirit.firstspirit.server.application.ApplicationPlugin` (extends `Plugin`; on
+both jars `[jar]`): `getLabel()`, `getDescription()` (tool-tip), `getIcon(ApplicationPlugin.IconType)`
+(`WHITE_BACKGROUND` / `DARK_BACKGROUND`), `getUrl()`, `isVisible()`, `isEnabled()` `[jar]`, plus
+`setUp(BaseContext)` / `tearDown()` from `Plugin` `[odfs]`. Deployment is a **web-app component**
+whose jar holds the class, added to the global `fs5root` web application in ServerManager →
+*Server properties → Web applications*; the row the button lands in (primary / editorial or
+secondary / managerial) is set under *Server properties → Start page* `[odfs]`. `isVisible` /
+`isEnabled` only shape the button; they are **not access control** — the launched application
+must check permissions itself `[odfs]`. The package name says `server`, but the interface is
+documented Access API; `checkCompliance` is the judge, not the package name.
+
+**Application tabs in SiteArchitect** (the *Application integration* page of the ODFS, 2026.5
+`[odfs]`): the Application API in `de.espirit.firstspirit.client.gui.applications`
+(`ApplicationTab`, `ApplicationService`, `ApplicationTabAppearance` `[jar]`) drives tabs in the
+SiteArchitect application area; a `ClientPlugin` (`de.espirit.firstspirit.client.plugin`) loaded at
+SiteArchitect start can open and control them. The ODFS calls the topic still in development;
+check the current Javadoc of those two packages before building on it.
+
 ## Configurable — the ServerManager config dialog — `<configurable>`
 
 A component's `<configurable>` class provides the dialog behind the *configure*

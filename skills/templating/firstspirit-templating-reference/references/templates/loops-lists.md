@@ -1,5 +1,7 @@
 # Templates: Loops and List Operations
 
+`#for` members and the `List` methods on this page: ODFS 2026.5 pages *System objects → #for* and *Data types → List* `[odfs]` (re-read 2026-10-30).
+
 ---
 
 ## Loops

@@ -73,13 +73,14 @@ FirstSpirit".
 
 - **Preview URL setup:** ServerManager → project properties → ContentCreator
   settings → point the preview at the external frontend.
-- **PreviewRenderingPlugin** selection (e.g. "CaaS Connect Preview Rendering
-  Plugin") to generate preview content.
+- **PreviewRenderingPlugin** selection (e.g. the "CaaS Connect Preview Rendering
+  Plugin", part of CaaS Connect) to generate preview content: ContentCreator renders
+  a changed element with it, so the frontend does not have to wait for CaaS.
 - **Project component:** "CXT ContentCreator: Preview Configuration ProjectApp".
 - iFrame / protocol (http vs https) requirements between ContentCreator and the
   preview app; preview configuration for sub-areas.
-- **Version requirements** for `TPP_SNAP.enableCaasMode`: CaaS Platform v3.0.3+,
-  CaaS Connect v3.4.0+.
+- **Version requirements** for `TPP_SNAP.enableCaasMode` (OCM 2 only): CaaS
+  Platform v3.0.3+, CaaS Connect v3.4.0+.
 - **Migration** from OCM 2.x.
 
 ---

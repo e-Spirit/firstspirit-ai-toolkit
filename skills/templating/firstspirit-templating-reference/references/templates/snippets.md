@@ -1,8 +1,8 @@
 # Snippets: thumbnail, label, extract
 
 A snippet defines how an object (page, section, dataset, medium, link) is shown to the editor in lists, search
-results, reports and selection dialogs. `[odfs]` FirstSpirit 2026.11, *Snippets*. It is set on the **Snippet tab**
-of a template, with three fields. Design guidance (when and what to put there) is in the `firstspirit-template-design` skill
+results, reports and selection dialogs. `[odfs]` FirstSpirit 2026.11, *Snippets* (same text in the 2026.5 documentation). It is set on the **Snippet tab**
+of a template, with three fields. Page, section, link and table templates and workflows have the tab; format templates and scripts do not `[odfs]` 2026.5, the *Snippet tab* pages of *Composition of templates*. Design guidance (when and what to put there) is in the `firstspirit-template-design` skill
 (its `snippets.md`).
 
 | Field | Shows | Export file |
@@ -19,13 +19,25 @@ when the template is chosen (`preview-image.md`).
 
 ## Where it is used
 
-- Search and the project history (the author's statement for the history, `[verify]` against the ODFS; the project
-  history in ContentCreator lists changed objects with name, author and time `[observed]` 2026-10-16).
-- SiteArchitect: search results, reports, selection dialogs, the display of `FS_CATALOG` link entries.
-- ContentCreator: search results, reports, selection dialogs; the snippet of a link template is also the tooltip in
-  `CMS_INPUT_DOM`, `CMS_INPUT_DOMTABLE` and InEdit mode.
-- FragmentCreator: the fragment list; without a definition it shows the variant ID and the folder path.
-- Without a definition (or with empty inputs) the object name and path are shown. Links show no tooltip in ContentCreator.
+- Search result lists, reports and selection dialogs in SiteArchitect and ContentCreator `[odfs]`; a search hit in
+  ContentCreator shows the type icon, the name and a descriptive text, the thumbnail at its right edge `[odfs]`
+  (ContentCreator manual 2026.11, *Report area → Search*; *Snippets → Thumbnail*).
+- The `FS_CATALOG` form: its entries (text, image) are displayed by the snippets of the selected section or link
+  templates `[odfs]` 2026.5, *FS_CATALOG*; in SiteArchitect the link snippets also serve `<TEMPLATES type="link">`
+  catalogs `[odfs]`. A catalog of sections without snippets lists each entry under the template name in ContentCreator
+  `[observed]` 2026-10-16.
+- The snippet of a link template is the tooltip of the link in `CMS_INPUT_DOM`, `CMS_INPUT_DOMTABLE` and InEdit mode in
+  ContentCreator `[odfs]`.
+- Workflows: the snippet of a workflow is evaluated in ContentCreator, in the action windows of the workflow `[odfs]`
+  2026.5, *Workflows → Snippet tab*.
+- The project history report in ContentCreator shows name, type icon, user, change, date and time, status and a preview
+  image per element (ContentCreator manual 2026.11, *Report area → Project history*); the manual does not say whether
+  the name shown is the snippet label `[verify]`.
+- FragmentCreator: the fragment list; without a definition it shows the variant ID and the folder path `[odfs]`.
+- Without a definition (or with empty inputs) the object name and path are shown; the path is always shown in
+  ContentCreator. Links show no tooltip in ContentCreator `[odfs]`.
+- Search indexing: the Label field is indexed too, so a component with `searchRelevancy="none"` whose value is in the
+  label still makes the element a search hit `[odfs]` 2026.5, *FS_CATALOG → searchRelevancy*.
 
 ## Expression syntax
 
@@ -54,6 +66,13 @@ SnippetHeader.txt   tt_key
 SnippetExtract.txt  if(!tt_name.isEmpty, tt_name) + if(!tt_order.isEmpty, " (" + tt_order + ")")
 ```
 
+Shapes seen in the template exports of four reference projects `[observed]` 2026-10-30 (not run live): a fallback text
+in place of an empty field, `if(!lt_linkText.isEmpty, lt_linkText, "Enter a link text!")`; a headline that falls back
+to the text, `if(!st_headline.empty, st_headline, if(!st_text.empty, truncate(st_text.toText(false), 30)))`; the
+snippets of the entries of an `FS_INDEX`, `st_product.getSnippets().map(x->x.getHeader()).toString(", ")`; the
+entries of an `FS_CATALOG`, `st_items.snippets.map(x->x.header).toString(" / ")`; a guarded thumbnail,
+`if(!st_image.empty, st_image)`. The `.empty` getter shorthand works like `.isEmpty` (`datatypes.md`).
+
 ## Thumbnail sources
 
 `[odfs]` FirstSpirit 2026.11, *Snippets → Thumbnail*. The field defines the teaser image of a search hit, shown at the
@@ -73,7 +92,7 @@ snippets; go through `.formData` as in the last line. List entries are usually o
 ## Label and extract per input component
 
 `[odfs]` FirstSpirit 2026.11, *Snippets → Label / Extract*. Label is the title of the teaser, extract the text excerpt.
-Without either, the object name and path are shown; for datasets the data source name and `#ID` (for example
+Without either, the object name and path are shown; for datasets the data source name and the dataset ID after a literal `#` (for example
 `Press releases: #128`). Join parts with `+`, static text in double quotes.
 
 | Component | Expression |

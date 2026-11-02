@@ -46,29 +46,40 @@ The `bodies` array defines the content areas the page template provides. Each en
 
 ### Content areas of an existing page template (`0.0.25-beta`)
 
-Present in the OpenAPI document of `0.0.25-beta` (read live 2026-10-06); the behaviour below is
-what that document states and has not been exercised yet `[verify]`:
+Present in the OpenAPI document of `0.0.25-beta` (read live 2026-10-06); the write semantics below
+were exercised on a throwaway page template and page on 2026-10-30 (`0.0.25-beta`, FS 5.2.261116)
+`[observed]`:
 
 ```
 GET    /projects/{id}/templates/page-templates/{uid}/bodies/            # [TemplateBodyDTO] with the *effective* allowed templates
 POST   /projects/{id}/templates/page-templates/{uid}/bodies/            # {"name","allowedTemplates"?} → 201; 409 name exists; 400 unknown template uid
 PUT    /projects/{id}/templates/page-templates/{uid}/bodies/{bodyName}  # rename and/or replace the whitelist → 200; 409 target name in use
-DELETE /projects/{id}/templates/page-templates/{uid}/bodies/{bodyName}  # 204; the API document says it is allowed while pages use the template [verify]
+DELETE /projects/{id}/templates/page-templates/{uid}/bodies/{bodyName}  # 204, also while pages use the template
 ```
 
-Each statement below is what the operation descriptions of the API document say; none has been
-exercised on a server yet:
-- Adding and renaming are described as safe for templates already used by pages, with existing
-  content in a renamed area preserved `[verify]`. Deleting an area is described as allowed while
-  pages use the template; the content pages stored in it then become unreachable `[verify]` — do
-  not try this on a shared project until a run has shown what happens to those pages.
-- **Whitelists are evaluated per page template, not per content area** `[verify]`. While no area of
-  the template has a whitelist, every section and table template is allowed in every area (and the
-  GET lists all of them for every area). As soon as one area has a whitelist, every other area
-  without one allows nothing. So an empty `allowedTemplates` means "everything" in an unrestricted
-  template and "nothing" next to a restricted area. (The GET itself is probed: R12.)
-- On `PUT`, omitting `allowedTemplates` keeps the current whitelist; `[]` drops this area's entries
-  `[verify]`. On `POST`, omitting or `[]` creates the area without a whitelist of its own `[verify]`.
+- `POST /templates/page-templates/ {uid,name,description}` creates a page template with no content
+  area (`"bodies":[]`); `DELETE /templates/page-templates/{uid}` removes it (204) `[observed]`.
+- `POST …/bodies/ {"name":"content"}` answers 201 with the new area; a second POST with the same
+  name is 409 (`A content area with name 'content' already exists …`), an unknown uid in
+  `allowedTemplates` is 400 (`Section/table template with uid '…' not found`) `[observed]`.
+- **Whitelists are evaluated per page template, not per content area** `[observed]`. While no
+  area has a whitelist, the GET lists *every* section and table template of the project for every
+  area. As soon as one area gets a whitelist (`{"name":"side","allowedTemplates":["text"]}`), every
+  other area without one answers `"allowedTemplates":[]` — it allows nothing. So an empty list
+  means "everything" in an unrestricted template and "nothing" next to a restricted area.
+- `PUT …/bodies/side {"name":"aside"}` renames and keeps the whitelist; a rename onto an existing
+  name is 409. `PUT …/bodies/aside {"allowedTemplates":[]}` drops that area's whitelist — with no
+  restricted area left, every area lists everything again. Omitting `allowedTemplates` on PUT keeps
+  the current whitelist `[observed]`.
+- A page created from the template carries one `bodies[]` entry per area (`{id,name,sections}`).
+  `DELETE …/bodies/aside` answers 204 while that page exists; the page's GET then lists the
+  remaining areas only `[observed]` (the deleted area was empty in that run — what happens to
+  sections stored in a deleted area is not probed; do not try it on a shared project).
+- Adding and renaming on a template already used by pages: the API document describes both as
+  safe with existing content preserved; the 2026-10-30 run only created the page after the areas existed
+  `[verify]`.
+
+The GET is in the smoke test (R12); the writes are not yet (`scripts/claim-coverage.md`).
 
 ### Format Template
 ```bash

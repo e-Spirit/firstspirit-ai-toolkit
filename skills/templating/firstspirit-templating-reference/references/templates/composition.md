@@ -123,6 +123,8 @@ Trim levels:
 
 ## Building structured output (maps → JSON)
 
+The CaaS document shape that CaaS Connect produces without templates is the `firstspirit-headless` skill's (`caas-connect.md`); the `json(...)` instruction function is not covered here; this section is the plain template-side idiom.
+
 For a **custom JSON** output channel (e.g. a headless project that authors its own document shape
 rather than relying on CaaS Connect's auto-serialisation), the robust idiom is **not** to
 concatenate JSON strings but to build a map/list graph and serialise it once with `.toJSON`.

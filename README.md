@@ -133,6 +133,7 @@ ships these (the `skills/` tree is the authoritative list):
 | `firstspirit-installation` | `deployment/` | Installing FirstSpirit on-premises and installing, updating and activating modules per server and project (BasicWorkflows, CaaS Connect, Navigation Service, OCM, AI Suite, SmartSearch, Multisite Management, VideoManagementPro and more) |
 | `firstspirit-configuration` | `deployment/` | Configuring a project after it exists: groups, roles, store and workflow permissions, external groups on Cloud, a plan-apply-verify permissions tool, per-module project configuration |
 | `firstspirit-headless` | `deployment/` | Headless delivery: CaaS Platform (REST and GraphQL), CaaS Connect, preview vs release, custom JSON output |
+| `firstspirit-caastomize` | `deployment/` | Caastomize (experimental, pre-release): the lean, template-customisable CaaS JSON — the `CaastomizeJSON` output channel and `leanJSON`, the lean JSON format, service and project app, full sync and eventing, coexistence with CaaS Connect |
 | `firstspirit-cloud` | `deployment/` | FirstSpirit Cloud (the managed SaaS): what the platform does differently or does not allow, and how to build and run a project on it |
 | `firstspirit-external-sync-export` | `deployment/` | Running FS-CLI / FSDevTools to export and import a project as an external-sync tree on disk, for git-based workflows |
 
@@ -216,6 +217,18 @@ scripts/submit-feedback.sh .firstspirit-feedback/<note>.md --yes    # post it as
 ```
 
 The assistant shows you the exact text first and posts only after you say yes. The script refuses a note that still has its placeholders, or that looks like it holds a credential or a local path. It never asks for a token; sign in to `gh` yourself.
+
+### At DevCon
+
+If you try the toolkit at the FirstSpirit DevCon, switch the hook to its event variant before you start your assistant:
+
+```bash
+export FIRSTSPIRIT_FEEDBACK=devcon
+```
+
+It writes the same note to the same place, with three additions: a header that says where the file goes at the event and links the [issue form](https://github.com/e-Spirit/firstspirit-ai-toolkit/issues/new?template=skill-feedback.yml), a line naming the DevCon hackathon environment as the reference (say in the note if you worked on your own project instead), and four questions from the toolkit team about where the assistant got FirstSpirit wrong, what no skill covered, what the toolkit should do next and whether you would use it on a customer project. Everything else is unchanged: no prompts, no answers, no project content, nothing sent anywhere.
+
+When you have filled it in, hand the file to the toolkit team on site or open an issue with it; the hand-in route above works the same way. The questions are optional; a note with only "What happened" filled in is just as welcome. The hand-in script leaves a question you did not answer out of the issue.
 
 ## Requirements
 

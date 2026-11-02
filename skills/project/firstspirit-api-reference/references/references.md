@@ -4,7 +4,8 @@ Every `StoreElement` can report what it **points at** (outgoing) and what **poin
 (incoming), as `ReferenceEntry` objects. "Which media does this page use?", "is anything still
 linking to this element?", "which references are broken?" are all answered here.
 
-Verification key: **[jar]** = `javap` on `fs-isolated-runtime.jar` FS 5.2.240208 (2026-09-14);
+Verification key: **[jar]** = `javap` on `fs-isolated-runtime.jar` FS 5.2.240208 (2026-09-14), re-checked
+on FS 5.2.261011 (2026-10-30; a member that exists on one jar only says so);
 **[javadoc]** = the public FirstSpirit Access API Javadoc;
 **[observed]** = seen working on a live project (verified on a live project, 2026-09-11) but not re-run
 by us; **[verify]** = not yet confirmed.
@@ -16,7 +17,7 @@ ReferenceEntry[]     elm.getOutgoingReferences();           // @NotNull — what
 ReferenceEntry[]     elm.getIncomingReferences();           // @NotNull — what points at this element   (since 3.1.172)
 boolean              elm.hasIncomingReferences();           // cheaper than getIncomingReferences().length > 0 (since 4.0)
 Set<ReferenceEntry>  elm.getReferences();                   // @Nullable! current outgoing refs as a Set (since 4.0.17)
-Set<ReferenceEntry>  elm.getReferences(Language... langs);  // @Experimental, @NotNull — [javadoc] only; NOT on the 5.2.240208 jar
+Set<ReferenceEntry>  elm.getReferences(Language... langs);  // @Experimental, @NotNull — [jar] 5.2.261011 only; NOT on the 5.2.240208 jar
 ```
 
 Two things bite:

@@ -142,8 +142,114 @@ printf '%s\n' '{"type":"assistant","message":{"content":[{"type":"tool_use","nam
 run_hook "$W" "$T" FIRSTSPIRIT_FEEDBACK=1
 assert_eq "no note when only the text mentions a toolkit path" "" "$(note_of "$W")"
 
+echo "== the DevCon variant adds the event header and the four questions =="
+DEVCON_MARK='> **DevCon feedback.**'
+DEVCON_ENV='Reference environment: the DevCon hackathon environment'
+DEVCON_FORM='issues/new?template=skill-feedback.yml'
+DEVCON_Q='## Four questions from the toolkit team'
+W="$(make_workdir devcon)"; T="$(make_transcript devcon)"
+run_hook "$W" "$T" FIRSTSPIRIT_FEEDBACK=devcon CLAUDE_PLUGIN_ROOT=/plugin
+N="$(note_of "$W")"
+if [ -n "$N" ]; then pass "devcon writes a note"; else fail "devcon writes a note" "none written"; fi
+body="$(cat "$N" 2>/dev/null)"
+assert_contains "devcon header is present"            "$body" "$DEVCON_MARK"
+assert_contains "devcon header names the environment" "$body" "$DEVCON_ENV"
+assert_contains "devcon header links the issue form"  "$body" "$DEVCON_FORM"
+assert_contains "devcon event row in the table"       "$body" "| Event | DevCon |"
+assert_contains "devcon four questions are present"   "$body" "$DEVCON_Q"
+assert_contains "devcon keeps the version"            "$body" "| Toolkit version | 9.8.7 |"
+assert_contains "devcon keeps the skills"             "$body" "- firstspirit-rest-api"
+assert_contains "devcon keeps the end-of-report marker" "$body" "end of report"
+assert_eq "devcon header is above the facts table" "yes" \
+  "$(awk -v h="$DEVCON_MARK" -v t='| Toolkit version |' 'index($0,h){hl=NR} index($0,t){tl=NR} END{print (hl && tl && hl<tl) ? "yes" : "no"}' "$N")"
+assert_eq "devcon questions are inside the report" "yes" \
+  "$(awk -v q="$DEVCON_Q" '/^<!-- end of report/{el=NR} index($0,q){ql=NR} END{print (ql && el && ql<el) ? "yes" : "no"}' "$N")"
+echo "== the DevCon variant leaks nothing more than =1 =="
+assert_not_contains "devcon: prompt text is not in the note"      "$body" "PROMPT-SENTINEL-7731"
+assert_not_contains "devcon: customer name is not in the note"    "$body" "ACME-SENTINEL"
+assert_not_contains "devcon: file content is not in the note"     "$body" "FILE-CONTENT-SENTINEL-5520"
+assert_not_contains "devcon: non-toolkit file is not in the note" "$body" "Secret-Sentinel"
+assert_not_contains "devcon: no home path of the project"         "$body" "/home/dev/projects"
+echo "== the DevCon header is absent with =1 and nothing is written when unset =="
+W="$(make_workdir one)"; T="$(make_transcript one)"
+run_hook "$W" "$T" FIRSTSPIRIT_FEEDBACK=1 CLAUDE_PLUGIN_ROOT=/plugin
+body="$(cat "$(note_of "$W")" 2>/dev/null)"
+assert_not_contains "=1 has no devcon header"    "$body" "$DEVCON_MARK"
+assert_not_contains "=1 has no environment line" "$body" "$DEVCON_ENV"
+assert_not_contains "=1 has no event row"        "$body" "| Event |"
+assert_not_contains "=1 has no four questions"   "$body" "$DEVCON_Q"
+W="$(make_workdir unset)"; T="$(make_transcript unset)"
+run_hook "$W" "$T" CLAUDE_PLUGIN_ROOT=/plugin
+assert_eq "unset writes no note at all" "" "$(note_of "$W")"
+echo "== the DevCon variant still passes the submit preview and refuses placeholders =="
+W="$(make_workdir devcon-sub2)"; T="$(make_transcript devcon-sub2)"
+run_hook "$W" "$T" FIRSTSPIRIT_FEEDBACK=devcon CLAUDE_PLUGIN_ROOT=/plugin
+DN="$(note_of "$W")"
+out="$("$SUBMIT" "$DN" 2>&1)"; rc=$?
+assert_eq "unfilled devcon note is refused" "2" "$rc"
+python3 - "$DN" <<'PY2'
+import sys
+p = sys.argv[1]; s = open(p).read()
+s = s.replace("_(Write here what was wrong, unclear or missing, in your own words. One sentence is enough. Do not paste project content, customer names, addresses or credentials.)_", "The REST reference misses the PATCH status.")
+s = s.replace("_(Write here what you expected instead.)_", "The reference should say how to do it.")
+open(p, "w").write(s)
+PY2
+out="$("$SUBMIT" "$DN" 2>&1)"; rc=$?
+assert_eq "filled devcon note previews" "0" "$rc"
+assert_contains "preview carries the devcon header"  "$out" "$DEVCON_MARK"
+assert_not_contains "unanswered questions are left out of the preview" "$out" "_(your answer)_"
+assert_not_contains "the questions heading goes with them"             "$out" "$DEVCON_Q"
+assert_contains     "the preview says how many were left out"         "$out" "Left out: 4 unanswered DevCon question(s)."
+assert_contains     "the sections after the questions stay"           "$out" "## Category and severity"
+assert_not_contains "preview still cuts the hand-in section" "$out" "For an assistant"
+python3 - "$DN" <<'PY3'
+import sys
+p = sys.argv[1]; s = open(p).read()
+q2 = "2. What did you ask that no skill covered?\n\n   _(your answer)_"
+assert q2 in s
+# question 2: the answer typed ABOVE the placeholder, which is left in; a numbered list and a `## ` line inside it
+s = s.replace(q2, "2. What did you ask that no skill covered?\n\n   Nothing about the Navigation Service.\n\n   1. first point\n   2. second point\n\n   ## my own heading\n\n   _(your answer)_")
+open(p, "w").write(s)
+PY3
+out="$("$SUBMIT" "$DN" 2>&1)"; rc=$?
+assert_eq "note with one answered question previews" "0" "$rc"
+assert_contains     "the answered question stays, with the heading" "$out" "$DEVCON_Q"
+assert_contains     "its text is in the preview"                   "$out" "Nothing about the Navigation Service."
+assert_contains     "a numbered list inside the answer is kept"      "$out" "   2. second point"
+assert_contains     "a ## line inside the answer is kept"            "$out" "   ## my own heading"
+assert_contains     "the heading after the questions still follows" "$out" "## Category and severity (optional)"
+assert_not_contains "the unanswered ones are gone"                 "$out" "1. Where did the assistant get FirstSpirit wrong"
+assert_not_contains "no placeholder is left"                       "$out" "_(your answer)_"
+assert_contains     "three were left out"                          "$out" "Left out: 3 unanswered DevCon question(s)."
+
+echo "== the hand-in script splits on the exact question lines the hook writes =="
+for needle in "1. Where did the assistant get FirstSpirit wrong, with the toolkit or without it?" \
+  "2. What did you ask that no skill covered?" \
+  "3. What should the toolkit do next: which topic, which assistant, which kind of help?" \
+  "4. Would you use it on a customer project? What would have to change first?"; do
+  if grep -qF -- "$needle" "$HOOK" && grep -qF -- "$needle" "$SUBMIT" && grep -qF -- "$needle" "$REPO_ROOT/hooks/session-end.ps1"; then
+    pass "hook, .ps1 and submit script agree on: ${needle:0:40}"
+  else
+    fail "hook, .ps1 and submit script agree on: ${needle:0:40}" "a question line differs"
+  fi
+done
+
+echo "== the switch is read case-insensitively, like the PowerShell hook =="
+W="$(make_workdir devcon-case)"; T="$(make_transcript devcon-case)"
+run_hook "$W" "$T" FIRSTSPIRIT_FEEDBACK=Devcon CLAUDE_PLUGIN_ROOT=/plugin
+N="$(note_of "$W")"
+if [ -n "$N" ]; then pass "Devcon writes a note"; else fail "Devcon writes a note" "none written"; fi
+assert_contains "Devcon gets the devcon header" "$(cat "$N")" "$DEVCON_MARK"
+W="$(make_workdir true-case)"; T="$(make_transcript true-case)"
+run_hook "$W" "$T" FIRSTSPIRIT_FEEDBACK=True CLAUDE_PLUGIN_ROOT=/plugin
+N="$(note_of "$W")"
+if [ -n "$N" ]; then pass "True writes a note"; else fail "True writes a note" "none written"; fi
+assert_not_contains "True gets no devcon header" "$(cat "$N")" "$DEVCON_MARK"
+
 echo "== the PowerShell twin writes the same marker and uses the same hand-in script =="
-for needle in '<!-- end of report: everything below stays on your machine -->' 'submit-feedback.sh'; do
+for needle in '<!-- end of report: everything below stays on your machine -->' 'submit-feedback.sh' \
+  '> **DevCon feedback.**' 'Reference environment: the DevCon hackathon environment' \
+  'issues/new?template=skill-feedback.yml' '## Four questions from the toolkit team' '| Event | DevCon |'; do
   if grep -qF -- "$needle" "$HOOK" && grep -qF -- "$needle" "$REPO_ROOT/hooks/session-end.ps1"; then
     pass "both hooks carry: $needle"
   else

@@ -25,7 +25,7 @@ Facts about what a template kind is come from `components-and-tags.md`; componen
    content, right after it exists. Whether a page template can be changed to read global content while the existing
    page stays valid has not been tested over REST `[verify]`; if the page has to be recreated, say so.
 5. **Create in dependency order.** A catalog restricted to a section template needs that template to exist
-   first (see `firstspirit-templating-reference`).
+   first, because its `TEMPLATES` entry names the template by uid (practice, `[observed]`).
 
 ## Default map: what is usually in an artifact
 

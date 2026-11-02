@@ -41,7 +41,7 @@ family), then route to the owner for the how.
 **Most extensions are available in both** — the usual difference is *provisioning*,
 not availability: **Cloud** = no module installation by the customer, Crownpeak provisions the environment and manages the server properties (Cloud vs. Self-Hosted page); **self-hosted** = you install
 the module and it's gated by an `fs-license.conf` flag (see
-[editions-and-licensing.md](editions-and-licensing.md)). `✓` cells for the services the Cloud first-steps page lists as licensed come from that page; cells marked **(verify)** are not documented there, so check the current
+[editions-and-licensing.md](editions-and-licensing.md)). `✓` cells for the services the Cloud first-steps page lists as licensed come from that page; cells marked `[verify]` are not documented there, so check the current
 Cloud service catalogue.
 
 | Extension | Cloud | Self-hosted | Note |
@@ -59,9 +59,9 @@ Cloud service catalogue.
 | Connect for Commerce | ✓ | ✓ | licensed service (Cloud first-steps) |
 | Development Tools (ContentCreator) | ✓ (pre-configured) | ✓ (install `.fsm`) | needs CXT-Platform |
 | BasicWorkflows | ✓ (pre-installed; activate per project) | ✓ (install `.fsm`) | open source |
-| Multisite Management (ContentTransport / Corporate Content) | (verify) | ✓ | `license.PACKAGEPOOL` |
-| External Synchronization (`fs-cli`) | (verify) | ✓ | Cloud development uses Git-based template transport; how External Synchronization maps to it is not documented in the first-steps doc |
-| Custom modules (FSM) | (verify — via provider pipeline) | ✓ | Cloud deploy via the Cloud Artifactory/CI |
+| Multisite Management (ContentTransport / Corporate Content) | `[verify]` | ✓ | `license.PACKAGEPOOL` |
+| External Synchronization (`fs-cli`) | `[verify]` | ✓ | Cloud development uses Git-based template transport; how External Synchronization maps to it is not documented in the first-steps doc |
+| Custom modules (FSM) | `[verify]` (via the provider pipeline) | ✓ | Cloud deploy via the Cloud Artifactory/CI |
 | **Server administration** (install modules, connect datasources, licence file) | ✗ provider only | ✓ | **the key structural difference** |
 
 **Not module-by-module:**

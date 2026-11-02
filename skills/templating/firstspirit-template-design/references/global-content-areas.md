@@ -2,7 +2,7 @@
 
 A **global content area** (GCA) holds content that belongs to the site, not to one page: a header, a footer, a cookie
 banner, a contact block. Its content lives on a page of its own, built from a **page template of the global content
-area** (prefix `gc_`, see `naming-and-conventions.md`). Facts and syntax are in the `firstspirit-templating-reference`
+area** (many projects prefix it `gc_`, a project convention; `naming-and-conventions.md`). Facts and syntax are in the `firstspirit-templating-reference`
 skill (`templates/system-objects.md`, section "Global content area"); this file is the design view.
 
 ## The rule
@@ -37,7 +37,7 @@ starts there. Contexts nest `[odfs]`:
 
 - A page and a section of the global content area have their own contexts, named like those of the page they sit on.
   `#global.context("section")` therefore addresses the **innermost** section, usually the one of the global content
-  area. `#global.section.id` and `#global.page.id` and their `name` and `uid` do the same.
+  area. `#global.section.id`, `#global.section.name`, `#global.page.id`, `#global.page.name` and `#global.page.uid` do the same (there is no `#global.section.uid`) `[odfs]`.
 - Variables set in the page and section templates of a global content area are visible in it and everything inside it.
   To make a variable visible to the elements outside, set it in `#global.context("PAGE")`.
 - If a page and a global content area use the same variable identifier, the one of the current element wins. Choose

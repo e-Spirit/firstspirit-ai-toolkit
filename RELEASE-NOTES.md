@@ -1,5 +1,120 @@
 # Release Notes
 
+## 0.8.0 — 2026-11-02
+
+Skills in this release (each SKILL.md carries the same source commit in its `metadata:` block):
+
+- `firstspirit-api-reference` @ 17f78f9 (beta)
+- `firstspirit-templating-reference` @ 17f78f9 (beta)
+- `firstspirit-scripting` @ 17f78f9 (beta)
+- `firstspirit-rest-api` @ 17f78f9 (beta)
+- `firstspirit-external-sync-export` @ 17f78f9 (beta)
+- `firstspirit-operations` @ 17f78f9 (beta)
+- `firstspirit-contentcreator-extensions` @ 17f78f9 (beta)
+- `firstspirit-template-design` @ 17f78f9 (beta)
+- `firstspirit-cloud` @ 17f78f9 (beta)
+- `firstspirit-headless` @ 17f78f9 (beta)
+- `firstspirit-module-development` @ 17f78f9 (beta)
+- `firstspirit-ai-suite` @ 17f78f9 (beta)
+- `firstspirit-smartsearch` @ 17f78f9 (beta)
+- `firstspirit-collaboration` @ 17f78f9 (beta)
+- `firstspirit-technical-product-knowledge` @ 17f78f9 (beta)
+- `firstspirit-technical-tone-of-voice` @ 17f78f9 (beta)
+- `firstspirit-workflow-development` @ 17f78f9 (beta)
+- `firstspirit-installation` @ 17f78f9 (beta)
+- `firstspirit-configuration` @ 17f78f9 (beta)
+- `firstspirit-caastomize` @ 17f78f9 (beta)
+
+Changes since 0.7.0 — one new skill, a review of every published skill against the product
+documentation and the current runtime, and a DevCon variant of the feedback note. Evidence tags
+(`[jar]`, `[odfs]`, `[observed]`, `[verify]`) stay in the text by decision.
+
+- **`firstspirit-caastomize`** — new, experimental. Caastomize is a pre-release FirstSpirit module
+  that sends a lean, template-customisable JSON to CaaS: the `CaastomizeJSON` output channel and the
+  `leanJSON` variable (`remove`, `rename`, `put`, own JSON, bodies on section and link templates),
+  the lean JSON format, service and project app, full sync and eventing, the collections it writes
+  beside CaaS Connect. The skill names the module version it describes and says what is not
+  generally available; ask for the installed version first. `firstspirit-headless` keeps no pointer
+  to it yet.
+- **`firstspirit-headless`** — OCM 2 (`snap.js`) and OCM 3 (`live.js`) told apart throughout:
+  how each bridge script is loaded, `enableCaasMode` is OCM 2 only, GID-based preview ids under
+  OCM 3, and a section on waiting for CaaS under OCM 3 (the Preview Rendering Plugin, or an
+  `_etag` poll when the delivery module writes asynchronously). CaaS Platform responses as seen
+  live: documents in `_embedded["rh:doc"]`, `_size` and `_total_pages` only with `?count`,
+  `np=false` does not restore collection metadata. Read-only API keys include `OPTIONS`.
+- **`firstspirit-templating-reference`** — new pages `templates/editorid.md` (the one home of the
+  `editorId(...)` call form, the quoted `editorName`, the empty-element rule) and
+  `templates/template-properties.md` (the Properties-tab switches: selection list of page and link
+  templates, the format template's Section box). Snippet and preview-image pages re-read against
+  the documentation; `#global.preview` instead of an undocumented `isPreview()`;
+  `$CMS_SET(#global.stopGenerate, true)`; link-template components are language-independent;
+  `CMS_INPUT_DOM.toText()` variants; `forbidPolyglotDataHierarchy` default corrected.
+- **`firstspirit-template-design`** — the design advice now matches the reference: `editorName`
+  takes the component name as a quoted string, an empty editorId element gets a substitute
+  (`&nbsp;`) rather than an empty string, only page and link templates have a selection-list
+  switch, the deprecated list and `FS_BUTTON` point at the reference's pages. Snippet guidance
+  per store (workflows, thumbnails only where the form has an image field). Documentation on
+  the SiteArchitect and the ContentCreator as template clients and on checking what the client
+  stores before writing a format template.
+- **`firstspirit-contentcreator-extensions`** — editing in the preview is named in the
+  description; `WebeditColor` has sixteen constants, `State.NEVER_RELEASED`, `reload(String)` and
+  `ClientResourceOperation` cited from their documentation pages, the project-specific
+  `fs5webedit_[PROJECT_ID]` root, the `MPP_API` injection name read from the jar, and the one
+  object the Restrictions page lists as not displayed.
+- **`firstspirit-workflow-development`** — BasicWorkflows facts read back from a live project:
+  Start transitions carry uid `start`, fixed rights for Everyone, the Administrators rights on the
+  other transitions, the display logic also excludes data sources, where the scripts live. The
+  `createWorkflow(String, Map, boolean)` variant does not exist and was removed; the documentation
+  pages for tabs, generated `->Target` names, the sixteen automatic activities and release vs
+  auto-release projects are cited.
+- **`firstspirit-rest-api`** — content areas of a page template: the write semantics (409 on a
+  duplicate name, rename keeps content, whitelists evaluated per page template, deleting an area
+  pages still use) observed on a throwaway template; five `[verify]` lines are `[observed]`.
+  Description rewritten to reach datasets, Global Content Areas, `/actions`, revisions,
+  `/execute`, by-uid, pagination and the OpenAPI document.
+- **`firstspirit-scripting`** — new section *Template debugging tools in SiteArchitect*
+  (preview errors, Template Inspector, Template Debugger, their shared permission switch,
+  `/showLog=1` and `/showLog=profile`); the description carries "the preview is slow" and
+  "where does this template error come from". The language-dependent release note points at
+  `firstspirit-api-reference` instead of restating it.
+- **`firstspirit-api-reference`** — language-dependent release rewritten from its documentation
+  page (per-project feature, `ReleaseOperation.languages(Language...)`, not backward compatible
+  before 2025.1); `IDProviderChange.getChangedLanguages()` and `getReferences(Language...)` are
+  marked as present on 5.2.261011 only; `ScheduleTaskAgent` row cites its page.
+- **`firstspirit-module-development`** — `getBroker(id)` corrected to `getBrokerByProjectId(id)`
+  (the former takes a revision); the Gradle plugin version bullet sourced to the plugin's public
+  tag (Gradle 8.11 and JDK 11 since 7.0.0); new section on the start-page launcher button
+  (`ApplicationPlugin`) and the Application API packages.
+- **`firstspirit-operations`** — `ShowReportOperation` and `OpenMergeDialogOperation` members
+  verified on both runtime jars; `PreviewOperation` in both clients,
+  `OpenElementMetaFormOperation` and `OpenElementDataFormOperation` facts from the documentation.
+- **`firstspirit-configuration`** — the permissions report script recurses into workflow folders
+  (a policy naming a workflow inside a folder was refused before); a `[verify]` sentence naming
+  the Cloud administrator groups is cut.
+- **`firstspirit-external-sync-export`** — the password redaction runs through a mode-600 sed
+  script instead of the command line; `ExportOperation` and `ImportOperation` named as the Access
+  API entry points (verified on the jar); duplicate heading removed.
+- **`firstspirit-technical-product-knowledge`** — current release 2026.11; four unverified
+  cells carry `[verify]`; a garbled licence sentence fixed; the Keycloak host line points at
+  `firstspirit-cloud`.
+- **`firstspirit-cloud`** — the backup-retention bullet no longer says CaaS is not backed up
+  at all (it contradicted the same file's Headless section); it points there.
+- **`firstspirit-installation`** — BasicWorkflows pointer to the workflow skill; the "Tools for
+  developers" documentation page (code completion, Template Inspector, browser tools) told apart
+  from the Development Tools module.
+- **`firstspirit-technical-tone-of-voice`** — the CaaS gloss follows the owner skill (preview and
+  release state, REST and GraphQL).
+- **`firstspirit-ai-suite`, `firstspirit-smartsearch`, `firstspirit-collaboration`** — restamped,
+  no text change.
+- Toolkit: the DevCon variant of the session-end feedback note. `FIRSTSPIRIT_FEEDBACK=devcon`
+  writes the same local note as `=1`, with an event header on top (where the file goes at the
+  event, the issue form link), a line naming the DevCon hackathon environment as the reference,
+  an `Event` row in the facts table and four questions from the toolkit team inside the report.
+  The report content, the privacy rules and the hand-in script are unchanged; `=1` writes exactly
+  what it wrote before. Bash and PowerShell hooks; README section "At DevCon"; hook tests for the
+  header being present with `devcon`, absent with `1`, and nothing written when unset.
+
+
 ## 0.7.0 — 2026-10-28
 
 Skills in this release (each SKILL.md carries the same source commit in its `metadata:` block):

@@ -62,6 +62,8 @@ summary. Link the wireframe or ticket if there is one.>
 
 ## Templates
 
+The skeleton uses the `pt_` / `st_` / `tt_` prefixes on template reference names because many projects do; the naming standard itself prescribes no type prefix for templates (`naming-and-conventions.md`). Use the project's convention.
+
 ### Page templates
 | Reference name | Display name | Description | Purpose | References / used in |
 |---|---|---|---|---|

@@ -115,10 +115,12 @@ Ant/Maven setups. (For migrating an existing module, the **FSM Dependency Checke
 lists internal/external dependencies and flags non-isolated / deprecated / internal
 API usage.)
 
-- **Latest published plugin: 9.0.2** (needs Gradle ≥ 8.11, JDK ≥ 11). But **pin the
-  version your target expects** — the Cloud module archetype (below) currently ships
-  **6.5.2**, and the CI pipeline resolves against a fixed Artifactory, so bumping the
-  plugin means confirming the new version is available there.
+- **Current plugin: 9.0.2** (newest tag of the public plugin repository, 2026-07-13, checked
+  2026-10-30; since 7.0.0 the minimum Gradle is 8.11 and the minimum JDK is 11, per the
+  repository's `UPGRADE.md`). But **pin the version your target expects** — the Cloud module
+  archetype (below) shipped **6.5.2** when last used `[observed]` 2026-10, and the CI pipeline
+  resolves against a fixed Artifactory, so bumping the plugin means confirming the new version
+  is available there.
 - **A JDK rollout drives the whole toolchain.** The constraint also runs backwards: an
   older plugin cannot run on a newer Gradle at all (plugin 6.5.2 failed on Gradle 9
   `[observed]`; the exact plugin version where Gradle 9 support starts is `[verify]`). Each

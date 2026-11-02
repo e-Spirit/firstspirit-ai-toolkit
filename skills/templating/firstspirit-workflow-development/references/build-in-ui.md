@@ -7,7 +7,7 @@ A workflow built without steps 5 and 7 saves fine but **is not offered on a page
 ## Order
 
 1. **Create the workflow.** Right-click *Workflows* in the Template Store › *New* › *Create new workflow*. Enter a reference name and a display name per editorial language; the reference name follows from the first display name `[verify]`. Editors see the display names on buttons and titles `[odfs]`. New workflows open in edit mode `[odfs]`.
-2. **Create the script** (only if an activity should do something). Scripts, folder `workflow_scripts` (BasicWorkflows keeps its scripts in a folder of its own `[verify]`), *Create new script*. The source is in the *html* tab of the script `[observed]`. Body: see below.
+2. **Create the script** (only if an activity should do something). Scripts, folder `workflow_scripts` (BasicWorkflows keeps its scripts in the folder `basic_workflows`, the AI review ones in `ai_review_workflow_scripts` `[observed]`), *Create new script*. The source is in the *html* tab of the script `[observed]`. Body: see below.
 3. **Wire the activity.** *State diagram* › right-click the state › *Edit activity* (the menu also has Add state, Add activity, Remove activity) `[verify]`. Pick the script, set *Execution* to *Automatic* for a step that runs by itself. Apply, then save.
    **Do not double-click a state**: it only moves it `[verify]`.
 4. **Draw the transition out of the activity.** Hover the activity; a "+" handle appears at its top edge; drag it onto the End state; name the transition in the dialog (e.g. `done`) `[verify]`. The script calls it by that name.
@@ -32,25 +32,30 @@ context.doTransition("done");
 ```
 
 - `RequestOperation` and the kinds WARN, INFO, QUESTION, ERROR are from the ODFS Messages page; the examples there call `addOk()` before `perform` `[odfs]`. ContentCreator shows WARN and INFO alike `[odfs]`.
-- `doTransition` takes the transition's reference name; unnamed transitions appear in the ODFS demos as `"->Target"` (e.g. `"->Start"`) `[odfs]` `[verify]` how that name is formed.
+- `doTransition(String)` takes the transition's reference name; a transition without a name gets one generated as `"->"` plus the name of its target state (e.g. `"->Start"`), and that generated name can be passed `[odfs]` (ODFS *Using scripts*).
 - The script has not been run in a client yet `[verify]`. The other facts about script contexts are in `firstspirit-scripting`.
 
 ## Display logic
 
-This is the display logic of the BasicWorkflows `release` package `[verify]`; it matches the documented behaviour that the release workflow is not available on Data Store folders `[odfs]`, and it suits any workflow meant for pages and sections:
+This is the display logic of the BasicWorkflows `release` package (read back on 2026-10-30 `[observed]`); it matches the documented behaviour that the release workflow is not available on Data Store folders `[odfs]` and, since module 1.4.1, on datasources `[odfs]`, and it suits any workflow meant for pages and sections:
 
 ```
 //!Beanshell
 import de.espirit.firstspirit.access.store.Store;
 import de.espirit.firstspirit.access.store.contentstore.ContentFolder;
+import de.espirit.firstspirit.access.store.contentstore.Content2;
 
 boolean isContentFolder(storeElement) {
 	return storeElement.getStore().getType() == Store.Type.CONTENTSTORE
 			&& storeElement instanceof ContentFolder;
 }
 
+boolean isDatasource(storeElement) {
+	return storeElement instanceof Content2;
+}
+
 storeElement = context.getElement();
-return storeElement != null && !isContentFolder(storeElement);
+return storeElement != null && !isContentFolder(storeElement) && !isDatasource(storeElement);
 ```
 
 ## Editing tips `[verify]`

@@ -60,6 +60,6 @@ workflows that exist in an older version, is `[verify]`.
 ## For the automation tools
 
 The documentation names the packages, not the workflow uids. On a project with the three packages imported the workflows were
-`release`, `delete` and `release_with_ai_review` (observed 2026-10-13, FirstSpirit 2026.11) `[observed]`; a request-release
-workflow is not part of the module. A role policy for the tool in `firstspirit-configuration` names only workflows the project
+`release`, `delete` and `release_with_ai_review` (observed 2026-10-13 and again 2026-10-30, FirstSpirit 2026.11) `[observed]`; a request-release
+workflow is not part of the module. What the three look like inside (Start transition, rights, display logic, script folders): `firstspirit-workflow-development/references/official-examples.md`. A role policy for the tool in `firstspirit-configuration` names only workflows the project
 has; create any other workflow first (`firstspirit-workflow-development`).

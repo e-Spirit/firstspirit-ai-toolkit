@@ -1,5 +1,7 @@
 # SessionEnd hook (PowerShell twin of hooks/session-end): write a local feedback note
 # when a session used the toolkit. Off by default; FIRSTSPIRIT_FEEDBACK=1 turns it on.
+# FIRSTSPIRIT_FEEDBACK=devcon writes the same note with the event header on top (where to
+# hand it in, the issue form, the reference environment, the four questions).
 #
 # Same contract as the bash hook: the note holds the toolkit version, the assistant, the
 # names of toolkit skills and reference files the session touched, and empty sections for
@@ -10,8 +12,9 @@
 
 $ErrorActionPreference = 'SilentlyContinue'
 
-$flag = $env:FIRSTSPIRIT_FEEDBACK
-if (@('1', 'true', 'yes') -notcontains "$flag".ToLower()) { exit 0 }
+$flag = "$($env:FIRSTSPIRIT_FEEDBACK)".ToLower()
+$devcon = ($flag -eq 'devcon')
+if (-not $devcon -and (@('1', 'true', 'yes') -notcontains $flag)) { exit 0 }
 
 $pluginRoot = Split-Path -Parent $PSScriptRoot
 
@@ -80,20 +83,58 @@ $ignore = Join-Path $dir '.gitignore'
 $utf8 = New-Object System.Text.UTF8Encoding($false)
 if (-not (Test-Path -LiteralPath $ignore)) { [System.IO.File]::WriteAllText($ignore, "*`n", $utf8) }
 
+# The DevCon variant: a fixed header above the facts table and fixed questions in the report.
+$devconHeader = ''
+$devconRow = ''
+$devconQuestions = ''
+if ($devcon) {
+    $devconHeader = @'
+
+> **DevCon feedback.** Thank you for trying the toolkit at the event. When you have filled in
+> the sections below, hand this file to the FirstSpirit AI Toolkit team on site, or open an
+> issue with it: https://github.com/e-Spirit/firstspirit-ai-toolkit/issues/new?template=skill-feedback.yml
+> Reference environment: the DevCon hackathon environment (the shared FirstSpirit Cloud
+> project of the guided track). Say if you worked on your own project instead.
+
+'@
+    $devconRow = "| Event | DevCon |`n"
+    $devconQuestions = @'
+## Four questions from the toolkit team
+
+1. Where did the assistant get FirstSpirit wrong, with the toolkit or without it?
+
+   _(your answer)_
+
+2. What did you ask that no skill covered?
+
+   _(your answer)_
+
+3. What should the toolkit do next: which topic, which assistant, which kind of help?
+
+   _(your answer)_
+
+4. Would you use it on a customer project? What would have to change first?
+
+   _(your answer)_
+
+
+'@
+}
+
 $out = Join-Path $dir "firstspirit-feedback-$stamp-$PID.md"
 $text = @"
 # FirstSpirit AI Toolkit: feedback note
 
 Written on your machine by the toolkit's session-end hook. Nothing has been sent anywhere.
 It holds no prompts, no answers, no file contents and no project names.
-
+$devconHeader
 | | |
 |---|---|
 | Toolkit version | $version |
 | Assistant | $harness |
 | Date | $day |
 | Session ended | $reason |
-
+$devconRow
 ## Skills this session used
 
 $skillList
@@ -110,7 +151,7 @@ _(Write here what was wrong, unclear or missing, in your own words. One sentence
 
 _(Write here what you expected instead.)_
 
-## Category and severity (optional)
+$devconQuestions## Category and severity (optional)
 
 Category: wrong, unclear, missing, skill did not trigger, other
 Severity: blocker, major, minor
