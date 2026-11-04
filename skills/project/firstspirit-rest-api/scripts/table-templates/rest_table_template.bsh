@@ -1,0 +1,1486 @@
+//!Beanshell
+
+import de.espirit.firstspirit.access.store.IDProvider;
+import de.espirit.firstspirit.access.store.Store;
+import de.espirit.firstspirit.access.store.templatestore.Schema;
+import de.espirit.firstspirit.access.store.contentstore.Content2;
+import de.espirit.firstspirit.access.store.templatestore.Script;
+import de.espirit.firstspirit.access.store.templatestore.Snippet;
+import de.espirit.firstspirit.access.store.templatestore.ScriptFolder;
+import de.espirit.firstspirit.access.store.templatestore.TableTemplate;
+import de.espirit.firstspirit.agency.SnippetAgent;
+import de.espirit.firstspirit.agency.StoreAgent;
+import java.security.MessageDigest;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.List;
+
+/**
+ * Reads and writes the sources of database schema table templates - the one template type the
+ * REST API cannot reach. It can only list schemas, never read or write their GOM, rules or
+ * channel sources, so table templates ('myschema.event' and friends) are invisible to it.
+ *
+ * A TableTemplate implements the same three provider interfaces every other template does:
+ *   ChannelSourceProvider  getChannelSource(TemplateSet)  / setChannelSource(TemplateSet, String)
+ *   GomSourceProvider      getGomSource()                 / setGomSource(String)
+ *   RulesetContainer       getRulesetDefinition()         / setRulesetDefinition(String)
+ * plus SnippetContainer getSnippet() / setSnippet(Snippet) for the snippet (label, extract,
+ * thumbnail), which the REST API cannot write for any template type,
+ * so this script is the transport, not a reimplementation of anything.
+ *
+ * Invoked through the REST API:
+ *   POST /rest/v1/projects/{id}/scripts/rest_table_template/execute
+ *   Body: {"action": "read", "uid": "myschema.event"}
+ *
+ * Since POST /execute discards a script's return value and answers with the captured log output
+ * instead, the result is emitted as a single JSON object through
+ * context.logInfo(). Source text therefore never travels raw - it would carry newlines and
+ * quotes through a log line - every source payload is base64, in both directions.
+ *
+ * Actions:
+ *   list       inventory of every table template: uid, id, schema, entity type, part hashes
+ *   read       gom, rules, channel source and snippet of one template, base64, with hashes
+ *   describe   the entity type's attributes and the template's column mappings, read only
+ *   write      set gom, rules, channel source and/or snippet of one template
+ *   create     create a new table template under a schema for an entity type, with its sources
+ *              and its field-to-column mappings, in one call - and, unless 'content2' is "-",
+ *              the data source (Content2) editors need to add datasets in ContentCreator
+ *   content2   create the data source for an existing table template
+ *   schemas    the schemas a 'create' can target, with their tables, and the database layers
+ *   extend     add new columns to an existing template's table, write its gom and re-map
+ *              every field (the full mappings text) - the one way to grow a table over REST
+ *   snippet-preview
+ *              evaluate a snippet (the saved one, or 'snippet' before it is written) on the
+ *              first 'limit' datasets of every data source of the template, per language.
+ *              A misspelt field or a syntax error does not fail - it evaluates to "" - so
+ *              this is the only way to see that a snippet works.
+ *   relocate   move this script into a ScriptStore folder ('folder', default "rest-extension"),
+ *              creating the folder at the Scripts root if needed. POST /scripts/ ignores
+ *              'location', so fs-table-install calls this right after creating the script.
+ *
+ * 'create' also makes what the template needs and does not exist yet: a new schema when
+ * 'newSchema' is "true" (on 'layer', or the only layer there is), and the database table itself
+ * when 'columns' describes it - see parseColumns(). FirstSpirit adds the system columns
+ * (fs_id, FS_GID, wf id, release languages, ...) on its own; measured 2026-11-02.
+ *
+ * A table template alone gives editors nothing: datasets are created through a Content2 element in
+ * the content store. The data source is created at the content store root with the table name as uid,
+ * display names per language and inherited permissions.
+ *
+ * 'read' and 'create' also carry the template's mappings as a base64 text, one line per form
+ * field - see parseMappings(). Without mappings a table template is a form whose values are
+ * never stored: SiteArchitect shows the fields, the dataset saves, and every column stays empty.
+ *
+ * 'create' validates everything it can before it creates anything: schema, entity type, a free
+ * uid, every mapped column. What it can only check after creation - that every mapped field
+ * exists in the GOM - deletes the new template again on failure, so a rejected call leaves no
+ * half-built template behind. There is deliberately no 'delete' action.
+ *
+ * 'write' is guarded by hashes: every part that is written must be accompanied by the hash the
+ * client last read ('gomHashExpected' and friends). A mismatch aborts the whole call before the
+ * element is touched. Two people editing the same template - one here, one in SiteArchitect -
+ * happens, and a silent overwrite is invisible from the outside. Pass "*" to write unconditionally.
+ *
+ * The previous source of every part it writes travels back in the response as 'backup', so the
+ * client can keep a copy of what it replaced without a second round trip.
+ *
+ * Environment: FirstSpirit Server (headless, invoked via REST)
+ * Context: ProjectScriptContext
+ */
+
+// ============================================================================
+// Constants
+// ============================================================================
+
+DEFAULT_TEMPLATE_SET = "html";
+UNCONDITIONAL = "*";
+
+// ============================================================================
+// Helper Methods
+// ============================================================================
+
+/**
+ * Escapes a string for embedding into a JSON string literal.
+ *
+ * Beanshell methods share the caller's namespace for untyped variables, so every local in this
+ * file carries a distinct name and a type declaration to keep it out of the caller's scope.
+ *
+ * @param value the raw value, may be null
+ * @return the escaped value, never null
+ */
+jsonEscape(value) {
+    if (value == null) {
+        return "";
+    }
+    return value.toString()
+        .replace("\\", "\\\\")
+        .replace("\"", "\\\"")
+        .replace("\n", "\\n")
+        .replace("\r", "");
+}
+
+/**
+ * Hashes a source string, so a client can compare without transferring it.
+ *
+ * @param source the source, may be null
+ * @return the lower case hex SHA-256, or "" for a null or empty source
+ */
+sha256(source) {
+    if (source == null || source.length() == 0) {
+        return "";
+    }
+    MessageDigest digestAlgorithm = MessageDigest.getInstance("SHA-256");
+    byte[] digestBytes = digestAlgorithm.digest(source.getBytes("UTF-8"));
+    StringBuilder digestHex = new StringBuilder();
+    for (int digestIndex = 0; digestIndex < digestBytes.length; digestIndex++) {
+        String digestPart = Integer.toHexString(digestBytes[digestIndex] & 0xff);
+        if (digestPart.length() == 1) {
+            digestHex.append("0");
+        }
+        digestHex.append(digestPart);
+    }
+    return digestHex.toString();
+}
+
+/**
+ * Encodes a source string for transport through a log line.
+ *
+ * @param source the source, may be null
+ * @return the base64 of the UTF-8 bytes, "" for null
+ */
+encode(source) {
+    if (source == null) {
+        return "";
+    }
+    return Base64.getEncoder().encodeToString(source.getBytes("UTF-8"));
+}
+
+/**
+ * Decodes a base64 payload back into a source string.
+ *
+ * @param payload the base64, may be null
+ * @return the decoded string, or null when nothing was passed
+ */
+decode(payload) {
+    if (payload == null) {
+        return null;
+    }
+    String payloadText = payload.toString();
+    if (payloadText.length() == 0) {
+        return "";
+    }
+    return new String(Base64.getDecoder().decode(payloadText), "UTF-8");
+}
+
+/**
+ * The snippet keys in file order. label is the snippet header: the title editors see for a
+ * dataset in lists, search results and selection dialogs instead of "<data source>: #<id>".
+ */
+SNIPPET_KEYS = new String[] { "label", "extract", "thumbnail" };
+
+/**
+ * Serialises a template's snippet (Template.getSnippet(), never null - verified on the server
+ * 2026-11-03) into the text fs-table keeps as <uid>.snippet.txt: one "key=expression" line per
+ * key of SNIPPET_KEYS. A line break inside an expression continues on the next line behind
+ * one space, so the text reads back unchanged.
+ *
+ * @param snippetTemplate the template
+ * @return the text, or "" when all three expressions are empty
+ */
+snippetText(snippetTemplate) {
+    snippetSource = snippetTemplate.getSnippet();
+    String[] snippetParts = new String[] {
+        snippetSource.getHeader(), snippetSource.getExtract(), snippetSource.getThumbnail() };
+    boolean snippetAny = false;
+    StringBuilder snippetOut = new StringBuilder();
+    for (int snippetIndex = 0; snippetIndex < snippetParts.length; snippetIndex++) {
+        String snippetPart = snippetParts[snippetIndex] == null ? "" : snippetParts[snippetIndex];
+        if (snippetPart.trim().length() > 0) {
+            snippetAny = true;
+        }
+        snippetOut.append(SNIPPET_KEYS[snippetIndex]).append("=")
+            .append(snippetPart.replace("\r", "").replace("\n", "\n ")).append("\n");
+    }
+    return snippetAny ? snippetOut.toString() : "";
+}
+
+/**
+ * Parses the text of a <uid>.snippet.txt (see snippetText()). Blank lines and lines starting
+ * with "#" are ignored; a line starting with one space continues the expression before it.
+ * A key that is left out is set to empty.
+ *
+ * @param snippetInput the text, may be null
+ * @return { label, extract, thumbnail }, or null when nothing was passed
+ */
+parseSnippet(snippetInput) {
+    if (snippetInput == null) {
+        return null;
+    }
+    String[] parsedParts = new String[] { "", "", "" };
+    int parsedKey = -1;
+    String[] parsedLines = snippetInput.replace("\r", "").split("\n");
+    for (int parsedIndex = 0; parsedIndex < parsedLines.length; parsedIndex++) {
+        String parsedLine = parsedLines[parsedIndex];
+        if (parsedLine.startsWith(" ") && parsedKey >= 0) {
+            parsedParts[parsedKey] = parsedParts[parsedKey] + "\n" + parsedLine.substring(1);
+            continue;
+        }
+        if (parsedLine.trim().length() == 0 || parsedLine.trim().startsWith("#")) {
+            continue;
+        }
+        int parsedEquals = parsedLine.indexOf('=');
+        String parsedName = parsedEquals < 0
+            ? parsedLine.trim() : parsedLine.substring(0, parsedEquals).trim();
+        parsedKey = Arrays.asList(SNIPPET_KEYS).indexOf(parsedName);
+        if (parsedEquals < 0 || parsedKey < 0) {
+            throw new IllegalArgumentException("Snippet line '" + parsedLine
+                + "' - expected label=, extract= or thumbnail=");
+        }
+        parsedParts[parsedKey] = parsedLine.substring(parsedEquals + 1).trim();
+    }
+    return parsedParts;
+}
+
+/**
+ * Wraps three expressions as a Snippet that is not attached to any template, for evaluation.
+ *
+ * @param detachedValues { label, extract, thumbnail }
+ * @return the Snippet
+ */
+detachedSnippet(detachedValues) {
+    final String detachedHeader = detachedValues[0];
+    final String detachedExtract = detachedValues[1];
+    final String detachedThumbnail = detachedValues[2];
+    return new Snippet() {
+        String getHeader() { return detachedHeader; }
+        String getExtract() { return detachedExtract; }
+        String getThumbnail() { return detachedThumbnail; }
+        void setHeader(String ignored) { }
+        void setExtract(String ignored) { }
+        void setThumbnail(String ignored) { }
+    };
+}
+
+/**
+ * Sets the three snippet expressions on a locked template; the caller saves.
+ *
+ * @param snippetTarget the template
+ * @param snippetValues { label, extract, thumbnail } from parseSnippet()
+ */
+applySnippet(snippetTarget, snippetValues) {
+    snippetObject = snippetTarget.getSnippet();
+    snippetObject.setHeader(snippetValues[0]);
+    snippetObject.setExtract(snippetValues[1]);
+    snippetObject.setThumbnail(snippetValues[2]);
+    snippetTarget.setSnippet(snippetObject);
+}
+
+/**
+ * Looks up a template set by uid.
+ *
+ * @param sourceProject the project
+ * @param setUid the template set uid, e.g. "html"
+ * @return the TemplateSet, or null when the project has none of that uid
+ */
+findTemplateSet(sourceProject, setUid) {
+    for (setIterator = sourceProject.getTemplateSets().iterator(); setIterator.hasNext();) {
+        candidateSet = setIterator.next();
+        if (candidateSet.getUid().equals(setUid)) {
+            return candidateSet;
+        }
+    }
+    return null;
+}
+
+/**
+ * Looks up a table template by uid.
+ *
+ * Table templates and queries share IDProvider.UidType.TEMPLATESTORE_SCHEMA, so the result is
+ * type checked rather than trusted.
+ *
+ * @param store the template store root
+ * @param wantedUid the uid, e.g. "myschema.event"
+ * @return the TableTemplate
+ * @throws IllegalArgumentException when there is no table template of that uid
+ */
+findTableTemplate(store, wantedUid) {
+    lookupResult = store.getStoreElement(wantedUid, IDProvider.UidType.TEMPLATESTORE_SCHEMA);
+    if (lookupResult == null) {
+        throw new IllegalArgumentException("Table template '" + wantedUid + "' not found");
+    }
+    if (!(lookupResult instanceof TableTemplate)) {
+        throw new IllegalArgumentException(
+            "'" + wantedUid + "' is not a table template but a " + lookupResult.getClass().getName());
+    }
+    return lookupResult;
+}
+
+/**
+ * Looks up a schema by uid.
+ *
+ * Schemes.getSchemaByName() matches the name, which usually equals the uid; the
+ * fallback walk keeps the lookup honest where the two differ.
+ *
+ * @param store the template store root
+ * @param wantedSchema the schema uid, e.g. "myschema"
+ * @return the Schema
+ * @throws IllegalArgumentException when there is no schema of that uid
+ */
+findSchema(store, wantedSchema) {
+    schemes = store.getSchemes();
+    byName = schemes.getSchemaByName(wantedSchema);
+    if (byName != null) {
+        return byName;
+    }
+    for (schemaIterator = schemes.getChildren(Schema.class, true).iterator();
+            schemaIterator.hasNext();) {
+        schemaCandidate = schemaIterator.next();
+        if (wantedSchema.equals(schemaCandidate.getUid())) {
+            return schemaCandidate;
+        }
+    }
+    throw new IllegalArgumentException("Schema '" + wantedSchema + "' not found");
+}
+
+/**
+ * Parses the mapping text of a 'create' call.
+ *
+ * One line per form field, blank lines and '#' comments ignored:
+ *   tt_date=date                   language independent, the same column for every language
+ *   tt_headline=headline_{LANG}    language dependent, {LANG} is the language abbreviation
+ *
+ * @param mappingText the decoded text, may be null
+ * @return field name -> column pattern, in file order
+ */
+parseMappings(mappingText) {
+    java.util.LinkedHashMap parsedMappings = new java.util.LinkedHashMap();
+    if (mappingText == null) {
+        return parsedMappings;
+    }
+    String[] mappingLines = mappingText.split("\n");
+    for (int lineIndex = 0; lineIndex < mappingLines.length; lineIndex++) {
+        String mappingLine = mappingLines[lineIndex].trim();
+        if (mappingLine.length() == 0 || mappingLine.startsWith("#")) {
+            continue;
+        }
+        int separator = mappingLine.indexOf('=');
+        if (separator <= 0 || separator == mappingLine.length() - 1) {
+            throw new IllegalArgumentException("Mapping line " + (lineIndex + 1)
+                + " is not 'field=column': " + mappingLine);
+        }
+        String mappedField = mappingLine.substring(0, separator).trim();
+        if (parsedMappings.containsKey(mappedField)) {
+            throw new IllegalArgumentException("Field '" + mappedField + "' is mapped twice");
+        }
+        parsedMappings.put(mappedField, mappingLine.substring(separator + 1).trim());
+    }
+    return parsedMappings;
+}
+
+/**
+ * Parses the column text of a 'create' call that also creates the database table.
+ *
+ * One line per column, blank lines and '#' comments ignored; {LANG} expands to one column per
+ * project language:
+ *   name_{LANG}=string 256      String, size in characters (default 256)
+ *   text_{LANG}=dom             rich text / any editor value stored as XML (DOM, link, image ...)
+ *   long=double                 also: long, integer, boolean, date
+ *
+ * @param columnText the decoded text, may be null
+ * @param languageList the project languages
+ * @return column name -> Object[]{Class, Integer size}, in file order; empty for null
+ */
+parseColumns(columnText, languageList) {
+    java.util.LinkedHashMap parsedColumns = new java.util.LinkedHashMap();
+    if (columnText == null) {
+        return parsedColumns;
+    }
+    String[] columnLines = columnText.split("\n");
+    for (int columnLine = 0; columnLine < columnLines.length; columnLine++) {
+        String columnSpec = columnLines[columnLine].trim();
+        if (columnSpec.length() == 0 || columnSpec.startsWith("#")) {
+            continue;
+        }
+        int columnSeparator = columnSpec.indexOf('=');
+        if (columnSeparator <= 0) {
+            throw new IllegalArgumentException("Column line " + (columnLine + 1)
+                + " is not 'column=type': " + columnSpec);
+        }
+        String columnPattern = columnSpec.substring(0, columnSeparator).trim();
+        String[] typeWords = columnSpec.substring(columnSeparator + 1).trim().split("\\s+");
+        String typeWord = typeWords[0].toLowerCase();
+        Class columnClass = null;
+        int columnSize = 0;
+        if ("string".equals(typeWord)) {
+            columnClass = String.class;
+            columnSize = typeWords.length > 1 ? Integer.parseInt(typeWords[1]) : 256;
+        } else if ("dom".equals(typeWord)) {
+            columnClass = Class.forName("de.espirit.firstspirit.client.editorcomponent.EditorWrapper");
+            columnSize = 65535;
+        } else if ("double".equals(typeWord)) {
+            columnClass = Double.class;
+        } else if ("long".equals(typeWord)) {
+            columnClass = Long.class;
+        } else if ("integer".equals(typeWord)) {
+            columnClass = Integer.class;
+        } else if ("boolean".equals(typeWord)) {
+            columnClass = Boolean.class;
+        } else if ("date".equals(typeWord)) {
+            columnClass = java.util.Date.class;
+        } else {
+            throw new IllegalArgumentException("Column '" + columnPattern + "' has unknown type '"
+                + typeWord + "' - use string [size], dom, double, long, integer, boolean or date");
+        }
+        java.util.ArrayList expandedNames = new java.util.ArrayList();
+        if (columnPattern.indexOf("{LANG}") >= 0) {
+            for (int columnLanguage = 0; columnLanguage < languageList.size(); columnLanguage++) {
+                expandedNames.add(columnPattern.replace("{LANG}",
+                    languageList.get(columnLanguage).getAbbreviation()));
+            }
+        } else {
+            expandedNames.add(columnPattern);
+        }
+        for (int expandedIndex = 0; expandedIndex < expandedNames.size(); expandedIndex++) {
+            String expandedName = expandedNames.get(expandedIndex);
+            if (parsedColumns.containsKey(expandedName)) {
+                throw new IllegalArgumentException("Column '" + expandedName + "' is defined twice");
+            }
+            parsedColumns.put(expandedName, new Object[] { columnClass, new Integer(columnSize) });
+        }
+    }
+    return parsedColumns;
+}
+
+/**
+ * Renders a template's mappings in the text form parseMappings() reads.
+ *
+ * A language dependent mapping is written with {LANG} when its column follows the
+ * column-per-language pattern; one that does not cannot be expressed and is written as a
+ * comment, so a reader sees it rather than losing it.
+ *
+ * @param mappedTemplate the table template
+ * @param languageList the project languages
+ * @return the mapping text, one line per mapped field
+ */
+renderMappings(mappedTemplate, languageList) {
+    StringBuilder mappingText = new StringBuilder();
+    renderedMappings = mappedTemplate.getMappings();
+    for (int renderIndex = 0; renderIndex < renderedMappings.length; renderIndex++) {
+        renderedMapping = renderedMappings[renderIndex];
+        String firstLanguage = languageList.get(0).getAbbreviation();
+        firstChain = renderedMapping.getAttributeReference(firstLanguage);
+        if (firstChain == null || firstChain.length == 0) {
+            mappingText.append("# ").append(renderedMapping.getName()).append(" is not mapped\n");
+            continue;
+        }
+        String firstColumn = String.join(".", firstChain);
+        if (!renderedMapping.isLanguageDependent()) {
+            mappingText.append(renderedMapping.getName()).append("=").append(firstColumn).append("\n");
+            continue;
+        }
+        String columnPattern = null;
+        if (firstColumn.endsWith(firstLanguage)) {
+            columnPattern = firstColumn.substring(0, firstColumn.length() - firstLanguage.length())
+                + "{LANG}";
+        }
+        for (int renderLanguage = 0; columnPattern != null && renderLanguage < languageList.size();
+                renderLanguage++) {
+            String checkLanguage = languageList.get(renderLanguage).getAbbreviation();
+            checkChain = renderedMapping.getAttributeReference(checkLanguage);
+            if (checkChain == null
+                    || !columnPattern.replace("{LANG}", checkLanguage).equals(String.join(".", checkChain))) {
+                columnPattern = null;
+            }
+        }
+        if (columnPattern == null) {
+            mappingText.append("# ").append(renderedMapping.getName())
+                .append(" is language dependent without a column-per-language pattern\n");
+        } else {
+            mappingText.append(renderedMapping.getName()).append("=").append(columnPattern).append("\n");
+        }
+    }
+    return mappingText.toString();
+}
+
+/**
+ * Fails when the content store already holds an element of that uid.
+ *
+ * Called before anything is created, so 'create' never leaves a template behind only because its
+ * data source could not be made.
+ *
+ * @param contentStoreRoot the content store root
+ * @param dataSourceUid the uid the new Content2 would get
+ */
+requireFreeDataSource(contentStoreRoot, dataSourceUid) {
+    if (contentStoreRoot.getStoreElement(dataSourceUid, IDProvider.UidType.CONTENTSTORE) != null) {
+        throw new IllegalStateException("The content store already has '" + dataSourceUid + "'");
+    }
+}
+
+/**
+ * Creates the data source (Content2) for a table template at the content store root.
+ *
+ * @param contentStoreRoot the content store root
+ * @param sourceTemplate the table template the datasets are edited with
+ * @param dataSourceUid the uid, by convention the entity type name
+ * @param dataSourceName the display name for every language, null for the uid
+ * @param languageList the project languages
+ * @return the new Content2
+ */
+createDataSource(contentStoreRoot, sourceTemplate, dataSourceUid, dataSourceName, languageList) {
+    java.util.HashMap dataSourceNames = new java.util.HashMap();
+    for (int dsLanguage = 0; dsLanguage < languageList.size(); dsLanguage++) {
+        dataSourceNames.put(languageList.get(dsLanguage),
+            dataSourceName == null ? dataSourceUid : dataSourceName);
+    }
+    contentStoreRoot.setLock(true, false);
+    try {
+        newDataSource = contentStoreRoot.createContent(sourceTemplate, dataSourceUid, dataSourceNames, false);
+        contentStoreRoot.save("data source for " + sourceTemplate.getUid(), false);
+    } finally {
+        contentStoreRoot.setLock(false, false);
+    }
+    return newDataSource;
+}
+
+/**
+ * Reads the entity type name of a table template.
+ *
+ * getEntityType() throws when the underlying database table is gone, which is a property of the
+ * template worth reporting rather than an error that should end the run.
+ *
+ * @param sourceTemplate the table template
+ * @return the entity type name, or "" when it cannot be resolved
+ */
+entityTypeName(sourceTemplate) {
+    try {
+        return sourceTemplate.getEntityType().getName();
+    } catch (Exception entityException) {
+        return "";
+    }
+}
+
+/**
+ * Puts back the gom and mappings an 'extend' replaced, after a later step failed.
+ *
+ * @return a short note for the error message: what was restored, or why it could not be
+ */
+revertExtend(revertTemplate, revertGom, revertMappings, revertComment) {
+    try {
+        revertTemplate.setLock(true, false);
+        try {
+            revertTemplate.setGomSource(revertGom);
+            revertTemplate.setMappings(revertMappings);
+            revertTemplate.save("revert: " + revertComment, false);
+        } finally {
+            revertTemplate.setLock(false, false);
+        }
+        return "gom and mappings restored";
+    } catch (Exception revertException) {
+        return "COULD NOT RESTORE gom and mappings (" + revertException + ") - check the template in SiteArchitect";
+    }
+}
+
+/**
+ * Reads a request parameter that may be absent.
+ *
+ * @param value the parameter as Beanshell hands it over
+ * @param fallback the value to use when the parameter was not passed
+ * @return the parameter as a String
+ */
+param(value, fallback) {
+    if (value == void || value == null) {
+        return fallback;
+    }
+    return value.toString();
+}
+
+// ============================================================================
+// Script Execution
+// ============================================================================
+
+try {
+    requestedAction = param(action == void ? null : action, "list");
+    templateSetUid = param(templateSet == void ? null : templateSet, DEFAULT_TEMPLATE_SET);
+    targetUid = param(uid == void ? null : uid, null);
+
+    project = context.getProject();
+    htmlSet = findTemplateSet(project, templateSetUid);
+    if (htmlSet == null) {
+        throw new IllegalArgumentException("Template set '" + templateSetUid + "' not found");
+    }
+
+    templateStore = context.requireSpecialist(StoreAgent.TYPE).getStore(Store.Type.TEMPLATESTORE);
+
+    json = new StringBuilder();
+    json.append("{\"status\":\"ok\"");
+    json.append(",\"action\":\"").append(jsonEscape(requestedAction)).append("\"");
+    json.append(",\"templateSet\":\"").append(jsonEscape(templateSetUid)).append("\"");
+
+    if ("list".equals(requestedAction)) {
+        templateArray = new StringBuilder("[");
+        int templateCount = 0;
+        for (templateIterator = templateStore.getSchemes()
+                .getChildren(TableTemplate.class, true).iterator(); templateIterator.hasNext();) {
+            listTemplate = templateIterator.next();
+
+            listGom = listTemplate.getGomSource();
+            listRules = listTemplate.getRulesetDefinition();
+            listChannel = listTemplate.getChannelSource(htmlSet);
+
+            if (templateCount > 0) {
+                templateArray.append(",");
+            }
+            templateCount++;
+            templateArray.append("{\"uid\":\"").append(jsonEscape(listTemplate.getUid()))
+                .append("\",\"id\":").append(listTemplate.getId())
+                .append(",\"name\":\"").append(jsonEscape(listTemplate.getName()))
+                .append("\",\"schema\":\"").append(jsonEscape(listTemplate.getSchema().getUid()))
+                .append("\",\"entityType\":\"").append(jsonEscape(entityTypeName(listTemplate)))
+                .append("\",\"gomBytes\":").append(listGom == null ? 0 : listGom.length())
+                .append(",\"gomHash\":\"").append(sha256(listGom))
+                .append("\",\"rulesBytes\":").append(listRules == null ? 0 : listRules.length())
+                .append(",\"rulesHash\":\"").append(sha256(listRules))
+                .append("\",\"channelBytes\":").append(listChannel == null ? 0 : listChannel.length())
+                .append(",\"channelHash\":\"").append(sha256(listChannel))
+                .append("\",\"snippetHash\":\"").append(sha256(snippetText(listTemplate)))
+                .append("\"}");
+        }
+        templateArray.append("]");
+        json.append(",\"count\":").append(templateCount);
+        json.append(",\"templates\":").append(templateArray.toString());
+
+    } else if ("read".equals(requestedAction)) {
+        if (targetUid == null) {
+            throw new IllegalArgumentException("Parameter 'uid' is required for action 'read'");
+        }
+        readTemplate = findTableTemplate(templateStore, targetUid);
+        readGom = readTemplate.getGomSource();
+        readRules = readTemplate.getRulesetDefinition();
+        readChannel = readTemplate.getChannelSource(htmlSet);
+        readSnippet = snippetText(readTemplate);
+
+        json.append(",\"uid\":\"").append(jsonEscape(readTemplate.getUid())).append("\"");
+        json.append(",\"id\":").append(readTemplate.getId());
+        json.append(",\"name\":\"").append(jsonEscape(readTemplate.getName())).append("\"");
+        json.append(",\"schema\":\"").append(jsonEscape(readTemplate.getSchema().getUid())).append("\"");
+        json.append(",\"entityType\":\"").append(jsonEscape(entityTypeName(readTemplate))).append("\"");
+        json.append(",\"gomHash\":\"").append(sha256(readGom)).append("\"");
+        json.append(",\"rulesHash\":\"").append(sha256(readRules)).append("\"");
+        json.append(",\"channelHash\":\"").append(sha256(readChannel)).append("\"");
+        json.append(",\"snippetHash\":\"").append(sha256(readSnippet)).append("\"");
+        json.append(",\"gom\":\"").append(encode(readGom)).append("\"");
+        json.append(",\"rules\":\"").append(encode(readRules)).append("\"");
+        json.append(",\"channel\":\"").append(encode(readChannel)).append("\"");
+        json.append(",\"snippet\":\"").append(encode(readSnippet)).append("\"");
+        json.append(",\"mappings\":\"")
+            .append(encode(renderMappings(readTemplate, project.getLanguages()))).append("\"");
+
+    } else if ("describe".equals(requestedAction)) {
+        if (targetUid == null) {
+            throw new IllegalArgumentException("Parameter 'uid' is required for action 'describe'");
+        }
+        describeTemplate = findTableTemplate(templateStore, targetUid);
+
+        attributeArray = new StringBuilder("[");
+        int attributeCount = 0;
+        for (attributeIterator = describeTemplate.getEntityType().getAttributes().iterator();
+                attributeIterator.hasNext();) {
+            attribute = attributeIterator.next();
+            if (attributeCount > 0) {
+                attributeArray.append(",");
+            }
+            attributeCount++;
+            attributeArray.append("{\"name\":\"").append(jsonEscape(attribute.getName()))
+                .append("\",\"type\":\"").append(jsonEscape(attribute.getType().getName()))
+                .append("\",\"displayText\":\"").append(jsonEscape(attribute.getDisplayText()))
+                .append("\",\"required\":").append(attribute.isRequired())
+                .append(",\"key\":").append(attribute.isKey())
+                .append(",\"readOnly\":").append(attribute.isReadOnly())
+                .append("}");
+        }
+        attributeArray.append("]");
+
+        // The mappings are the columns of the dataset list in SiteArchitect: which attribute
+        // each column shows, and whether it is language dependent.
+        mappingArray = new StringBuilder("[");
+        mappings = describeTemplate.getMappings();
+        for (int mappingIndex = 0; mappingIndex < mappings.length; mappingIndex++) {
+            mapping = mappings[mappingIndex];
+            if (mappingIndex > 0) {
+                mappingArray.append(",");
+            }
+            referenceChain = mapping.getAttributeReference(null);
+            referenceText = "";
+            if (referenceChain != null) {
+                for (int chainIndex = 0; chainIndex < referenceChain.length; chainIndex++) {
+                    if (chainIndex > 0) {
+                        referenceText = referenceText + ".";
+                    }
+                    referenceText = referenceText + referenceChain[chainIndex];
+                }
+            }
+            mappingArray.append("{\"name\":\"").append(jsonEscape(mapping.getName()))
+                .append("\",\"attribute\":\"").append(jsonEscape(referenceText))
+                .append("\",\"languageDependent\":").append(mapping.isLanguageDependent())
+                .append(",\"visible\":").append(mapping.isVisible())
+                .append("}");
+        }
+        mappingArray.append("]");
+
+        json.append(",\"uid\":\"").append(jsonEscape(describeTemplate.getUid())).append("\"");
+        json.append(",\"entityType\":\"").append(jsonEscape(entityTypeName(describeTemplate))).append("\"");
+        json.append(",\"attributes\":").append(attributeArray.toString());
+        json.append(",\"mappings\":").append(mappingArray.toString());
+
+    } else if ("write".equals(requestedAction)) {
+        if (targetUid == null) {
+            throw new IllegalArgumentException("Parameter 'uid' is required for action 'write'");
+        }
+        newGom = decode(gom == void ? null : gom);
+        newRules = decode(rules == void ? null : rules);
+        newChannel = decode(channel == void ? null : channel);
+        newSnippetText = decode(snippet == void ? null : snippet);
+        newSnippet = parseSnippet(newSnippetText);
+        if (newGom == null && newRules == null && newChannel == null && newSnippet == null) {
+            throw new IllegalArgumentException(
+                "Action 'write' needs at least one of 'gom', 'rules', 'channel', 'snippet'");
+        }
+        expectedGom = param(gomHashExpected == void ? null : gomHashExpected, null);
+        expectedRules = param(rulesHashExpected == void ? null : rulesHashExpected, null);
+        expectedChannel = param(channelHashExpected == void ? null : channelHashExpected, null);
+        expectedSnippet = param(snippetHashExpected == void ? null : snippetHashExpected, null);
+        writeComment = param(comment == void ? null : comment, "written via rest_table_template");
+
+        writeTemplate = findTableTemplate(templateStore, targetUid);
+        oldGom = writeTemplate.getGomSource();
+        oldRules = writeTemplate.getRulesetDefinition();
+        oldChannel = writeTemplate.getChannelSource(htmlSet);
+        oldSnippet = snippetText(writeTemplate);
+
+        // Check every precondition before touching the element - a half written template is
+        // worse than a rejected call.
+        if (newGom != null) {
+            if (expectedGom == null) {
+                throw new IllegalArgumentException("Writing 'gom' requires 'gomHashExpected'");
+            }
+            if (!UNCONDITIONAL.equals(expectedGom) && !expectedGom.equals(sha256(oldGom))) {
+                throw new IllegalStateException("Hash mismatch on 'gom': the server holds "
+                    + sha256(oldGom) + ", the client expected " + expectedGom);
+            }
+        }
+        if (newRules != null) {
+            if (expectedRules == null) {
+                throw new IllegalArgumentException("Writing 'rules' requires 'rulesHashExpected'");
+            }
+            if (!UNCONDITIONAL.equals(expectedRules) && !expectedRules.equals(sha256(oldRules))) {
+                throw new IllegalStateException("Hash mismatch on 'rules': the server holds "
+                    + sha256(oldRules) + ", the client expected " + expectedRules);
+            }
+        }
+        if (newChannel != null) {
+            if (expectedChannel == null) {
+                throw new IllegalArgumentException("Writing 'channel' requires 'channelHashExpected'");
+            }
+            if (!UNCONDITIONAL.equals(expectedChannel) && !expectedChannel.equals(sha256(oldChannel))) {
+                throw new IllegalStateException("Hash mismatch on 'channel': the server holds "
+                    + sha256(oldChannel) + ", the client expected " + expectedChannel);
+            }
+        }
+        if (newSnippet != null) {
+            if (expectedSnippet == null) {
+                throw new IllegalArgumentException("Writing 'snippet' requires 'snippetHashExpected'");
+            }
+            if (!UNCONDITIONAL.equals(expectedSnippet) && !expectedSnippet.equals(sha256(oldSnippet))) {
+                throw new IllegalStateException("Hash mismatch on 'snippet': the server holds "
+                    + sha256(oldSnippet) + ", the client expected " + expectedSnippet);
+            }
+        }
+
+        writtenParts = new ArrayList();
+        writeTemplate.setLock(true, false);
+        try {
+            // GOM first, then rules, then the channel - the order fs-table push uses, so a rule
+            // referencing a new editor never lands before the editor exists.
+            if (newGom != null) {
+                writeTemplate.setGomSource(newGom);
+                writtenParts.add("gom");
+            }
+            if (newRules != null) {
+                writeTemplate.setRulesetDefinition(newRules);
+                writtenParts.add("rules");
+            }
+            if (newChannel != null) {
+                writeTemplate.setChannelSource(htmlSet, newChannel);
+                writtenParts.add("channel");
+            }
+            if (newSnippet != null) {
+                applySnippet(writeTemplate, newSnippet);
+                writtenParts.add("snippet");
+            }
+            writeTemplate.save(writeComment, false);
+        } finally {
+            writeTemplate.setLock(false, false);
+        }
+
+        partArray = new StringBuilder("[");
+        for (int partIndex = 0; partIndex < writtenParts.size(); partIndex++) {
+            if (partIndex > 0) {
+                partArray.append(",");
+            }
+            partArray.append("\"").append(jsonEscape(writtenParts.get(partIndex))).append("\"");
+        }
+        partArray.append("]");
+
+        json.append(",\"uid\":\"").append(jsonEscape(writeTemplate.getUid())).append("\"");
+        json.append(",\"written\":").append(partArray.toString());
+        json.append(",\"comment\":\"").append(jsonEscape(writeComment)).append("\"");
+        json.append(",\"gomHash\":\"").append(sha256(writeTemplate.getGomSource())).append("\"");
+        json.append(",\"rulesHash\":\"")
+            .append(sha256(writeTemplate.getRulesetDefinition())).append("\"");
+        json.append(",\"channelHash\":\"")
+            .append(sha256(writeTemplate.getChannelSource(htmlSet))).append("\"");
+        json.append(",\"snippetHash\":\"").append(sha256(snippetText(writeTemplate))).append("\"");
+        // What was replaced, so the client can keep a backup without a second round trip.
+        json.append(",\"backup\":{");
+        json.append("\"gom\":\"").append(encode(oldGom)).append("\"");
+        json.append(",\"rules\":\"").append(encode(oldRules)).append("\"");
+        json.append(",\"channel\":\"").append(encode(oldChannel)).append("\"");
+        json.append(",\"snippet\":\"").append(encode(oldSnippet)).append("\"");
+        json.append("}");
+
+    } else if ("create".equals(requestedAction)) {
+        // ---- inputs, all checked before anything exists on the server ----------------------
+        createSchemaUid = param(schema == void ? null : schema, null);
+        createEntityName = param(entityType == void ? null : entityType, null);
+        if (targetUid == null || createSchemaUid == null || createEntityName == null) {
+            throw new IllegalArgumentException(
+                "Action 'create' needs 'uid', 'schema' and 'entityType'");
+        }
+        createGom = decode(gom == void ? null : gom);
+        createRules = decode(rules == void ? null : rules);
+        createChannel = decode(channel == void ? null : channel);
+        // Parsed before anything exists, so a malformed snippet file creates nothing.
+        createSnippet = parseSnippet(decode(snippet == void ? null : snippet));
+        if (createGom == null || createGom.trim().length() == 0) {
+            throw new IllegalArgumentException("Action 'create' needs a 'gom' - a table template "
+                + "without a form has nothing to map");
+        }
+        createName = param(name == void ? null : name, null);
+        createComment = param(comment == void ? null : comment, "created via rest_table_template");
+        requestedMappings = parseMappings(decode(mappings == void ? null : mappings));
+        // "-" skips the data source; anything else is its uid, the entity type name by default.
+        createDataSourceUid = param(content2 == void ? null : content2, createEntityName);
+        contentRoot = context.requireSpecialist(StoreAgent.TYPE).getStore(Store.Type.CONTENTSTORE);
+        if (!"-".equals(createDataSourceUid)) {
+            requireFreeDataSource(contentRoot, createDataSourceUid);
+        }
+
+        if (templateStore.getStoreElement(targetUid, IDProvider.UidType.TEMPLATESTORE_SCHEMA) != null) {
+            throw new IllegalStateException("'" + targetUid + "' already exists - use 'write'");
+        }
+        createLanguages = project.getLanguages();
+        createSchemes = templateStore.getSchemes();
+        createNewSchema = "true".equals(param(newSchema == void ? null : newSchema, "false"));
+        createLayer = param(layer == void ? null : layer, null);
+        columnSpecs = parseColumns(decode(columns == void ? null : columns), createLanguages);
+
+        createSchemaElement = createSchemes.getSchemaByName(createSchemaUid);
+        if (createNewSchema) {
+            if (createSchemaElement != null) {
+                throw new IllegalStateException("Schema '" + createSchemaUid
+                    + "' exists already - drop 'newSchema' to use it");
+            }
+            availableLayers = createSchemes.getLayerNames();
+            if (createLayer == null && availableLayers.length == 1) {
+                createLayer = availableLayers[0];
+            }
+            if (createLayer == null || !Arrays.asList(availableLayers).contains(createLayer)) {
+                throw new IllegalArgumentException("A new schema needs a 'layer' out of "
+                    + Arrays.toString(availableLayers));
+            }
+        } else if (createSchemaElement == null) {
+            createSchemaElement = findSchema(templateStore, createSchemaUid);
+        }
+
+        createEntity = createSchemaElement == null ? null
+            : createSchemaElement.getOrSchema().getEntityType(createEntityName);
+        java.util.HashSet knownColumns = new java.util.HashSet();
+        if (createEntity != null) {
+            for (columnIterator = createEntity.getAttributes().iterator(); columnIterator.hasNext();) {
+                knownColumns.add(columnIterator.next().getName());
+            }
+            for (specIterator = columnSpecs.keySet().iterator(); specIterator.hasNext();) {
+                String specColumn = specIterator.next();
+                if (!knownColumns.contains(specColumn)) {
+                    throw new IllegalArgumentException("Table '" + createEntityName
+                        + "' exists already and has no column '" + specColumn
+                        + "' - use 'extend' to add columns to an existing table");
+                }
+            }
+        } else {
+            if (columnSpecs.isEmpty()) {
+                throw new IllegalArgumentException("Schema '" + createSchemaUid
+                    + "' has no table '" + createEntityName + "' - pass 'columns' to create it");
+            }
+            knownColumns.addAll(columnSpecs.keySet());
+        }
+        for (patternIterator = requestedMappings.entrySet().iterator(); patternIterator.hasNext();) {
+            patternEntry = patternIterator.next();
+            String columnPatternIn = patternEntry.getValue();
+            for (int languageIndex = 0; languageIndex < createLanguages.size(); languageIndex++) {
+                String resolvedColumn = columnPatternIn.replace("{LANG}",
+                    createLanguages.get(languageIndex).getAbbreviation());
+                if (!knownColumns.contains(resolvedColumn)) {
+                    throw new IllegalArgumentException("Field '" + patternEntry.getKey()
+                        + "' is mapped to '" + resolvedColumn + "', which entity type '"
+                        + createEntityName + "' does not have");
+                }
+            }
+        }
+
+        // ---- schema and table first; they stay if the template fails, and say so ------------
+        createdParts = new ArrayList();
+        if (createNewSchema) {
+            createSchemes.setLock(true, false);
+            try {
+                createSchemaElement = createSchemes.createSchema(createSchemaUid, createLayer, false);
+                createSchemes.save(createComment, false);
+            } finally {
+                createSchemes.setLock(false, false);
+            }
+            createdParts.add("schema " + createSchemaUid);
+        }
+        if (createEntity == null) {
+            createSchemaElement.setLock(true, false);
+            try {
+                tableSchema = createSchemaElement.getOrSchema();
+                newEntityType = tableSchema.createEntityType(createEntityName);
+                for (specIterator = columnSpecs.entrySet().iterator(); specIterator.hasNext();) {
+                    specEntry = specIterator.next();
+                    Object[] specValue = specEntry.getValue();
+                    newColumn = newEntityType.createSimpleAttribute(specEntry.getKey(), specValue[0]);
+                    if (((Integer) specValue[1]).intValue() > 0) {
+                        newColumn.setSize(((Integer) specValue[1]).intValue());
+                    }
+                }
+                createSchemaElement.setOrSchema(tableSchema);
+                createSchemaElement.save(createComment, false);
+            } finally {
+                createSchemaElement.setLock(false, false);
+            }
+            createEntity = createSchemaElement.getOrSchema().getEntityType(createEntityName);
+            if (createEntity == null) {
+                throw new IllegalStateException("Table '" + createEntityName
+                    + "' was saved but does not read back");
+            }
+            createdParts.add("table " + createEntityName);
+        }
+
+        // ---- create, then fill; any failure from here on removes the new template ---------
+        newTemplate = createSchemaElement.createTableTemplate(createEntity, targetUid, false);
+        unmappedFields = new ArrayList();
+        try {
+            newTemplate.setLock(true, false);
+            try {
+                if (createName != null) {
+                    for (int nameIndex = 0; nameIndex < createLanguages.size(); nameIndex++) {
+                        newTemplate.setDisplayName(createLanguages.get(nameIndex), createName);
+                    }
+                }
+                newTemplate.setGomSource(createGom);
+                if (createRules != null) {
+                    newTemplate.setRulesetDefinition(createRules);
+                }
+                if (createChannel != null) {
+                    newTemplate.setChannelSource(htmlSet, createChannel);
+                }
+                if (createSnippet != null) {
+                    applySnippet(newTemplate, createSnippet);
+                }
+                newTemplate.save(createComment, false);
+
+                // The mapping list is derived from the saved GOM: one entry per form field.
+                derivedMappings = newTemplate.getMappings(TableTemplate.EMPTY_MAPPINGS,
+                    newTemplate.getGomProvider());
+                java.util.HashSet derivedNames = new java.util.HashSet();
+                for (int derivedIndex = 0; derivedIndex < derivedMappings.length; derivedIndex++) {
+                    derivedMapping = derivedMappings[derivedIndex];
+                    String derivedName = derivedMapping.getName();
+                    derivedNames.add(derivedName);
+                    if (!requestedMappings.containsKey(derivedName)) {
+                        unmappedFields.add(derivedName);
+                        continue;
+                    }
+                    String derivedPattern = requestedMappings.get(derivedName);
+                    boolean perLanguage = derivedPattern.indexOf("{LANG}") >= 0;
+                    for (int mapLanguage = 0; mapLanguage < createLanguages.size(); mapLanguage++) {
+                        String mapAbbreviation = createLanguages.get(mapLanguage).getAbbreviation();
+                        derivedMapping.setAttributeReference(
+                            new String[] { derivedPattern.replace("{LANG}", mapAbbreviation) },
+                            mapAbbreviation, perLanguage);
+                    }
+                }
+                for (requestedIterator = requestedMappings.keySet().iterator();
+                        requestedIterator.hasNext();) {
+                    String requestedField = requestedIterator.next();
+                    if (!derivedNames.contains(requestedField)) {
+                        throw new IllegalArgumentException("Field '" + requestedField
+                            + "' is mapped but the GOM has no such field");
+                    }
+                }
+                newTemplate.setMappings(derivedMappings);
+                newTemplate.save(createComment, false);
+            } finally {
+                newTemplate.setLock(false, false);
+            }
+        } catch (Exception createException) {
+            cleanupNote = "removed again";
+            try {
+                newTemplate.setLock(true, false);
+                newTemplate.delete();
+            } catch (Exception cleanupException) {
+                cleanupNote = "COULD NOT BE REMOVED (" + cleanupException + ") - delete '"
+                    + targetUid + "' in SiteArchitect";
+            }
+            throw new IllegalStateException("Creating '" + targetUid + "' failed, the template was "
+                + cleanupNote + (createdParts.isEmpty() ? "" : " (created and kept: " + createdParts + ")")
+                + ": " + createException);
+        }
+
+        // The template is complete and valid on its own from here; a failing data source is
+        // reported, and 'content2' can be run again for it.
+        createdDataSourceUid = "";
+        dataSourceError = "";
+        if (!"-".equals(createDataSourceUid)) {
+            try {
+                createdDataSourceUid = createDataSource(contentRoot, newTemplate, createDataSourceUid,
+                    createName, createLanguages).getUid();
+            } catch (Exception dataSourceException) {
+                dataSourceError = dataSourceException.toString();
+            }
+        }
+
+        unmappedArray = new StringBuilder("[");
+        for (int unmappedIndex = 0; unmappedIndex < unmappedFields.size(); unmappedIndex++) {
+            if (unmappedIndex > 0) {
+                unmappedArray.append(",");
+            }
+            unmappedArray.append("\"").append(jsonEscape(unmappedFields.get(unmappedIndex))).append("\"");
+        }
+        unmappedArray.append("]");
+
+        json.append(",\"uid\":\"").append(jsonEscape(newTemplate.getUid())).append("\"");
+        json.append(",\"id\":").append(newTemplate.getId());
+        json.append(",\"schema\":\"").append(jsonEscape(createSchemaElement.getUid())).append("\"");
+        json.append(",\"entityType\":\"").append(jsonEscape(createEntityName)).append("\"");
+        json.append(",\"unmapped\":").append(unmappedArray.toString());
+        json.append(",\"createdSchema\":").append(createNewSchema);
+        json.append(",\"createdTable\":").append(createdParts.contains("table " + createEntityName));
+        json.append(",\"content2\":\"").append(jsonEscape(createdDataSourceUid)).append("\"");
+        json.append(",\"content2Error\":\"").append(jsonEscape(dataSourceError)).append("\"");
+        json.append(",\"gomHash\":\"").append(sha256(newTemplate.getGomSource())).append("\"");
+        json.append(",\"rulesHash\":\"")
+            .append(sha256(newTemplate.getRulesetDefinition())).append("\"");
+        json.append(",\"channelHash\":\"")
+            .append(sha256(newTemplate.getChannelSource(htmlSet))).append("\"");
+        json.append(",\"snippetHash\":\"").append(sha256(snippetText(newTemplate))).append("\"");
+
+    } else if ("snippet-preview".equals(requestedAction)) {
+        if (targetUid == null) {
+            throw new IllegalArgumentException("Parameter 'uid' is required for action 'snippet-preview'");
+        }
+        previewTemplate = findTableTemplate(templateStore, targetUid);
+        previewValues = parseSnippet(decode(snippet == void ? null : snippet));
+        previewSource = "request";
+        if (previewValues == null) {
+            previewValues = parseSnippet(snippetText(previewTemplate));
+            previewSource = "server";
+        }
+        int previewLimit = Integer.parseInt(param(limit == void ? null : limit, "5"));
+        previewSnippet = detachedSnippet(previewValues);
+        previewAgent = context.requireSpecialist(SnippetAgent.TYPE);
+        previewLanguages = project.getLanguages();
+        previewStore = context.requireSpecialist(StoreAgent.TYPE).getStore(Store.Type.CONTENTSTORE);
+
+        sourceArray = new StringBuilder("[");
+        rowArray = new StringBuilder("[");
+        int previewSources = 0;
+        int previewRows = 0;
+        int previewEmptyLabels = 0;
+        for (previewIterator = previewStore.getChildren(Content2.class, true).iterator();
+                previewIterator.hasNext();) {
+            previewContent2 = previewIterator.next();
+            previewOwner = previewContent2.getTemplate();
+            if (previewOwner == null || !targetUid.equals(previewOwner.getUid())) {
+                continue;
+            }
+            if (previewSources++ > 0) {
+                sourceArray.append(",");
+            }
+            sourceArray.append("\"").append(jsonEscape(previewContent2.getUid())).append("\"");
+            int previewTaken = 0;
+            for (datasetIterator = previewContent2.getDatasets().iterator();
+                    datasetIterator.hasNext() && previewTaken < previewLimit;) {
+                previewDataset = datasetIterator.next();
+                previewTaken++;
+                previewProvider = previewAgent.getSnippetProvider(previewDataset.getFormData(), previewSnippet);
+                String previewId = "";
+                try {
+                    previewId = String.valueOf(previewDataset.getEntity().getValue("fs_id"));
+                } catch (Exception idException) {
+                    previewId = "?";
+                }
+                for (int previewLanguage = 0; previewLanguage < previewLanguages.size(); previewLanguage++) {
+                    previewLang = previewLanguages.get(previewLanguage);
+                    String previewHeader = previewProvider.getHeader(previewLang);
+                    String previewExtract = previewProvider.getExtract(previewLang);
+                    boolean previewThumb = previewProvider.getThumbnail(previewLang) != null;
+                    if (previewHeader == null || previewHeader.trim().length() == 0) {
+                        previewEmptyLabels++;
+                    }
+                    if (previewExtract != null && previewExtract.length() > 120) {
+                        previewExtract = previewExtract.substring(0, 120) + "...";
+                    }
+                    if (previewRows++ > 0) {
+                        rowArray.append(",");
+                    }
+                    rowArray.append("{\"dataSource\":\"").append(jsonEscape(previewContent2.getUid()))
+                        .append("\",\"id\":\"").append(jsonEscape(previewId))
+                        .append("\",\"language\":\"").append(jsonEscape(previewLang.getAbbreviation()))
+                        .append("\",\"label\":\"").append(jsonEscape(previewHeader))
+                        .append("\",\"extract\":\"").append(jsonEscape(previewExtract))
+                        .append("\",\"thumbnail\":").append(previewThumb)
+                        .append("}");
+                }
+            }
+        }
+        sourceArray.append("]");
+        rowArray.append("]");
+        json.append(",\"uid\":\"").append(jsonEscape(previewTemplate.getUid())).append("\"");
+        json.append(",\"source\":\"").append(previewSource).append("\"");
+        json.append(",\"dataSources\":").append(sourceArray.toString());
+        json.append(",\"evaluated\":").append(previewRows);
+        json.append(",\"emptyLabels\":").append(previewEmptyLabels);
+        json.append(",\"rows\":").append(rowArray.toString());
+
+    } else if ("schemas".equals(requestedAction)) {
+        schemaArray = new StringBuilder("[");
+        int schemaCount = 0;
+        for (schemaIterator = templateStore.getSchemes().getChildren(Schema.class, true).iterator();
+                schemaIterator.hasNext();) {
+            listedSchema = schemaIterator.next();
+            tableNames = new StringBuilder("[");
+            int tableCount = 0;
+            for (tableIterator = listedSchema.getOrSchema().getEntityTypes().iterator();
+                    tableIterator.hasNext();) {
+                if (tableCount++ > 0) {
+                    tableNames.append(",");
+                }
+                tableNames.append("\"").append(jsonEscape(tableIterator.next().getName())).append("\"");
+            }
+            tableNames.append("]");
+            if (schemaCount++ > 0) {
+                schemaArray.append(",");
+            }
+            schemaArray.append("{\"uid\":\"").append(jsonEscape(listedSchema.getUid()))
+                .append("\",\"layer\":\"").append(jsonEscape(listedSchema.getLayer()))
+                .append("\",\"tables\":").append(tableNames.toString()).append("}");
+        }
+        schemaArray.append("]");
+        layerArray = new StringBuilder("[");
+        listedLayers = templateStore.getSchemes().getLayerNames();
+        for (int layerIndex = 0; layerIndex < listedLayers.length; layerIndex++) {
+            if (layerIndex > 0) {
+                layerArray.append(",");
+            }
+            layerArray.append("\"").append(jsonEscape(listedLayers[layerIndex])).append("\"");
+        }
+        layerArray.append("]");
+        json.append(",\"schemas\":").append(schemaArray.toString());
+        json.append(",\"layers\":").append(layerArray.toString());
+
+    } else if ("content2".equals(requestedAction)) {
+        if (targetUid == null) {
+            throw new IllegalArgumentException("Parameter 'uid' is required for action 'content2'");
+        }
+        dsTemplate = findTableTemplate(templateStore, targetUid);
+        dsUid = param(content2 == void ? null : content2, entityTypeName(dsTemplate));
+        if (dsUid.length() == 0) {
+            throw new IllegalStateException("'" + targetUid + "' has no resolvable entity type - pass 'content2'");
+        }
+        dsRoot = context.requireSpecialist(StoreAgent.TYPE).getStore(Store.Type.CONTENTSTORE);
+        requireFreeDataSource(dsRoot, dsUid);
+        dsCreated = createDataSource(dsRoot, dsTemplate, dsUid,
+            param(name == void ? null : name, null), project.getLanguages());
+
+        json.append(",\"uid\":\"").append(jsonEscape(targetUid)).append("\"");
+        json.append(",\"content2\":\"").append(jsonEscape(dsCreated.getUid())).append("\"");
+        json.append(",\"content2Id\":").append(dsCreated.getId());
+
+    } else if ("extend".equals(requestedAction)) {
+        if (targetUid == null) {
+            throw new IllegalArgumentException("Parameter 'uid' is required for action 'extend'");
+        }
+        extendTemplate = findTableTemplate(templateStore, targetUid);
+        extendGom = decode(gom == void ? null : gom);
+        extendMappings = parseMappings(decode(mappings == void ? null : mappings));
+        extendLanguages = project.getLanguages();
+        extendColumns = parseColumns(decode(columns == void ? null : columns), extendLanguages);
+        extendComment = param(comment == void ? null : comment, "extended via rest_table_template");
+        if (extendGom == null || extendGom.trim().length() == 0 || extendMappings.isEmpty()) {
+            throw new IllegalArgumentException("Action 'extend' needs 'gom' and the full 'mappings'");
+        }
+
+        // Same guard as 'write': the client sends the hashes of the state it last pulled, so a
+        // form or mapping changed in SiteArchitect meanwhile is refused, not overwritten.
+        expectedGom = param(gomHashExpected == void ? null : gomHashExpected, null);
+        expectedMappings = param(mappingsHashExpected == void ? null : mappingsHashExpected, null);
+        if (expectedGom == null || expectedMappings == null) {
+            throw new IllegalArgumentException("Action 'extend' requires 'gomHashExpected' and 'mappingsHashExpected'");
+        }
+        if (!UNCONDITIONAL.equals(expectedGom) && !expectedGom.equals(sha256(extendTemplate.getGomSource()))) {
+            throw new IllegalStateException("Hash mismatch on 'gom': the server holds "
+                + sha256(extendTemplate.getGomSource()) + ", the client expected " + expectedGom);
+        }
+        currentMappings = renderMappings(extendTemplate, extendLanguages);
+        if (!UNCONDITIONAL.equals(expectedMappings) && !expectedMappings.equals(sha256(currentMappings))) {
+            throw new IllegalStateException("Hash mismatch on 'mappings': the server holds "
+                + sha256(currentMappings) + ", the client expected " + expectedMappings);
+        }
+
+        extendSchema = extendTemplate.getParent();
+        while (extendSchema != null && !(extendSchema instanceof Schema)) {
+            extendSchema = extendSchema.getParent();
+        }
+        if (extendSchema == null) {
+            throw new IllegalStateException("'" + targetUid + "' has no schema above it");
+        }
+        extendEntityName = entityTypeName(extendTemplate);
+
+        // ---- 0. which columns are new; checks only, nothing changes yet --------------------
+        java.util.HashSet extendKnown = new java.util.HashSet();
+        for (columnIterator = extendTemplate.getEntityType().getAttributes().iterator(); columnIterator.hasNext();) {
+            extendKnown.add(columnIterator.next().getName());
+        }
+        addedColumns = new ArrayList();
+        for (specIterator = extendColumns.keySet().iterator(); specIterator.hasNext();) {
+            String extendColumn = specIterator.next();
+            if (!extendKnown.contains(extendColumn)) {
+                addedColumns.add(extendColumn);
+            }
+        }
+        for (patternIterator = extendMappings.entrySet().iterator(); patternIterator.hasNext();) {
+            patternEntry = patternIterator.next();
+            for (int languageIndex = 0; languageIndex < extendLanguages.size(); languageIndex++) {
+                String extendResolved = patternEntry.getValue().replace("{LANG}",
+                    extendLanguages.get(languageIndex).getAbbreviation());
+                if (!extendKnown.contains(extendResolved) && !addedColumns.contains(extendResolved)) {
+                    throw new IllegalArgumentException("Field '" + patternEntry.getKey() + "' is mapped to '"
+                        + extendResolved + "', which neither table '" + extendEntityName + "' nor 'columns' has");
+                }
+            }
+        }
+        // Order matters: the GOM is checked (saved and reverted on failure) BEFORE any column is
+        // created, because columns cannot be dropped again from here. A rejected form or a mapped
+        // field missing from it therefore leaves the table untouched.
+        oldGom = extendTemplate.getGomSource();
+        oldMappings = extendTemplate.getMappings();
+        extendUnmapped = new ArrayList();
+
+        // ---- 1. gom: save it and check every mapped field exists in it -----------------------
+        extendTemplate.setLock(true, false);
+        try {
+            try {
+                extendTemplate.setGomSource(extendGom);
+                extendTemplate.save(extendComment, false);
+            } catch (Exception gomException) {
+                extendTemplate.setGomSource(oldGom);
+                throw new IllegalArgumentException("The server rejected the GOM - nothing changed: " + gomException);
+            }
+            checkMappings = extendTemplate.getMappings(TableTemplate.EMPTY_MAPPINGS,
+                extendTemplate.getGomProvider());
+            java.util.HashSet gomFieldNames = new java.util.HashSet();
+            for (int checkIndex = 0; checkIndex < checkMappings.length; checkIndex++) {
+                gomFieldNames.add(checkMappings[checkIndex].getName());
+            }
+            for (requestedIterator = extendMappings.keySet().iterator(); requestedIterator.hasNext();) {
+                String requestedField = requestedIterator.next();
+                if (!gomFieldNames.contains(requestedField)) {
+                    extendTemplate.setGomSource(oldGom);
+                    extendTemplate.save("revert: " + extendComment, false);
+                    throw new IllegalArgumentException("Field '" + requestedField
+                        + "' is mapped but the GOM has no such field - gom reverted, nothing changed");
+                }
+            }
+        } finally {
+            extendTemplate.setLock(false, false);
+        }
+
+        // ---- 2. new columns (existing ones are left alone, never altered) -------------------
+        if (!addedColumns.isEmpty()) {
+            try {
+                extendSchema.setLock(true, false);
+                try {
+                    extendOrSchema = extendSchema.getOrSchema();
+                    extendEntity = extendOrSchema.getEntityType(extendEntityName);
+                    for (int addIndex = 0; addIndex < addedColumns.size(); addIndex++) {
+                        String addName = addedColumns.get(addIndex);
+                        Object[] addSpec = extendColumns.get(addName);
+                        addedAttribute = extendEntity.createSimpleAttribute(addName, addSpec[0]);
+                        if (((Integer) addSpec[1]).intValue() > 0) {
+                            addedAttribute.setSize(((Integer) addSpec[1]).intValue());
+                        }
+                    }
+                    extendSchema.setOrSchema(extendOrSchema);
+                    extendSchema.save(extendComment, false);
+                } finally {
+                    extendSchema.setLock(false, false);
+                }
+            } catch (Exception columnException) {
+                revertNote = revertExtend(extendTemplate, oldGom, oldMappings, extendComment);
+                throw new IllegalStateException("Adding the columns failed - " + revertNote
+                    + ", no column added: " + columnException);
+            }
+            extendTemplate = findTableTemplate(templateStore, targetUid);
+        }
+
+        // ---- 3. every mapping, derived from the saved gom ----------------------------------
+        // Every target column was checked to exist above, so this fails only on a server error.
+        try {
+            extendTemplate.setLock(true, false);
+            try {
+                derivedMappings = extendTemplate.getMappings(TableTemplate.EMPTY_MAPPINGS,
+                    extendTemplate.getGomProvider());
+                for (int derivedIndex = 0; derivedIndex < derivedMappings.length; derivedIndex++) {
+                    derivedMapping = derivedMappings[derivedIndex];
+                    String derivedName = derivedMapping.getName();
+                    if (!extendMappings.containsKey(derivedName)) {
+                        extendUnmapped.add(derivedName);
+                        continue;
+                    }
+                    String derivedPattern = extendMappings.get(derivedName);
+                    boolean perLanguage = derivedPattern.indexOf("{LANG}") >= 0;
+                    for (int mapLanguage = 0; mapLanguage < extendLanguages.size(); mapLanguage++) {
+                        String mapAbbreviation = extendLanguages.get(mapLanguage).getAbbreviation();
+                        derivedMapping.setAttributeReference(
+                            new String[] { derivedPattern.replace("{LANG}", mapAbbreviation) },
+                            mapAbbreviation, perLanguage);
+                    }
+                }
+                extendTemplate.setMappings(derivedMappings);
+                extendTemplate.save(extendComment, false);
+            } finally {
+                extendTemplate.setLock(false, false);
+            }
+        } catch (Exception mappingException) {
+            revertNote = revertExtend(extendTemplate, oldGom, oldMappings, extendComment);
+            throw new IllegalStateException("Setting the mappings failed - " + revertNote
+                + (addedColumns.isEmpty() ? "" : "; the new columns " + addedColumns
+                    + " exist and are unused (drop them in SiteArchitect or run extend again)")
+                + ": " + mappingException);
+        }
+
+        addedArray = new StringBuilder("[");
+        for (int addedIndex = 0; addedIndex < addedColumns.size(); addedIndex++) {
+            if (addedIndex > 0) {
+                addedArray.append(",");
+            }
+            addedArray.append("\"").append(jsonEscape(addedColumns.get(addedIndex))).append("\"");
+        }
+        addedArray.append("]");
+        unmappedArray = new StringBuilder("[");
+        for (int unmappedIndex = 0; unmappedIndex < extendUnmapped.size(); unmappedIndex++) {
+            if (unmappedIndex > 0) {
+                unmappedArray.append(",");
+            }
+            unmappedArray.append("\"").append(jsonEscape(extendUnmapped.get(unmappedIndex))).append("\"");
+        }
+        unmappedArray.append("]");
+        json.append(",\"uid\":\"").append(jsonEscape(targetUid)).append("\"");
+        json.append(",\"addedColumns\":").append(addedArray.toString());
+        json.append(",\"unmapped\":").append(unmappedArray.toString());
+        json.append(",\"gomHash\":\"").append(sha256(extendTemplate.getGomSource())).append("\"");
+        json.append(",\"backup\":{\"gom\":\"").append(encode(oldGom)).append("\"}");
+
+    } else if ("relocate".equals(requestedAction)) {
+        folderName = param(folder == void ? null : folder, "rest-extension");
+        scriptName = param(script == void ? null : script, "rest_table_template");
+        scriptsRoot = templateStore.getScripts();
+
+        selfScript = null;
+        for (scriptIterator = scriptsRoot.getChildren(Script.class, true).iterator(); scriptIterator.hasNext();) {
+            candidateScript = scriptIterator.next();
+            if (scriptName.equals(candidateScript.getUid())) {
+                selfScript = candidateScript;
+                break;
+            }
+        }
+        if (selfScript == null) {
+            throw new IllegalStateException("Script '" + scriptName + "' not found in the ScriptStore");
+        }
+
+        targetFolder = null;
+        seenFolders = new StringBuilder("[");
+        for (folderIterator = scriptsRoot.getChildren(ScriptFolder.class, false).iterator(); folderIterator.hasNext();) {
+            candidateFolder = folderIterator.next();
+            // Script folders have no uid (getUid() throws UnsupportedOperationException); the
+            // reference name and the display names are what a person sees, so match any of them.
+            candidateNames = new java.util.LinkedHashSet();
+            candidateNames.add(String.valueOf(candidateFolder.getName()));
+            for (int nameLanguage = 0; nameLanguage < project.getLanguages().size(); nameLanguage++) {
+                candidateNames.add(String.valueOf(candidateFolder.getDisplayName(project.getLanguages().get(nameLanguage))));
+            }
+            if (seenFolders.length() > 1) {
+                seenFolders.append(",");
+            }
+            seenFolders.append("{\"id\":").append(candidateFolder.getId()).append(",\"names\":\"")
+                .append(jsonEscape(candidateNames.toString())).append("\"}");
+            if (targetFolder == null && candidateNames.contains(folderName)) {
+                targetFolder = candidateFolder;
+            }
+        }
+        seenFolders.append("]");
+        folderCreated = false;
+        if (targetFolder == null) {
+            // ScriptContainer.createScriptFolder(String), public API.
+            scriptsRoot.setLock(true, false);
+            try {
+                targetFolder = scriptsRoot.createScriptFolder(folderName);
+                scriptsRoot.save("folder for " + scriptName, false);
+            } finally {
+                scriptsRoot.setLock(false, false);
+            }
+            folderCreated = true;
+        }
+
+        moved = false;
+        if (selfScript.getParent() == null || selfScript.getParent().getId() != targetFolder.getId()) {
+            targetFolder.setLock(true, false);
+            try {
+                targetFolder.moveChild(selfScript);
+                targetFolder.save("move " + scriptName, false);
+            } finally {
+                targetFolder.setLock(false, false);
+            }
+            moved = true;
+        }
+
+        json.append(",\"script\":\"").append(jsonEscape(scriptName)).append("\"");
+        json.append(",\"folder\":\"").append(jsonEscape(folderName)).append("\"");
+        json.append(",\"folderCreated\":").append(folderCreated);
+        json.append(",\"moved\":").append(moved);
+        json.append(",\"folderId\":").append(targetFolder.getId());
+        json.append(",\"folders\":").append(seenFolders.toString());
+
+    } else {
+        throw new IllegalArgumentException("Unknown action '" + requestedAction + "'");
+    }
+
+    json.append("}");
+    context.logInfo(json.toString());
+
+} catch (Exception e) {
+    context.logError("{\"status\":\"error\",\"message\":\"" + jsonEscape(e.toString()) + "\"}", e);
+}

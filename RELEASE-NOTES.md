@@ -1,5 +1,52 @@
 # Release Notes
 
+## 0.8.1 — 2026-11-04
+
+Skills in this release (each SKILL.md carries the same source commit in its `metadata:` block):
+
+- `firstspirit-api-reference` @ f1ac89f (beta)
+- `firstspirit-templating-reference` @ f1ac89f (beta)
+- `firstspirit-scripting` @ f1ac89f (beta)
+- `firstspirit-rest-api` @ f1ac89f (beta)
+- `firstspirit-external-sync-export` @ f1ac89f (beta)
+- `firstspirit-operations` @ f1ac89f (beta)
+- `firstspirit-contentcreator-extensions` @ f1ac89f (beta)
+- `firstspirit-template-design` @ f1ac89f (beta)
+- `firstspirit-cloud` @ f1ac89f (beta)
+- `firstspirit-headless` @ f1ac89f (beta)
+- `firstspirit-module-development` @ f1ac89f (beta)
+- `firstspirit-ai-suite` @ f1ac89f (beta)
+- `firstspirit-smartsearch` @ f1ac89f (beta)
+- `firstspirit-collaboration` @ f1ac89f (beta)
+- `firstspirit-technical-product-knowledge` @ f1ac89f (beta)
+- `firstspirit-technical-tone-of-voice` @ f1ac89f (beta)
+- `firstspirit-workflow-development` @ f1ac89f (beta)
+- `firstspirit-installation` @ f1ac89f (beta)
+- `firstspirit-configuration` @ f1ac89f (beta)
+- `firstspirit-caastomize` @ f1ac89f (beta)
+
+Changes since 0.8.0 — one skill extended; the other nineteen are restamped without a content
+change. Evidence tags (`[jar]`, `[odfs]`, `[observed]`, `[verify]`) stay in the text by decision.
+
+- **`firstspirit-rest-api`** — an interim route for what the REST module cannot do: create a
+  table template with its database table, field-to-column mappings, snippet and data source
+  (Content2), or read and write an existing table template's form, rules and channel. One
+  versioned BeanShell script (`scripts/table-templates/rest_table_template.bsh`) is installed
+  once into the project's script store and called through `POST /scripts/{name}/execute`; the
+  shell tools `fs-table` (`create`, `pull`, `diff`, `push`, `extend`, `content2`, `snippet`),
+  `fs-table-install` and `fs-lint` drive it from a file layout documented in
+  `references/table-templates.md` and `references/table-templates-file-formats.md`, with a
+  worked example under `assets/table-templates/`. `push` and `extend` are guarded by hashes of
+  the server state; a failed `create` removes what it had made. The blocks in `SKILL.md` and
+  `references/content-management.md` are marked `interim:table-templates` and go when the REST
+  module ships table-template endpoints: check the OpenAPI document of your module first. The
+  route was tested end to end on a FirstSpirit 2026.11 development server; whether the
+  column-type helper used for DOM columns is a public API is still marked `[verify]`.
+- **Toolkit** — the CI shellcheck step also covers the extensionless scripts under
+  `skills/*/*/scripts/*/`, and `.gitattributes` keeps those scripts and the `.bsh` on LF so a
+  Windows checkout does not break the shebang line or the uploaded script.
+
+
 ## 0.8.0 — 2026-11-02
 
 Skills in this release (each SKILL.md carries the same source commit in its `metadata:` block):

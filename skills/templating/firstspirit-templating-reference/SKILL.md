@@ -3,9 +3,9 @@ name: firstspirit-templating-reference
 description: >-
   Lookup reference for FirstSpirit template development: template language ($CMS_VALUE$, $CMS_IF$, $CMS_FOR$, $CMS_REF$, $CMS_RENDER$, system objects, string operations, Navigation and PageGroup, content projection), GOM input components (CMS_INPUT_*, FS_REFERENCE, FS_CATALOG, FS_INDEX, FS_DATASET) and the datatype each yields, database schemas (table templates, queries, Remote Data), Rules, identifiers and casing, deprecated components, the Snippet tab (label, extract, thumbnail expressions), the preview image (Properties tab), where the editorId call goes, PDF output (template set, Apache FOP). Use for exact template syntax, the right input component, how to read a component's value in the output channel, or whether something is deprecated: "syntax for CMS_FOR", "which component for a single choice", "is FS_LIST still supported", "review my Ruleset.xml", "what goes in the snippet of a section template", "editorId parameters for a picture", "where do I set the image editors see when picking a template".
 metadata:
-  source-commit: "17f78f9"
-  published: "2026-11-02"
-  toolkit-version: "0.8.0"
+  source-commit: "f1ac89f"
+  published: "2026-11-04"
+  toolkit-version: "0.8.1"
 ---
 
 > **Beta.** Early public release. Feedback welcome; behaviour and structure may change.

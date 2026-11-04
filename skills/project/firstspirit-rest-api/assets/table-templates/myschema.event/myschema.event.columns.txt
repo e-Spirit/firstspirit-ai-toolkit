@@ -1,0 +1,9 @@
+# The database table, created when it does not exist yet. One "column=type" line each;
+# {LANG} makes one column per project language. FirstSpirit adds fs_id, FS_GID and the
+# other system columns itself.
+# Types: string [size], dom, double, long, integer, boolean, date
+title_{LANG}=string 256
+text_{LANG}=dom
+start=date
+lat=double
+lng=double

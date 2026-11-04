@@ -9,11 +9,11 @@ description: >
   by-uid, pagination, the OpenAPI document, the .env and curl setup, error codes, and what is not available
   over REST. Triggers on: REST API calls to FirstSpirit, curl against /rest/v1/, page/section management,
   form field PATCH, media upload, content search, "run a script over REST", "curl returns 401 although the
-  credentials are right". Also for reading or writing content via the API.
+  credentials are right". Also creating table templates, tables and data sources (via a script).
 metadata:
-  source-commit: "17f78f9"
-  published: "2026-11-02"
-  toolkit-version: "0.8.0"
+  source-commit: "f1ac89f"
+  published: "2026-11-04"
+  toolkit-version: "0.8.1"
 ---
 
 > **Beta.** Early public release. Feedback welcome; behaviour and structure may change.
@@ -118,6 +118,16 @@ Read [references/content-catalog.md](references/content-catalog.md)
 
 **Search & Discovery** (find elements, check references):
 Read [references/search-and-discovery.md](references/search-and-discovery.md)
+
+<!-- interim:table-templates -->
+**Table templates, database tables, mappings, data sources (Content2)** — *not REST*:
+the REST API cannot create or edit any of these. Read
+[references/table-templates.md](references/table-templates.md): one installed BeanShell script,
+driven by `scripts/table-templates/fs-table`, creates, pulls, diffs and pushes them, snippet
+included; the files it reads (form, columns, mappings, snippet) are in
+[references/table-templates-file-formats.md](references/table-templates-file-formats.md). Also for `Unknown action` errors from `rest_table_template`. Check the OpenAPI document
+for table-template paths first; if your module version offers them, use REST instead.
+<!-- /interim:table-templates -->
 
 ## Playbook: Duplicate a Page (e.g. event variant)
 
@@ -304,6 +314,11 @@ GET    /projects/{id}/data-sources/{ds}/{gid}/revisions/    GET .../revisions/{r
 Write dataset fields with the same GET → jq → PATCH FormEditorDTO flow used for
 page/section editors (see Critical Rule #1), **not** by PATCHing `/entity`.
 
+<!-- interim:table-templates -->
+A data source needs a table template and a database table behind it, and REST can create
+neither. Route through a script: [references/table-templates.md](references/table-templates.md).
+<!-- /interim:table-templates -->
+
 ### Search
 ```
 GET    /projects/{id}/search?q={query}&page=0&size=20
@@ -346,6 +361,13 @@ POST   /projects/{id}/scripts/{name}/execute           # JSON in
 > result. The same goes for create → upload → execute → delete throwaway
 > scripts as a general RPC channel. If a write is not available through REST, say so and use a
 > proper script context or an `Executable` (`firstspirit-scripting`), not the execute endpoint.
+
+<!-- interim:table-templates -->
+> **One exception:** the table-template tools
+> ([references/table-templates.md](references/table-templates.md)) install the versioned script
+> `rest_table_template` once and parse the single JSON log record it writes. That covers a gap
+> in the REST module; don't copy the pattern for anything else.
+<!-- /interim:table-templates -->
 
 ### Global Content
 ```
@@ -426,6 +448,13 @@ Actions: `copy`, `release`. Options for release:
   SiteArchitect or in Template Development in ContentCreator; each client has a dedicated step for it. Do not look for an endpoint: write down what
   the snippet should contain (name, template, field values), say that you did not create it, and hand it over.
 - Template store content cannot be released (see *Actions Pattern*).
+<!-- interim:table-templates -->
+- **Table templates, database tables, field-to-column mappings and data sources** cannot be created
+  over REST, and a table template's GOM, rules and channel cannot be read or written
+  (`GET …/templates/table-templates/` → `404`) `[observed]`. Route through a script:
+  [references/table-templates.md](references/table-templates.md). It also writes the
+  **snippet of a table template** (not of other template types).
+<!-- /interim:table-templates -->
 
 ## When a call fails
 

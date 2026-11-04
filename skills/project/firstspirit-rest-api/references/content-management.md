@@ -572,6 +572,11 @@ curl -s -K "$FS_CURLRC" \
 > source *listing* also omitted some data sources `[observed]`, so an absent entry is not proof
 > the data source does not exist; address it by uid.
 
+<!-- interim:table-templates -->
+> To create or change a table template, its table, mappings or data source, use the
+> script-based route in [table-templates.md](table-templates.md); REST cannot do it.
+<!-- /interim:table-templates -->
+
 ### Write Dataset Fields (form-editor pattern)
 Dataset editing works exactly like page/section editors: **GET the editor → mutate
 `content` with jq → PATCH** the complete FormEditorDTO. Do **not** PATCH `/entity`.

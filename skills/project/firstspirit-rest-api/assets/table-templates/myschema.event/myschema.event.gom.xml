@@ -1,0 +1,33 @@
+<CMS_MODULE>
+
+  <CMS_INPUT_TEXT name="tt_title" hFill="yes" singleLine="yes" useLanguages="yes">
+    <LANGINFOS>
+      <LANGINFO lang="*" label="Title"/>
+    </LANGINFOS>
+  </CMS_INPUT_TEXT>
+
+  <CMS_INPUT_DOM name="tt_text" hFill="yes" useLanguages="yes">
+    <LANGINFOS>
+      <LANGINFO lang="*" label="Text"/>
+    </LANGINFOS>
+  </CMS_INPUT_DOM>
+
+  <CMS_INPUT_DATE name="tt_start" hFill="yes" mode="DATETIME" useLanguages="no">
+    <LANGINFOS>
+      <LANGINFO lang="*" label="Start"/>
+    </LANGINFOS>
+  </CMS_INPUT_DATE>
+
+  <CMS_INPUT_NUMBER name="tt_lat" type="double" hFill="yes" useLanguages="no">
+    <LANGINFOS>
+      <LANGINFO lang="*" label="Latitude"/>
+    </LANGINFOS>
+  </CMS_INPUT_NUMBER>
+
+  <CMS_INPUT_NUMBER name="tt_long" type="double" hFill="yes" useLanguages="no">
+    <LANGINFOS>
+      <LANGINFO lang="*" label="Longitude"/>
+    </LANGINFOS>
+  </CMS_INPUT_NUMBER>
+
+</CMS_MODULE>

@@ -3,9 +3,9 @@ name: firstspirit-scripting
 description: >-
   Lookup reference for FirstSpirit scripting with BeanShell: the script types and their bound `context` objects (menu, context-menu, workflow, Content2/dataset, FS_BUTTON, template/generation, schedule, PermissionService), BeanShell essentials, logging and debugging, and the safe Access-API patterns (lock/save/unlock, iteration, store navigation, form data, transitions). Use whenever you write, review or debug a FirstSpirit script — e.g. "which context object do I get in a workflow script", "how do I lock and save an element in BeanShell", "how do I log from a script", "how do I read a form field", "call a script from a template with $CMS_RENDER$", "open a dialog or an element's form from a client script", "where does this template error come from" or "the preview is slow" (Template Inspector, Template Debugger, #global.debugMode, /showLog=profile). Also use it for any BeanShell ("Bean Shell") script or `.bsh` file, even without naming FirstSpirit — outside FirstSpirit, BeanShell is almost never used.
 metadata:
-  source-commit: "17f78f9"
-  published: "2026-11-02"
-  toolkit-version: "0.8.0"
+  source-commit: "f1ac89f"
+  published: "2026-11-04"
+  toolkit-version: "0.8.1"
 ---
 
 > **Beta.** Early public release. Feedback welcome; behaviour and structure may change.

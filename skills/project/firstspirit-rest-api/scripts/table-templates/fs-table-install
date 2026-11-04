@@ -1,0 +1,145 @@
+#!/usr/bin/env bash
+# Install (or update) the server-side script fs-table talks to, in the project the .env names.
+#
+#   fs-table-install            show the target project, ask, then install
+#   fs-table-install --yes      install without asking
+#   fs-table-install --check    read only: is the project's script the same as this skill's?
+#                               exit 0 identical, 1 error, 2 missing, 3 different
+#
+# Creates the ScriptStore script "rest_table_template" if it is missing, in the ScriptStore folder
+# $FS_SCRIPT_FOLDER (default "rest-extension", created if needed), saves the copy it
+# replaces to backup/auto/, uploads the source and reads it back - a 200 on the upload is
+# not proof. Run it again after updating the skill: nothing in a project says which version
+# it holds, and an old one only shows as "Unknown action '<name>'" once you call something new.
+
+. "$(dirname "${BASH_SOURCE[0]}")/fs-env"
+
+NAME="${FS_TABLE_SCRIPT:-rest_table_template}"
+FOLDER="${FS_SCRIPT_FOLDER:-rest-extension}"
+SRC="$FS_BIN_DIR/rest_table_template.bsh"
+WORK="$REPO_ROOT/tmp/.fs-table-install.$$"
+mkdir -p "$WORK"
+trap 'rm -rf "$WORK"' EXIT
+
+MODE="install"
+case "${1:-}" in
+    --yes)   MODE="yes" ;;
+    --check) MODE="check" ;;
+    "")      ;;
+    *)       sed -n '2,12p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit 1 ;;
+esac
+
+# Credentials through a config file only this user can read - never -u on the command line,
+# where the process list shows them.
+(
+    umask 077
+    printf 'user = "%s:%s"\n' \
+        "$(printf '%s' "$FS_USERNAME" | sed 's/[\\"]/\\&/g')" \
+        "$(printf '%s' "$FS_PASSWORD" | sed 's/[\\"]/\\&/g')" > "$WORK/auth.curl"
+)
+fs_curl() { curl -sS --config "$WORK/auth.curl" "$@"; }
+
+# POST /scripts/ ignores "location", so the script moves itself into $FOLDER through its own
+# "relocate" action. Needs the new source to be installed already.
+relocate() {
+    jq -n --arg f "$FOLDER" --arg s "$NAME" --arg ts "$FS_TEMPLATE_SET_UID" \
+        '{action:"relocate", folder:$f, script:$s, templateSet:$ts}' > "$WORK/relocate.json"
+    fs_curl -X POST -H "Content-Type: application/json" --data-binary "@$WORK/relocate.json" \
+        "$FS_PROJECT_URL/scripts/$NAME/execute" | sed -E 's/^\[(INFO|ERROR|WARN)\] //' > "$WORK/relocate.out"
+    if [ "$(jq -r '.status // empty' < "$WORK/relocate.out" 2>/dev/null)" != "ok" ]; then
+        echo "fs-table-install: could not move $NAME into /$FOLDER:" >&2
+        head -c 500 "$WORK/relocate.out" >&2; echo >&2
+        return 1
+    fi
+    location="$(fs_curl "$FS_PROJECT_URL/scripts/$NAME" | jq -r '.location')"
+    if [ "$location" != "/$FOLDER" ]; then
+        echo "fs-table-install: $NAME is in '$location' after relocate, expected /$FOLDER" >&2
+        return 1
+    fi
+    echo "  location -> /$FOLDER$(jq -r 'if .folderCreated then " (folder created)" else "" end' < "$WORK/relocate.out")"
+}
+
+# A credentials file inside a git work tree must be ignored, or the next "git add ." commits it.
+if git -C "$(dirname "$FS_ENV_FILE")" rev-parse --is-inside-work-tree > /dev/null 2>&1 \
+   && ! git -C "$(dirname "$FS_ENV_FILE")" check-ignore -q "$FS_ENV_FILE"; then
+    echo "WARNING: $FS_ENV_FILE holds a password and is NOT gitignored - add it to .gitignore" >&2
+fi
+
+# Check the login and show which project this is - the .env comments are not proof.
+status="$(fs_curl -o "$WORK/project.json" -w '%{http_code}' "$FS_PROJECT_URL")"
+case "$status" in
+    200) ;;
+    401|403) echo "fs-table-install: login refused ($status) - check FS_USERNAME / FS_PASSWORD" >&2; exit 1 ;;
+    429) echo "fs-table-install: 429 - usually failed logins, not load. Do not retry:" >&2
+         head -c 300 "$WORK/project.json" >&2; echo >&2; exit 1 ;;
+    *) echo "fs-table-install: $FS_PROJECT_URL answered $status" >&2; exit 1 ;;
+esac
+echo "Target: $(jq -r '"\(.id)  \(.name)"' < "$WORK/project.json")"
+echo "        $FS_REST_BASE_URL  (template set $FS_TEMPLATE_SET_UID)"
+
+# What the project holds now.
+code="$(fs_curl -o /dev/null -w '%{http_code}' "$FS_PROJECT_URL/scripts/$NAME")"
+present="no"
+location=""
+if [ "$code" = "200" ]; then
+    present="yes"
+    location="$(fs_curl "$FS_PROJECT_URL/scripts/$NAME" | jq -r '.location')"
+    fs_curl -H "Accept: text/plain" -o "$WORK/server.bsh" \
+        "$FS_PROJECT_URL/scripts/$NAME/template-sets/$FS_TEMPLATE_SET_UID"
+fi
+
+local_bytes="$(wc -c < "$SRC" | tr -d ' ')"
+if [ "$present" = "no" ]; then
+    echo "  $NAME: not in this project"
+    [ "$MODE" = "check" ] && exit 2
+elif cmp -s "$SRC" "$WORK/server.bsh"; then
+    echo "  $NAME: identical to this skill's copy ($local_bytes bytes), in $location"
+    if [ "$location" = "/$FOLDER" ]; then
+        [ "$MODE" = "check" ] && exit 0
+        echo "  nothing to install"
+        exit 0
+    fi
+    [ "$MODE" = "check" ] && { echo "  not in /$FOLDER - run fs-table-install to move it"; exit 3; }
+    relocate
+    exit $?
+else
+    echo "  $NAME: DIFFERENT - project $(wc -c < "$WORK/server.bsh" | tr -d ' ') bytes, skill $local_bytes bytes"
+    [ "$MODE" = "check" ] && { echo "  run fs-table-install to update it"; exit 3; }
+fi
+
+if [ "$MODE" = "install" ]; then
+    printf 'Install %s into this project? [y/N] ' "$NAME"
+    IFS= read -r answer || answer=""
+    [ "$answer" = "y" ] || [ "$answer" = "Y" ] || { echo "nothing installed"; exit 1; }
+fi
+
+if [ "$present" = "yes" ]; then
+    mkdir -p "$REPO_ROOT/backup/auto"
+    backup="$REPO_ROOT/backup/auto/$(date +%Y%m%d-%H%M%S)-$FS_PROJECT_ID-$NAME.bsh"
+    cp "$WORK/server.bsh" "$backup"
+    echo "  replaced copy saved -> ${backup#"$REPO_ROOT"/}"
+else
+    jq -n --arg n "$NAME" \
+        '{name:$n, description:"firstspirit-rest-api: table templates over BeanShell"}' \
+        > "$WORK/create.json"
+    fs_curl -o /dev/null -w "  create script -> %{http_code}\n" \
+        -X POST -H "Content-Type: application/json" \
+        --data-binary "@$WORK/create.json" "$FS_PROJECT_URL/scripts/"
+fi
+
+fs_curl -o /dev/null -w "  upload source -> %{http_code}\n" \
+    -X PUT -H "Content-Type: text/plain; charset=UTF-8" \
+    --data-binary "@$SRC" "$FS_PROJECT_URL/scripts/$NAME/template-sets/$FS_TEMPLATE_SET_UID"
+
+fs_curl -H "Accept: text/plain" -o "$WORK/readback.bsh" \
+    "$FS_PROJECT_URL/scripts/$NAME/template-sets/$FS_TEMPLATE_SET_UID"
+if ! cmp -s "$SRC" "$WORK/readback.bsh"; then
+    echo "fs-table-install: READ-BACK DIFFERS - the script on the server is not the skill's" >&2
+    exit 1
+fi
+echo "  read-back identical ($local_bytes bytes)"
+
+relocate
+
+# One harmless call proves the script runs: the schema list.
+"$FS_BIN_DIR/fs-table" schemas
