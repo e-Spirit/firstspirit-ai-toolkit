@@ -150,9 +150,17 @@ b64_of() {
     base64 < "$1" | tr -d '\n'
 }
 
-# hash_of <file> -> the file's SHA-256, matching what the script computes
+# hash_of <file> -> the file's SHA-256, matching what the script computes.
+# sha256sum is coreutils (Linux, CI images); shasum is perl (macOS ships it, Alpine does not).
 hash_of() {
-    shasum -a 256 < "$1" | cut -d' ' -f1
+    if command -v sha256sum > /dev/null 2>&1; then
+        sha256sum < "$1" | cut -d' ' -f1
+    elif command -v shasum > /dev/null 2>&1; then
+        shasum -a 256 < "$1" | cut -d' ' -f1
+    else
+        echo "fs-table: neither sha256sum nor shasum found - install coreutils or perl Digest::SHA" >&2
+        return 1
+    fi
 }
 
 # table_dir <root> <schema> <uid> -> the directory a template belongs in
@@ -319,6 +327,25 @@ cmd_diff() {
             status=1
         fi
     done < <(find "$tmp" -type f | sort)
+
+    # Second pass: template directories in the working tree that the server does not have
+    # (not yet created). The first pass only walks what was pulled, so it cannot see them.
+    local local_dir schema uid wanted
+    for local_dir in "$REPO_ROOT/$TABLE_ROOT"/*/*/; do
+        [ -d "$local_dir" ] || continue
+        local_dir="${local_dir%/}"
+        uid="$(basename "$local_dir")"
+        schema="$(basename "$(dirname "$local_dir")")"
+        if [ $# -gt 0 ]; then
+            wanted=0
+            for arg in "$@"; do [ "$arg" = "$uid" ] && wanted=1; done
+            [ "$wanted" -eq 1 ] || continue
+        fi
+        if [ ! -d "$tmp/$TABLE_ROOT/$schema/$uid" ]; then
+            echo "only local: $TABLE_ROOT/$schema/$uid (not on the server - run 'fs-table create')"
+            status=1
+        fi
+    done
 
     if [ "$status" -eq 0 ]; then
         echo "fs-table: no differences"

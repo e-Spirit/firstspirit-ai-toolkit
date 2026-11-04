@@ -1043,6 +1043,8 @@ try {
             } catch (Exception cleanupException) {
                 cleanupNote = "COULD NOT BE REMOVED (" + cleanupException + ") - delete '"
                     + targetUid + "' in SiteArchitect";
+                // Leave the element editable for that manual cleanup.
+                try { newTemplate.setLock(false, false); } catch (Exception ignored) {}
             }
             throw new IllegalStateException("Creating '" + targetUid + "' failed, the template was "
                 + cleanupNote + (createdParts.isEmpty() ? "" : " (created and kept: " + createdParts + ")")

@@ -132,7 +132,9 @@ lint_template() {
                 }
                 if (!has_comma) blocks++
             }
-            offset = abs + 8
+            # Continue after the closing ")" so a nested $CMS_SET(..)$ inside the arguments
+            # is not scanned a second time (and miscounted as a block form).
+            offset = (close_at > 0) ? close_at : abs + 8
             rest = substr(clean, offset + 1)
         }
         ends = count(clean, "$CMS_END_SET$")

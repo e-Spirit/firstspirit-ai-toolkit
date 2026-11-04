@@ -84,8 +84,15 @@ location=""
 if [ "$code" = "200" ]; then
     present="yes"
     location="$(fs_curl "$FS_PROJECT_URL/scripts/$NAME" | jq -r '.location')"
-    fs_curl -H "Accept: text/plain" -o "$WORK/server.bsh" \
-        "$FS_PROJECT_URL/scripts/$NAME/template-sets/$FS_TEMPLATE_SET_UID"
+    code="$(fs_curl -H "Accept: text/plain" -o "$WORK/server.bsh" -w '%{http_code}' \
+        "$FS_PROJECT_URL/scripts/$NAME/template-sets/$FS_TEMPLATE_SET_UID")"
+    if [ "$code" != "200" ]; then
+        # Without this check a 404 (wrong FS_TEMPLATE_SET_UID) lands in server.bsh and the
+        # install carries on against the wrong resource.
+        echo "fs-table-install: $NAME exists but template set '$FS_TEMPLATE_SET_UID' answered $code - check FS_TEMPLATE_SET_UID" >&2
+        head -c 300 "$WORK/server.bsh" >&2; echo >&2
+        exit 1
+    fi
 fi
 
 local_bytes="$(wc -c < "$SRC" | tr -d ' ')"
@@ -131,8 +138,13 @@ fs_curl -o /dev/null -w "  upload source -> %{http_code}\n" \
     -X PUT -H "Content-Type: text/plain; charset=UTF-8" \
     --data-binary "@$SRC" "$FS_PROJECT_URL/scripts/$NAME/template-sets/$FS_TEMPLATE_SET_UID"
 
-fs_curl -H "Accept: text/plain" -o "$WORK/readback.bsh" \
-    "$FS_PROJECT_URL/scripts/$NAME/template-sets/$FS_TEMPLATE_SET_UID"
+code="$(fs_curl -H "Accept: text/plain" -o "$WORK/readback.bsh" -w '%{http_code}' \
+    "$FS_PROJECT_URL/scripts/$NAME/template-sets/$FS_TEMPLATE_SET_UID")"
+if [ "$code" != "200" ]; then
+    echo "fs-table-install: read-back answered $code" >&2
+    head -c 300 "$WORK/readback.bsh" >&2; echo >&2
+    exit 1
+fi
 if ! cmp -s "$SRC" "$WORK/readback.bsh"; then
     echo "fs-table-install: READ-BACK DIFFERS - the script on the server is not the skill's" >&2
     exit 1
