@@ -1,0 +1,3 @@
+label=if(!tt_title.isEmpty, tt_title, if(!tt_text.isEmpty, truncate(tt_text.toText(false).trim(), 40), ""))
+extract=if(!tt_start.isEmpty, tt_start.format("dd.MM.yyyy HH:mm"), "") + if(!tt_start.isEmpty && !tt_text.isEmpty, " | ", "") + if(!tt_text.isEmpty, truncate(tt_text.toText(false).trim(), 100), "")
+thumbnail=

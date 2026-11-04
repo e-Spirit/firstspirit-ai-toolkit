@@ -3,9 +3,9 @@ name: firstspirit-template-design
 description: >-
   Design principles and review guidance for FirstSpirit templates. Use whenever creating, reviewing, fixing or auditing FirstSpirit templates and their output channels: page, section, format and link templates, input components and forms (GOM), CMS tags and output, headless and CaaS, content modelling, naming, reuse, editorial usability (editorId so editors can select a section, edit text in place and crop a picture in the ContentCreator preview; snippets so lists show content, not the template name; a preview image so editors pick the right template), localisation, cutting HTML into templates. Trigger it for any template task, also a channel handed over to correct — e.g. "build a section template", "review this template", "which input component should I use", "turn this HTML into FirstSpirit templates", "editors cannot select the section or crop the picture", "the catalog shows every entry under the template name", "editors pick the wrong template". Pair with firstspirit-technical-tone-of-voice for prose.
 metadata:
-  source-commit: "17f78f9"
-  published: "2026-11-02"
-  toolkit-version: "0.8.0"
+  source-commit: "f1ac89f"
+  published: "2026-11-04"
+  toolkit-version: "0.8.1"
 ---
 
 > **Beta.** Early public release. Feedback welcome; behaviour and structure may change.

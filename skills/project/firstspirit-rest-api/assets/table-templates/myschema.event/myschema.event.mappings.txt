@@ -1,0 +1,6 @@
+# Which column each form field is stored in. A field without a line is never stored.
+tt_title=title_{LANG}
+tt_text=text_{LANG}
+tt_start=start
+tt_lat=lat
+tt_long=lng

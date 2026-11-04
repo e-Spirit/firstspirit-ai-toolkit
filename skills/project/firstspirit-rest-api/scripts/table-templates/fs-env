@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+# Shared setup for the table-template tools of the firstspirit-rest-api skill. Sourced by
+# fs-table, fs-lint and fs-table-install.
+#
+# These tools exist because the REST API cannot create or edit table templates, tables,
+# mappings or data sources.
+#
+# Uses the same .env as the FirstSpirit AI Toolkit's firstspirit-rest-api skill
+# (its SKILL.md -> Setup): FS_REST_BASE_URL, FS_USERNAME, FS_PASSWORD, FS_PROJECT_ID.
+# Optional: FS_TEMPLATE_SET_UID (default html).
+#
+#   FS_PROJECT_ROOT  where templates, backups and scratch go   (default: current directory)
+#   FS_ENV_FILE      the credentials file                      (default: $FS_PROJECT_ROOT/.env)
+
+set -euo pipefail
+
+FS_BIN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${FS_PROJECT_ROOT:-$PWD}" && pwd)"
+export FS_BIN_DIR REPO_ROOT
+
+: "${FS_ENV_FILE:=$REPO_ROOT/.env}"
+if [ ! -f "$FS_ENV_FILE" ]; then
+    echo "fs-env: no credentials file at $FS_ENV_FILE." >&2
+    echo "        Create the .env described in the firstspirit-rest-api skill (Setup):" >&2
+    echo "        FS_REST_BASE_URL=https://<host>/rest/v1, FS_USERNAME, FS_PASSWORD='<password>', FS_PROJECT_ID" >&2
+    echo "        or point FS_ENV_FILE at an existing one." >&2
+    exit 1
+fi
+
+# Sourced by the shell, as in the firstspirit-rest-api skill: single-quote any value with a $.
+# Not exported: the values stay in this shell, and the password reaches curl only through the
+# mode-600 config file each tool writes. A 429 that names failed logins means wrong
+# credentials: fix them before trying again.
+# shellcheck disable=SC1090
+. "$FS_ENV_FILE"
+
+for _var in FS_REST_BASE_URL FS_USERNAME FS_PASSWORD FS_PROJECT_ID; do
+    if [ -z "${!_var:-}" ]; then
+        echo "fs-env: $_var is not set in $FS_ENV_FILE" >&2
+        exit 1
+    fi
+done
+unset _var
+
+: "${FS_TEMPLATE_SET_UID:=html}"
+FS_PROJECT_URL="$FS_REST_BASE_URL/projects/$FS_PROJECT_ID"
+export FS_ENV_FILE FS_TEMPLATE_SET_UID FS_PROJECT_URL
+
+# Scratch the tools write below the project root (never the system temp dir), the same
+# ./tmp the firstspirit-rest-api skill uses for payloads.
+mkdir -p "$REPO_ROOT/tmp"

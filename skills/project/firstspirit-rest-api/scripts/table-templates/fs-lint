@@ -1,0 +1,261 @@
+#!/usr/bin/env bash
+# Check template sources for the mistakes that break a FirstSpirit render.
+#
+# Usage:
+#   fs-lint                       check every file below cms/templates/
+#   fs-lint <file|dir>...         check these files
+#
+# Checks:
+#   1. Balance of $CMS_IF$ / $CMS_FOR$ / $CMS_SWITCH$ / $CMS_TRIM$ and the
+#      block form of $CMS_SET(x)$ ... $CMS_END_SET$
+#   2. Single-quoted string literals inside $CMS_...$ expressions - a single
+#      quote fails compilation and the page prints the raw source
+#   3. Balance of <![CDATA[ ]]> and <CMS_ARRAY_ELEMENT>
+#   4. Well-formedness of .gom.xml and .rules.xml
+#   5. <uid>.snippet.txt: only label= / extract= / thumbnail= lines, no single-quoted
+#      literals, balanced parentheses and quotes, and every tt_* field it names exists in
+#      <uid>.gom.xml. Written over the Java API, the server stores a snippet without parsing
+#      it; a broken or misspelt expression only shows as an empty label.
+#
+# Add checks here one per lesson, with the measurement in the comment. Each one
+# catches a failure that is INVISIBLE at push time: 200 OK, no generator warning,
+# wrong page.
+#
+# Exits non-zero as soon as one file fails, so it can gate fs-table push and create.
+
+. "$(dirname "${BASH_SOURCE[0]}")/fs-env"
+
+# --------------------------------------------------------------------------
+
+lint_template() {
+    awk '
+    # ---- read the whole file -------------------------------------------
+    { src = src $0 "\n" }
+
+    function line_of(pos,   head, n) {
+        head = substr(src, 1, pos)
+        n = gsub(/\n/, "\n", head)
+        return n + 1
+    }
+
+    function report(pos, msg) {
+        printf "%s:%d: %s\n", FILENAME, line_of(pos), msg
+        errors++
+    }
+
+    # Blank out $-- ... --$ comments so their content is never scanned,
+    # keeping the newlines so line numbers stay correct.
+    function strip_comments(s,   out, i, j, chunk) {
+        out = ""
+        while ((i = index(s, "$--")) > 0) {
+            out = out substr(s, 1, i - 1)
+            s = substr(s, i)
+            j = index(s, "--$")
+            if (j == 0) { chunk = s; s = "" } else { chunk = substr(s, 1, j + 2); s = substr(s, j + 3) }
+            gsub(/[^\n]/, " ", chunk)
+            out = out chunk
+        }
+        return out s
+    }
+
+    # Scan a $CMS_ expression starting at the "(" in position start.
+    # Tracks double-quoted string literals so parentheses and apostrophes
+    # inside them are ignored — " rowspan=\x27" and "yyyy-MM-dd\x27T\x27" are
+    # perfectly legal, only a quote outside a literal breaks compilation.
+    #
+    # Sets EXPR_END to the position of the closing ")" (0 when unclosed) and
+    # EXPR_BAD_QUOTE to the position of an offending apostrophe (0 when none).
+    function scan_expr(s, start,   depth, i, c, instr) {
+        depth = 0
+        instr = 0
+        EXPR_END = 0
+        EXPR_BAD_QUOTE = 0
+        for (i = start; i <= length(s); i++) {
+            c = substr(s, i, 1)
+            if (instr) {
+                if (c == "\\") i++                 # skip the escaped character
+                else if (c == "\"") instr = 0
+                continue
+            }
+            if (c == "\"") instr = 1
+            else if (c == "(") depth++
+            else if (c == ")") { depth--; if (depth == 0) { EXPR_END = i; return } }
+            else if (c == "\047" && EXPR_BAD_QUOTE == 0) EXPR_BAD_QUOTE = i
+        }
+    }
+
+    function count(s, needle,   n, i) {
+        n = 0
+        while ((i = index(s, needle)) > 0) { n++; s = substr(s, i + length(needle)) }
+        return n
+    }
+
+
+    function check_balance(opener, closer, open_n, close_n) {
+        if (open_n != close_n)
+            printf "%s: unbalanced %s / %s — %d open, %d close\n", \
+                   FILENAME, opener, closer, open_n, close_n
+        if (open_n != close_n) errors++
+    }
+
+    END {
+        clean = strip_comments(src)
+
+        # ---- 1. block tag balance --------------------------------------
+        check_balance("$CMS_IF(",     "$CMS_END_IF$",     count(clean, "$CMS_IF("),     count(clean, "$CMS_END_IF$"))
+        check_balance("$CMS_FOR(",    "$CMS_END_FOR$",    count(clean, "$CMS_FOR("),    count(clean, "$CMS_END_FOR$"))
+        check_balance("$CMS_SWITCH(", "$CMS_END_SWITCH$", count(clean, "$CMS_SWITCH("), count(clean, "$CMS_END_SWITCH$"))
+        check_balance("$CMS_TRIM",    "$CMS_END_TRIM$",   count(clean, "$CMS_TRIM"),    count(clean, "$CMS_END_TRIM$"))
+
+        # $CMS_SET(x)$ ... $CMS_END_SET$ is the block form and needs a closer.
+        # $CMS_SET(x, value)$ is the inline form and must not have one.
+        # Tell them apart by looking for a comma at parenthesis depth 1.
+        blocks = 0
+        rest = clean
+        offset = 0
+        while ((i = index(rest, "$CMS_SET(")) > 0) {
+            abs = offset + i
+            open_at = abs + 8                      # position of the "("
+            scan_expr(clean, open_at)
+            close_at = EXPR_END
+            if (close_at == 0) {
+                report(abs, "unclosed $CMS_SET(")
+            } else {
+                args = substr(clean, open_at + 1, close_at - open_at - 1)
+                depth = 0
+                has_comma = 0
+                for (k = 1; k <= length(args); k++) {
+                    c = substr(args, k, 1)
+                    if (c == "(") depth++
+                    else if (c == ")") depth--
+                    else if (c == "," && depth == 0) { has_comma = 1; break }
+                }
+                if (!has_comma) blocks++
+            }
+            # Continue after the closing ")" so a nested $CMS_SET(..)$ inside the arguments
+            # is not scanned a second time (and miscounted as a block form).
+            offset = (close_at > 0) ? close_at : abs + 8
+            rest = substr(clean, offset + 1)
+        }
+        ends = count(clean, "$CMS_END_SET$")
+        if (blocks != ends) {
+            printf "%s: unbalanced $CMS_SET(x)$ / $CMS_END_SET$ — %d block form, %d close\n", \
+                   FILENAME, blocks, ends
+            errors++
+        }
+
+        # ---- 2. single quotes inside $CMS_...$ expressions -------------
+        rest = clean
+        offset = 0
+        while (match(rest, /\$CMS_[A-Z_]+\(/) > 0) {
+            abs = offset + RSTART
+            open_at = abs + RLENGTH - 1            # position of the "("
+            scan_expr(clean, open_at)
+            if (EXPR_BAD_QUOTE > 0)
+                report(EXPR_BAD_QUOTE, "single-quoted literal in a $CMS_ expression — use double quotes")
+            offset = abs + RLENGTH - 1
+            rest = substr(clean, offset + 1)
+        }
+
+        # ---- 3. CDATA and array elements -------------------------------
+        check_balance("<![CDATA[", "]]>", count(clean, "<![CDATA["), count(clean, "]]>"))
+        check_balance("<CMS_ARRAY_ELEMENT", "</CMS_ARRAY_ELEMENT>", \
+                      count(clean, "<CMS_ARRAY_ELEMENT"), count(clean, "</CMS_ARRAY_ELEMENT>"))
+
+        exit (errors > 0)
+    }
+    ' "$1"
+}
+
+lint_xml() {
+    if command -v xmllint > /dev/null 2>&1; then
+        if ! xmllint --noout "$1" 2> "$REPO_ROOT/tmp/.fs-lint-xml.$$"; then
+            sed "s|^|$1: |" "$REPO_ROOT/tmp/.fs-lint-xml.$$"
+            rm -f "$REPO_ROOT/tmp/.fs-lint-xml.$$"
+            return 1
+        fi
+        rm -f "$REPO_ROOT/tmp/.fs-lint-xml.$$"
+    fi
+    return 0
+}
+
+lint_snippet() {
+    local file="$1" gom fields bad=0 field
+    gom="${file%.snippet.txt}.gom.xml"
+    if grep -nEv '^(label|extract|thumbnail)=|^ |^[[:space:]]*(#|$)' "$file" \
+        | awk -v f="$file" '{ print f ":" $0 " - expected label=, extract= or thumbnail=" }' | grep .; then
+        bad=1
+    fi
+    # Outside double-quoted literals an apostrophe breaks the expression.
+    if sed 's/"[^"]*"//g' "$file" | grep -n "'" \
+        | awk -v f="$file" '{ print f ":" $0 " - single quote, use double quotes" }' | grep .; then
+        bad=1
+    fi
+    # The server saves a snippet without parsing it (measured 2026-11-03: an unclosed "if("
+    # was stored and evaluated to ""), so balance is checked here, per expression.
+    if ! awk -v f="$file" '
+        function check(  i, c, depth, instr) {
+            if (key == "") return
+            depth = 0; instr = 0
+            for (i = 1; i <= length(expr); i++) {
+                c = substr(expr, i, 1)
+                if (instr) { if (c == "\\") i++; else if (c == "\"") instr = 0; continue }
+                if (c == "\"") instr = 1
+                else if (c == "(") depth++
+                else if (c == ")" && --depth < 0) break
+            }
+            if (instr) { print f ": " key " - unclosed double quote"; bad = 1 }
+            else if (depth != 0) { print f ": " key " - unbalanced parentheses"; bad = 1 }
+        }
+        /^ / { expr = expr "\n" substr($0, 2); next }
+        /^(label|extract|thumbnail)=/ { check(); key = substr($0, 1, index($0, "=") - 1); expr = substr($0, index($0, "=") + 1); next }
+        END { check(); exit bad }
+    ' "$file"; then
+        bad=1
+    fi
+    if [ -f "$gom" ]; then
+        fields="$(grep -oE 'name="[^"]+"' "$gom" | sed 's/name="//; s/"$//' | sort -u)"
+        for field in $(sed 's/"[^"]*"//g' "$file" | grep -oE '\btt_[A-Za-z0-9_]+' | sort -u); do
+            if ! printf '%s\n' "$fields" | grep -qx "$field"; then
+                echo "$file: '$field' is not a field of $(basename "$gom")"
+                bad=1
+            fi
+        done
+    fi
+    return "$bad"
+}
+
+# --------------------------------------------------------------------------
+
+FILES=()
+if [ $# -eq 0 ]; then
+    while IFS= read -r f; do FILES+=("$f"); done < <(
+        find "$REPO_ROOT/cms/templates" \( -name '*.html' -o -name '*.xml' -o -name '*.snippet.txt' \) -type f | sort
+    )
+else
+    for arg in "$@"; do
+        if [ -d "$arg" ]; then
+            while IFS= read -r f; do FILES+=("$f"); done < <(
+                find "$arg" \( -name '*.html' -o -name '*.xml' -o -name '*.snippet.txt' \) -type f | sort
+            )
+        else
+            FILES+=("$arg")
+        fi
+    done
+fi
+
+failed=0
+for f in "${FILES[@]}"; do
+    case "$f" in
+        *.html) lint_template "$f" || failed=$((failed + 1)) ;;
+        *.xml) lint_xml "$f" || failed=$((failed + 1)) ;;
+        *.snippet.txt) lint_snippet "$f" || failed=$((failed + 1)) ;;
+    esac
+done
+
+if [ "$failed" -gt 0 ]; then
+    echo "fs-lint: $failed of ${#FILES[@]} file(s) failed" >&2
+    exit 1
+fi
+
+echo "fs-lint: ${#FILES[@]} file(s) OK"

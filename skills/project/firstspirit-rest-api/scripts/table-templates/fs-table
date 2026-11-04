@@ -1,0 +1,847 @@
+#!/usr/bin/env bash
+# Export and upload database schema table templates.
+#
+# Table templates (myschema.event, ...) render the dataset
+# detail pages. The REST API can only list schemas — it never exposes their GOM,
+# Rules or channel sources — so the toolkit's REST workflow cannot see them. This script
+# reaches them through the server-side BeanShell script "rest_table_template",
+# which speaks the same three provider interfaces every other template offers.
+#
+# Usage:
+#   fs-table list                     inventory: uid, entity type, part sizes
+#   fs-table schemas                  the schemas, their tables, and the database layers
+#   fs-table fields <uid>             the entity type's columns and the mappings
+#   fs-table pull [uid...]            export into cms/templates/table-templates/
+#   fs-table pull --into <dir> ...    export below <dir> instead (used by diff)
+#   fs-table diff [uid...]            compare the server against the working tree
+#   fs-table push <dir|uid>...        upload the changed parts
+#   fs-table push --dry-run ...       show what would be sent, send nothing
+#   fs-table push --force ...         skip the hash precondition
+#   fs-table create <dir> [--entity-type <table>] [--name <display name>]
+#                   [--schema <s> | --new-schema <s> [--layer <l>]]
+#                   [--content2 <uid> | --no-content2] [--dry-run]
+#                                     create a new template from a directory, and its
+#                                     data source - and its schema and table if needed
+#   fs-table extend <uid> [--dry-run] [--force]
+#                                     grow an existing template: add the columns of
+#                                     <uid>.columns.txt the table lacks, upload the GOM and
+#                                     re-map every field from <uid>.mappings.txt; refused if
+#                                     the form or mappings changed since the last pull
+#   fs-table content2 <uid> [--content2 <uid>] [--name <display name>]
+#                                     create the data source for an existing template
+#   fs-table snippet <uid> [--server] [--limit n]
+#                                     evaluate <uid>.snippet.txt (or, with --server, the saved
+#                                     snippet) on the first n datasets, per language - the only
+#                                     check that its expressions work
+#
+# create ASKS which schema the template goes into - one that exists, or a new one - unless
+# --schema / --new-schema answer it; the answers are read from stdin. The directory is
+# moved to cms/templates/table-templates/<schema>/<uid>/ to match. The table defaults to
+# the uid without its prefix (myschema.event -> event). If the table does not exist,
+# <uid>.columns.txt creates it, one "column=type" line each: "name_{LANG}=string 256",
+# "text_{LANG}=dom", "lat=double" (also long, integer, boolean, date); FirstSpirit adds
+# fs_id and the other system columns itself.
+#
+# The directory holds <uid>.gom.xml (required), <uid>.html, <uid>.rules.xml,
+# <uid>.snippet.txt and <uid>.mappings.txt, one "field=column" line per form field
+# ("tt_headline=headline_{LANG}" for a column per language). The snippet is what editors see
+# for each dataset in lists, search and selection dialogs: "label=", "extract=" and
+# "thumbnail=" lines, each one snippet expression (label=if(!tt_name.isEmpty, tt_name)).
+# Without it every dataset shows as "<data source>: #<id>"; create warns. A field without a line is created unmapped: the editor
+# shows it, the dataset never stores it. The server checks schema, entity type, a free
+# uid and every column before it creates anything, and removes the template again if a
+# mapped field turns out not to be in the GOM. A successful create pulls the template
+# back, which writes meta.json - from then on it is an ordinary push/pull/diff template.
+#
+# A table template alone gives editors nothing to work with: datasets are added through a
+# data source (Content2) in the content store. create therefore makes one by default, at
+# the content store root with the entity type as uid.
+# The uid is checked before anything is created. content2 does the same for a template
+# that already exists.
+#
+# pull also writes <uid>.mappings.txt, so the mappings are on record and fs-table diff
+# sees them change. push does not send mappings: fs-table extend does, and push says so
+# when the file was edited.
+#
+# The snippet travels like the GOM, rules and channel: pulled, diffed and pushed with the
+# same hash precondition. The REST API cannot write snippets for any template type.
+#
+# A push only sends the parts whose local file differs from the source the last
+# pull recorded in meta.json, and it sends that recorded hash along as a
+# precondition: when someone changed the template in SiteArchitect in the
+# meantime, the server refuses the write instead of overwriting them. --force
+# replaces that check with "*" and can overwrite someone else's change.
+#
+# The server returns the source it replaced, so backup/auto/ is written from the
+# response — no separate read round trip.
+#
+# Every push is gated by fs-lint.
+#
+# Changes only reach the live site after a re-generation/deploy.
+
+. "$(dirname "${BASH_SOURCE[0]}")/fs-env"
+
+SCRIPT_NAME="${FS_TABLE_SCRIPT:-rest_table_template}"
+TABLE_ROOT="${FS_TABLE_ROOT:-cms/templates/table-templates}"
+EMPTY_RULES_PATTERN='<RULES></RULES>'
+
+# Scratch lives below the project root, never in $TMPDIR.
+WORK="$REPO_ROOT/tmp/.fs-table.$$"
+mkdir -p "$WORK"
+trap 'rm -rf "$WORK"' EXIT
+
+# The credentials go to curl through a config file only this user can read, never through
+# -u on the command line, where every process listing would show them for the length of
+# the call. Inside the quotes curl's config syntax needs \ and " escaped.
+(
+    umask 077
+    printf 'user = "%s:%s"\n' \
+        "$(printf '%s' "$FS_USERNAME" | sed 's/[\\"]/\\&/g')" \
+        "$(printf '%s' "$FS_PASSWORD" | sed 's/[\\"]/\\&/g')" > "$WORK/auth.curl"
+)
+
+# --------------------------------------------------------------------------
+# Transport
+# --------------------------------------------------------------------------
+
+# fs_table_call <request-file> -> response JSON on stdout
+#
+# POST /execute discards the script's return value and answers with its captured
+# log output, so the JSON arrives prefixed with a level, which is stripped here.
+fs_table_call() {
+    local request="$1" response="$WORK/response.json"
+
+    # The script defaults to template set "html"; projects that name theirs differently
+    # set FS_TEMPLATE_SET_UID, and every call carries it.
+    jq --arg ts "${FS_TEMPLATE_SET_UID:-html}" '.templateSet = $ts' < "$request" > "$WORK/request.ts.json"
+    request="$WORK/request.ts.json"
+
+    curl -sS --config "$WORK/auth.curl" \
+        -X POST -H "Content-Type: application/json" \
+        --data-binary "@$request" \
+        --max-time 300 \
+        "$FS_PROJECT_URL/scripts/$SCRIPT_NAME/execute" \
+        | sed -E 's/^\[(INFO|ERROR|WARN)\] //' > "$response"
+
+    if ! jq -e . < "$response" > /dev/null 2>&1; then
+        echo "fs-table: unexpected response" >&2
+        sed 's/^/  /' "$response" >&2
+        return 1
+    fi
+    if [ "$(jq -r '.status' < "$response")" != "ok" ]; then
+        echo "fs-table: $(jq -r '.message // "server reported an error"' < "$response")" >&2
+        # Nothing in a project says which version of the script it holds; the first sign of an
+        # old one is an action it does not know yet.
+        if jq -r '.message // ""' < "$response" | grep -q "Unknown action"; then
+            echo "fs-table: the project's $SCRIPT_NAME script is older than this fs-table -" >&2
+            echo "          update it with fs-table-install (fs-table-install --check compares)" >&2
+        fi
+        return 1
+    fi
+    cat "$response"
+}
+
+# --------------------------------------------------------------------------
+# Helpers
+# --------------------------------------------------------------------------
+
+# b64_of <file> -> the file's content as base64 on one line
+b64_of() {
+    base64 < "$1" | tr -d '\n'
+}
+
+# hash_of <file> -> the file's SHA-256, matching what the script computes.
+# sha256sum is coreutils (Linux, CI images); shasum is perl (macOS ships it, Alpine does not).
+hash_of() {
+    if command -v sha256sum > /dev/null 2>&1; then
+        sha256sum < "$1" | cut -d' ' -f1
+    elif command -v shasum > /dev/null 2>&1; then
+        shasum -a 256 < "$1" | cut -d' ' -f1
+    else
+        echo "fs-table: neither sha256sum nor shasum found - install coreutils or perl Digest::SHA" >&2
+        return 1
+    fi
+}
+
+# table_dir <root> <schema> <uid> -> the directory a template belongs in
+table_dir() {
+    echo "$1/$TABLE_ROOT/$2/$3"
+}
+
+# --------------------------------------------------------------------------
+# list
+# --------------------------------------------------------------------------
+
+cmd_list() {
+    jq -n '{action:"list"}' > "$WORK/request.json"
+    fs_table_call "$WORK/request.json" \
+        | jq -r '.templates[]
+                 | [.uid, .entityType, (.gomBytes|tostring), (.channelBytes|tostring)]
+                 | @tsv' \
+        | awk 'BEGIN { print "UID\tENTITY TYPE\tGOM\tCHANNEL" } { print }' \
+        | column -t -s "$(printf '\t')"
+}
+
+# --------------------------------------------------------------------------
+# schemas
+# --------------------------------------------------------------------------
+
+cmd_schemas() {
+    jq -n '{action:"schemas"}' > "$WORK/request.json"
+    fs_table_call "$WORK/request.json" > "$WORK/schemas.json" || return 1
+    jq -r '.schemas[] | [.uid, .layer, (.tables | join(", "))] | @tsv' < "$WORK/schemas.json" \
+        | awk 'BEGIN { print "SCHEMA\tLAYER\tTABLES" } { print }' \
+        | column -t -s "$(printf '\t')"
+}
+
+# --------------------------------------------------------------------------
+# fields
+# --------------------------------------------------------------------------
+
+cmd_fields() {
+    local uid="$1"
+    [ -n "$uid" ] || { echo "fs-table: fields needs a uid" >&2; return 1; }
+
+    jq -n --arg uid "$uid" '{action:"describe", uid:$uid}' > "$WORK/request.json"
+    fs_table_call "$WORK/request.json" > "$WORK/fields.json" || return 1
+
+    echo "$uid — entity type $(jq -r '.entityType' < "$WORK/fields.json")"
+    echo
+    jq -r '.attributes[] | [.name, .type, (if .required then "required" else "" end),
+                            (if .key then "key" else "" end)] | @tsv' \
+        < "$WORK/fields.json" \
+        | awk 'BEGIN { print "COLUMN\tTYPE\t\t" } { print }' \
+        | column -t -s "$(printf '\t')"
+
+    # Which column each form field is stored in: the same text pull writes to <uid>.mappings.txt.
+    jq -n --arg uid "$uid" '{action:"read", uid:$uid}' > "$WORK/request.json"
+    fs_table_call "$WORK/request.json" > "$WORK/read.json" || return 1
+    echo
+    echo "MAPPINGS (form field = column)"
+    jq -r '.mappings // "" | @base64d' < "$WORK/read.json" | grep -v '^[[:space:]]*$' | sed 's/^/  /' \
+        || echo "  (none - nothing an editor enters is stored)"
+}
+
+# --------------------------------------------------------------------------
+# pull
+# --------------------------------------------------------------------------
+
+# pull_one <root> <uid>
+pull_one() {
+    local root="$1" uid="$2" dir schema rules_text
+
+    jq -n --arg uid "$uid" '{action:"read", uid:$uid}' > "$WORK/request.json"
+    fs_table_call "$WORK/request.json" > "$WORK/read.json" || return 1
+
+    schema="$(jq -r '.schema' < "$WORK/read.json")"
+    dir="$(table_dir "$root" "$schema" "$uid")"
+    mkdir -p "$dir"
+
+    jq -r '.channel' < "$WORK/read.json" | base64 -d > "$dir/$uid.html"
+    jq -r '.gom'     < "$WORK/read.json" | base64 -d > "$dir/$uid.gom.xml"
+
+    # An empty "<RULES> </RULES>" produces no file. 
+    jq -r '.rules' < "$WORK/read.json" | base64 -d > "$WORK/rules.xml"
+    rules_text="$(tr -d '[:space:]' < "$WORK/rules.xml")"
+    if [ -s "$WORK/rules.xml" ] && [ "$rules_text" != "$EMPTY_RULES_PATTERN" ]; then
+        cp "$WORK/rules.xml" "$dir/$uid.rules.xml"
+    else
+        rm -f "$dir/$uid.rules.xml"
+    fi
+
+    jq -r '.mappings // ""' < "$WORK/read.json" | base64 -d > "$dir/$uid.mappings.txt"
+
+    # The snippet (label, extract, thumbnail): no file when all three are empty.
+    jq -r '.snippet // ""' < "$WORK/read.json" | base64 -d > "$WORK/snippet.txt"
+    if [ -s "$WORK/snippet.txt" ]; then
+        cp "$WORK/snippet.txt" "$dir/$uid.snippet.txt"
+    else
+        rm -f "$dir/$uid.snippet.txt"
+    fi
+
+    # sourceHashes records which server state these files were derived from —
+    # a push sends them back as its precondition. mappingsHash only lets push
+    # notice an edit it cannot send.
+    jq -S --arg mh "$(hash_of "$dir/$uid.mappings.txt")" \
+        '{id, uid, name, schema, entityType, mappingsHash: $mh,
+          sourceHashes: {gom: .gomHash, rules: .rulesHash, channel: .channelHash,
+                         snippet: (.snippetHash // "")}}' \
+        < "$WORK/read.json" > "$dir/meta.json"
+
+    echo "pulled $uid -> ${dir#"$root"/}"
+}
+
+cmd_pull() {
+    local root="$REPO_ROOT" uids=()
+
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --into) root="$2"; shift 2 ;;
+            -*) echo "fs-table: unknown option '$1'" >&2; return 1 ;;
+            *) uids+=("$1"); shift ;;
+        esac
+    done
+
+    if [ ${#uids[@]} -eq 0 ]; then
+        jq -n '{action:"list"}' > "$WORK/request.json"
+        fs_table_call "$WORK/request.json" > "$WORK/list.json" || return 1
+        while IFS= read -r listed; do
+            uids+=("$listed")
+        done < <(jq -r '.templates[].uid' < "$WORK/list.json")
+    fi
+
+    local uid status=0
+    for uid in "${uids[@]}"; do
+        pull_one "$root" "$uid" || status=1
+    done
+    return "$status"
+}
+
+# --------------------------------------------------------------------------
+# diff
+# --------------------------------------------------------------------------
+
+cmd_diff() {
+    local tmp="$WORK/diff" status=0 remote rel local_file
+    mkdir -p "$tmp"
+
+    cmd_pull --into "$tmp" "$@" > /dev/null || return 1
+
+    echo "fs-table: server (<) against working tree (>)"
+    echo
+
+    while IFS= read -r remote; do
+        rel="${remote#"$tmp"/}"
+        local_file="$REPO_ROOT/$rel"
+
+        if [ ! -f "$local_file" ]; then
+            echo "only on server: $rel"
+            status=1
+            continue
+        fi
+        # meta.json carries the hashes of the server state, which move on every
+        # push — comparing them would report every push as drift.
+        [ "$(basename "$rel")" = "meta.json" ] && continue
+        if ! diff -u "$remote" "$local_file" > /dev/null; then
+            diff -u --label "server/$rel" --label "local/$rel" "$remote" "$local_file" || true
+            status=1
+        fi
+    done < <(find "$tmp" -type f | sort)
+
+    # Second pass: template directories in the working tree that the server does not have
+    # (not yet created). The first pass only walks what was pulled, so it cannot see them.
+    local local_dir schema uid wanted
+    for local_dir in "$REPO_ROOT/$TABLE_ROOT"/*/*/; do
+        [ -d "$local_dir" ] || continue
+        local_dir="${local_dir%/}"
+        uid="$(basename "$local_dir")"
+        schema="$(basename "$(dirname "$local_dir")")"
+        if [ $# -gt 0 ]; then
+            wanted=0
+            for arg in "$@"; do [ "$arg" = "$uid" ] && wanted=1; done
+            [ "$wanted" -eq 1 ] || continue
+        fi
+        if [ ! -d "$tmp/$TABLE_ROOT/$schema/$uid" ]; then
+            echo "only local: $TABLE_ROOT/$schema/$uid (not on the server - run 'fs-table create')"
+            status=1
+        fi
+    done
+
+    if [ "$status" -eq 0 ]; then
+        echo "fs-table: no differences"
+    fi
+    return "$status"
+}
+
+# --------------------------------------------------------------------------
+# push
+# --------------------------------------------------------------------------
+
+# push_one <dir> <dry-run> <force> <backup-dir>
+push_one() {
+    local dir="$1" dry="$2" force="$3" backup="$4"
+    local uid schema meta part file expected actual sent=0
+
+    uid="$(basename "$dir")"
+    schema="$(basename "$(dirname "$dir")")"
+    meta="$dir/meta.json"
+    if [ ! -f "$meta" ]; then
+        echo "fs-table: $dir has no meta.json — run 'fs-table pull $uid' first" >&2
+        return 1
+    fi
+
+    if [ -f "$dir/$uid.mappings.txt" ] \
+        && [ "$(jq -r '.mappingsHash // ""' < "$meta")" != "$(hash_of "$dir/$uid.mappings.txt")" ]; then
+        echo "fs-table: $uid.mappings.txt was edited — push does not send mappings," \
+             "use 'fs-table extend $uid'" >&2
+    fi
+
+    jq -n --arg uid "$uid" --arg comment "pushed from the repository by fs-table" \
+        '{action:"write", uid:$uid, comment:$comment}' > "$WORK/request.json"
+
+    for part in gom rules channel snippet; do
+        case "$part" in
+            gom) file="$dir/$uid.gom.xml" ;;
+            rules) file="$dir/$uid.rules.xml" ;;
+            channel) file="$dir/$uid.html" ;;
+            snippet) file="$dir/$uid.snippet.txt" ;;
+        esac
+        [ -f "$file" ] || continue
+
+        # "" is a real hash: the part is empty on the server (no rules, no snippet yet).
+        # Only a hash that was never recorded - meta.json from an older pull - stops the push.
+        expected="$(jq -r --arg p "$part" \
+            'if (.sourceHashes // {}) | has($p) then .sourceHashes[$p] else "?" end' < "$meta")"
+        actual="$(hash_of "$file")"
+        [ "$expected" = "$actual" ] && continue
+
+        [ "$force" -eq 1 ] && expected='*'
+        if [ "$expected" = "?" ]; then
+            echo "fs-table: $uid has no recorded hash for '$part' — pull first, or use --force" >&2
+            return 1
+        fi
+
+        jq --arg v "$(b64_of "$file")" --arg h "$expected" --arg p "$part" \
+            '.[$p] = $v | .[$p + "HashExpected"] = $h' \
+            < "$WORK/request.json" > "$WORK/request.next.json"
+        mv "$WORK/request.next.json" "$WORK/request.json"
+        echo "  $part: ${file#"$REPO_ROOT"/}"
+        sent=$((sent + 1))
+    done
+
+    if [ "$sent" -eq 0 ]; then
+        echo "$uid: unchanged"
+        return 0
+    fi
+    if [ "$dry" -eq 1 ]; then
+        echo "$uid: $sent part(s) would be sent (dry run)"
+        return 0
+    fi
+
+    fs_table_call "$WORK/request.json" > "$WORK/write.json" || return 1
+
+    # The response carries the replaced source, so the backup costs no round trip.
+    local backup_dir="$backup/$TABLE_ROOT/$schema/$uid"
+    mkdir -p "$backup_dir"
+    jq -r '.backup.channel' < "$WORK/write.json" | base64 -d > "$backup_dir/$uid.html"
+    jq -r '.backup.gom'     < "$WORK/write.json" | base64 -d > "$backup_dir/$uid.gom.xml"
+    jq -r '.backup.rules'   < "$WORK/write.json" | base64 -d > "$backup_dir/$uid.rules.xml"
+    jq -r '.backup.snippet // ""' < "$WORK/write.json" | base64 -d > "$backup_dir/$uid.snippet.txt"
+
+    # The server state moved — record where meta.json now stands.
+    jq -S --slurpfile w "$WORK/write.json" \
+        '.sourceHashes = {gom: $w[0].gomHash, rules: $w[0].rulesHash, channel: $w[0].channelHash,
+                          snippet: ($w[0].snippetHash // "")}' \
+        < "$meta" > "$WORK/meta.next.json"
+    mv "$WORK/meta.next.json" "$meta"
+
+    echo "$uid: pushed $(jq -r '.written | join(", ")' < "$WORK/write.json")"
+    if jq -e '.written | index("snippet")' < "$WORK/write.json" > /dev/null; then
+        snippet_preview "$uid" "" 3 || return 1
+    fi
+}
+
+cmd_push() {
+    local dry=0 force=0 targets=() backup
+    backup="$REPO_ROOT/backup/auto/$(date +%Y%m%d-%H%M%S)"
+
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --dry-run) dry=1; shift ;;
+            --force) force=1; shift ;;
+            -*) echo "fs-table: unknown option '$1'" >&2; return 1 ;;
+            *) targets+=("$1"); shift ;;
+        esac
+    done
+    if [ ${#targets[@]} -eq 0 ]; then
+        echo "fs-table: push needs a directory or a uid" >&2
+        return 1
+    fi
+
+    # A uid is accepted as well as a path — the layout is derivable either way.
+    local target dirs=() found
+    for target in "${targets[@]}"; do
+        if [ -d "$target" ]; then
+            dirs+=("$(cd "$target" && pwd)")
+            continue
+        fi
+        found="$(find "$REPO_ROOT/$TABLE_ROOT" -mindepth 2 -maxdepth 2 -type d \
+                      -name "$target" 2>/dev/null | head -1)"
+        if [ -z "$found" ]; then
+            echo "fs-table: '$target' is neither a directory nor a known table template" >&2
+            return 1
+        fi
+        dirs+=("$found")
+    done
+
+    "$FS_BIN_DIR/fs-lint" "${dirs[@]}" || return 1
+
+    local dir status=0
+    for dir in "${dirs[@]}"; do
+        push_one "$dir" "$dry" "$force" "$backup" || status=1
+    done
+    if [ "$dry" -eq 0 ] && [ -d "$backup" ]; then
+        echo "fs-table: replaced sources kept in ${backup#"$REPO_ROOT"/}"
+    fi
+    return "$status"
+}
+
+# --------------------------------------------------------------------------
+# create
+# --------------------------------------------------------------------------
+
+# choose_schema <uid> <suggested schema> -> sets CHOSEN_SCHEMA, CHOSEN_NEW, CHOSEN_LAYER
+#
+# Asks which schema the template goes into: one that exists, or a new one. The answers are
+# read from stdin, so a script can pipe them; --schema / --new-schema skip the question.
+choose_schema() {
+    local uid="$1" suggested="$2" count i default="" answer schemas_json="$WORK/schemas.json"
+
+    jq -n '{action:"schemas"}' > "$WORK/request.json"
+    fs_table_call "$WORK/request.json" > "$schemas_json" || return 1
+    count="$(jq '.schemas | length' < "$schemas_json")"
+
+    echo "Schema for $uid:" >&2
+    for ((i = 0; i < count; i++)); do
+        local listed tables mark=""
+        listed="$(jq -r --argjson i "$i" '.schemas[$i].uid' < "$schemas_json")"
+        tables="$(jq -r --argjson i "$i" '.schemas[$i].tables | join(", ")' < "$schemas_json")"
+        if [ "$listed" = "$suggested" ]; then default="$((i + 1))"; mark="  (from the path)"; fi
+        printf '  %d) %-20s %s%s\n' "$((i + 1))" "$listed" "${tables:-no tables}" "$mark" >&2
+    done
+    echo "  n) a new schema" >&2
+    printf 'Choice%s: ' "${default:+ [$default]}" >&2
+    IFS= read -r answer || { echo >&2; echo "fs-table: no answer — pass --schema or --new-schema" >&2; return 1; }
+    answer="${answer:-$default}"
+
+    CHOSEN_NEW=0
+    CHOSEN_LAYER=""
+    if [ "$answer" = "n" ] || [ "$answer" = "N" ]; then
+        printf 'Name of the new schema: ' >&2
+        IFS= read -r CHOSEN_SCHEMA || return 1
+        if ! [[ "$CHOSEN_SCHEMA" =~ ^[a-z][a-z0-9_]*$ ]]; then
+            echo "fs-table: '$CHOSEN_SCHEMA' — use lower case letters, digits and _" >&2
+            return 1
+        fi
+        CHOSEN_NEW=1
+        local layers
+        layers="$(jq '.layers | length' < "$schemas_json")"
+        if [ "$layers" -gt 1 ]; then
+            echo "Database layer:" >&2
+            jq -r '.layers | to_entries[] | "  \(.key + 1)) \(.value)"' < "$schemas_json" >&2
+            printf 'Choice: ' >&2
+            IFS= read -r answer || return 1
+            CHOSEN_LAYER="$(jq -r --argjson i "$((answer - 1))" '.layers[$i] // ""' < "$schemas_json")"
+            [ -n "$CHOSEN_LAYER" ] || { echo "fs-table: no such layer" >&2; return 1; }
+        fi
+        return 0
+    fi
+    if ! [[ "$answer" =~ ^[0-9]+$ ]] || [ "$answer" -lt 1 ] || [ "$answer" -gt "$count" ]; then
+        echo "fs-table: '$answer' is not a choice" >&2
+        return 1
+    fi
+    CHOSEN_SCHEMA="$(jq -r --argjson i "$((answer - 1))" '.schemas[$i].uid' < "$schemas_json")"
+}
+
+cmd_create() {
+    local dir="" entity="" name="" dry=0 content2="" schema="" new_schema=0 layer=""
+
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --entity-type) entity="$2"; shift 2 ;;
+            --name) name="$2"; shift 2 ;;
+            --schema) schema="$2"; shift 2 ;;
+            --new-schema) schema="$2"; new_schema=1; shift 2 ;;
+            --layer) layer="$2"; shift 2 ;;
+            --content2) content2="$2"; shift 2 ;;
+            --no-content2) content2="-"; shift ;;
+            --dry-run) dry=1; shift ;;
+            -*) echo "fs-table: unknown option '$1'" >&2; return 1 ;;
+            *) [ -z "$dir" ] || { echo "fs-table: create takes one directory" >&2; return 1; }
+               dir="$1"; shift ;;
+        esac
+    done
+    if [ -z "$dir" ]; then
+        echo "fs-table: create needs a directory" >&2
+        return 1
+    fi
+    [ -d "$dir" ] || { echo "fs-table: $dir is not a directory" >&2; return 1; }
+    dir="$(cd "$dir" && pwd)"
+
+    local uid suggested=""
+    uid="$(basename "$dir")"
+    # The table defaults to the uid without its schema prefix: myschema.event -> event.
+    entity="${entity:-${uid##*.}}"
+    if [ "$(dirname "$(dirname "$dir")")" = "$REPO_ROOT/$TABLE_ROOT" ]; then
+        suggested="$(basename "$(dirname "$dir")")"
+    fi
+    if [ -f "$dir/meta.json" ]; then
+        echo "fs-table: $uid has a meta.json — it exists already, use push" >&2
+        return 1
+    fi
+    if [ ! -f "$dir/$uid.gom.xml" ]; then
+        echo "fs-table: $dir/$uid.gom.xml is required" >&2
+        return 1
+    fi
+
+    if [ -z "$schema" ]; then
+        choose_schema "$uid" "$suggested" || return 1
+        schema="$CHOSEN_SCHEMA"; new_schema="$CHOSEN_NEW"; layer="$CHOSEN_LAYER"
+    fi
+
+    # The repository mirrors the server: the directory follows the schema it goes into.
+    local target="$REPO_ROOT/$TABLE_ROOT/$schema/$uid"
+    if [ "$dir" != "$target" ]; then
+        if [ -e "$target" ]; then
+            echo "fs-table: ${target#"$REPO_ROOT"/} exists already" >&2
+            return 1
+        fi
+        # Moved only once the server accepted the create - a refused call leaves it where it was.
+        echo "  goes to ${target#"$REPO_ROOT"/}"
+    fi
+
+    "$FS_BIN_DIR/fs-lint" "$dir" || return 1
+    if [ ! -f "$dir/$uid.snippet.txt" ]; then
+        echo "fs-table: no $uid.snippet.txt - editors will see every dataset as" \
+             "\"<data source>: #<id>\" in lists, search and selection dialogs" >&2
+    fi
+
+    jq -n --arg uid "$uid" --arg schema "$schema" --arg entity "$entity" \
+          --arg comment "created from the repository by fs-table" \
+          --arg new "$([ "$new_schema" -eq 1 ] && echo true || echo false)" --arg layer "$layer" \
+        '{action:"create", uid:$uid, schema:$schema, entityType:$entity, comment:$comment,
+          newSchema:$new} | (if $layer != "" then .layer = $layer else . end)' \
+        > "$WORK/request.json"
+    jq --arg n "$name" --arg c "$content2" \
+        '(if $n != "" then .name = $n else . end) | (if $c != "" then .content2 = $c else . end)' \
+        < "$WORK/request.json" > "$WORK/request.next.json"
+    mv "$WORK/request.next.json" "$WORK/request.json"
+
+    local part file
+    for part in gom rules channel snippet mappings columns; do
+        case "$part" in
+            gom) file="$dir/$uid.gom.xml" ;;
+            rules) file="$dir/$uid.rules.xml" ;;
+            channel) file="$dir/$uid.html" ;;
+            snippet) file="$dir/$uid.snippet.txt" ;;
+            mappings) file="$dir/$uid.mappings.txt" ;;
+            columns) file="$dir/$uid.columns.txt" ;;
+        esac
+        [ -f "$file" ] || continue
+        jq --arg v "$(b64_of "$file")" --arg p "$part" '.[$p] = $v' \
+            < "$WORK/request.json" > "$WORK/request.next.json"
+        mv "$WORK/request.next.json" "$WORK/request.json"
+        echo "  $part: ${file#"$REPO_ROOT"/}"
+    done
+
+    if [ "$dry" -eq 1 ]; then
+        echo "$uid: would be created in $([ "$new_schema" -eq 1 ] && echo "NEW ")schema $schema" \
+             "for table $entity$([ -f "$dir/$uid.columns.txt" ] && echo " (created from columns.txt if missing)")," \
+             "data source: ${content2:-$entity} (dry run)"
+        return 0
+    fi
+
+    fs_table_call "$WORK/request.json" > "$WORK/create.json" || return 1
+    [ "$(jq -r '.createdSchema' < "$WORK/create.json")" = "true" ] && echo "$uid: schema $schema created"
+    [ "$(jq -r '.createdTable' < "$WORK/create.json")" = "true" ] && echo "$uid: table $entity created"
+    echo "$uid: created, id $(jq -r '.id' < "$WORK/create.json")"
+    if [ "$(jq '.unmapped | length' < "$WORK/create.json")" -gt 0 ]; then
+        echo "fs-table: unmapped — these fields are never stored:" \
+             "$(jq -r '.unmapped | join(", ")' < "$WORK/create.json")" >&2
+    fi
+
+    if [ -n "$(jq -r '.content2Error' < "$WORK/create.json")" ]; then
+        echo "fs-table: the template is complete, but its data source failed:" \
+             "$(jq -r '.content2Error' < "$WORK/create.json")" >&2
+        echo "          retry with: fs-table content2 $uid" >&2
+    elif [ -n "$(jq -r '.content2' < "$WORK/create.json")" ]; then
+        echo "$uid: data source $(jq -r '.content2' < "$WORK/create.json") created"
+    fi
+
+    if [ "$dir" != "$target" ]; then
+        mkdir -p "$(dirname "$target")"
+        mv "$dir" "$target"
+        echo "$uid: moved to ${target#"$REPO_ROOT"/}"
+    fi
+
+    # The independent read-back, and the meta.json every later push needs.
+    pull_one "$REPO_ROOT" "$uid" || return 1
+    if [ -f "$target/$uid.snippet.txt" ]; then
+        snippet_preview "$uid" "" 3 || true
+    fi
+}
+
+# --------------------------------------------------------------------------
+# extend
+# --------------------------------------------------------------------------
+
+cmd_extend() {
+    local uid="" dry=0 force=0
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --dry-run) dry=1; shift ;;
+            --force) force=1; shift ;;
+            -*) echo "fs-table: unknown option '$1'" >&2; return 1 ;;
+            *) uid="$1"; shift ;;
+        esac
+    done
+    [ -n "$uid" ] || { echo "fs-table: extend needs a table template uid" >&2; return 1; }
+    local dir
+    dir="$(find "$REPO_ROOT/$TABLE_ROOT" -mindepth 2 -maxdepth 2 -type d -name "$uid" | head -1)"
+    [ -n "$dir" ] || { echo "fs-table: $uid not found below $TABLE_ROOT - pull it first" >&2; return 1; }
+    local part file
+    for part in gom mappings; do
+        case "$part" in gom) file="$dir/$uid.gom.xml" ;; mappings) file="$dir/$uid.mappings.txt" ;; esac
+        [ -f "$file" ] || { echo "fs-table: extend needs ${file#"$REPO_ROOT"/}" >&2; return 1; }
+    done
+    [ -f "$dir/meta.json" ] || { echo "fs-table: $dir has no meta.json - run 'fs-table pull $uid' first" >&2; return 1; }
+    "$FS_BIN_DIR/fs-lint" "$dir" || return 1
+
+    # The hashes of the last pull are the precondition, as for push; --force sends "*".
+    local gh mh
+    gh="$(jq -r '.sourceHashes.gom // ""' < "$dir/meta.json")"
+    mh="$(jq -r '.mappingsHash // ""' < "$dir/meta.json")"
+    [ "$force" -eq 1 ] && { gh="*"; mh="*"; }
+    jq -n --arg uid "$uid" --arg comment "extended from the repository by fs-table" \
+          --arg gh "$gh" --arg mh "$mh" \
+        '{action:"extend", uid:$uid, comment:$comment, gomHashExpected:$gh, mappingsHashExpected:$mh}' \
+        > "$WORK/request.json"
+    for part in gom mappings columns; do
+        case "$part" in
+            gom) file="$dir/$uid.gom.xml" ;;
+            mappings) file="$dir/$uid.mappings.txt" ;;
+            columns) file="$dir/$uid.columns.txt" ;;
+        esac
+        [ -f "$file" ] || continue
+        jq --arg v "$(b64_of "$file")" --arg p "$part" '.[$p] = $v' \
+            < "$WORK/request.json" > "$WORK/request.next.json"
+        mv "$WORK/request.next.json" "$WORK/request.json"
+        echo "  $part: ${file#"$REPO_ROOT"/}"
+    done
+    if [ "$dry" -eq 1 ]; then
+        echo "$uid: would be extended (dry run)"
+        return 0
+    fi
+
+    fs_table_call "$WORK/request.json" > "$WORK/extend.json" || return 1
+    local backup
+    backup="$REPO_ROOT/backup/auto/$(date +%Y%m%d-%H%M%S)/$uid"
+    mkdir -p "$backup"
+    jq -r '.backup.gom' < "$WORK/extend.json" | base64 --decode > "$backup/$uid.gom.xml"
+    echo "$uid: columns added: $(jq -r '.addedColumns | if length == 0 then "none" else join(", ") end' < "$WORK/extend.json")"
+    if [ "$(jq '.unmapped | length' < "$WORK/extend.json")" -gt 0 ]; then
+        echo "fs-table: unmapped - these fields are never stored:" \
+             "$(jq -r '.unmapped | join(", ")' < "$WORK/extend.json")" >&2
+    fi
+    echo "$uid: previous gom kept in ${backup#"$REPO_ROOT"/}"
+    pull_one "$REPO_ROOT" "$uid"
+}
+
+# --------------------------------------------------------------------------
+# content2
+# --------------------------------------------------------------------------
+
+cmd_content2() {
+    local uid="" name="" content2=""
+
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --name) name="$2"; shift 2 ;;
+            --content2) content2="$2"; shift 2 ;;
+            -*) echo "fs-table: unknown option '$1'" >&2; return 1 ;;
+            *) uid="$1"; shift ;;
+        esac
+    done
+    [ -n "$uid" ] || { echo "fs-table: content2 needs a table template uid" >&2; return 1; }
+
+    jq -n --arg uid "$uid" --arg n "$name" --arg c "$content2" \
+        '{action:"content2", uid:$uid}
+         | (if $n != "" then .name = $n else . end) | (if $c != "" then .content2 = $c else . end)' \
+        > "$WORK/request.json"
+    fs_table_call "$WORK/request.json" > "$WORK/content2.json" || return 1
+    echo "$uid: data source $(jq -r '.content2' < "$WORK/content2.json")" \
+         "created, id $(jq -r '.content2Id' < "$WORK/content2.json")"
+}
+
+# --------------------------------------------------------------------------
+# snippet
+# --------------------------------------------------------------------------
+
+# snippet_preview <uid> [file] [limit] -> prints the evaluated snippet per dataset and language;
+# fails when datasets exist and no label evaluates to anything.
+#
+# A misspelt field or a syntax error in a snippet expression does not fail anywhere - the
+# server saves it and every evaluation answers "" (measured 2026-11-03) - so evaluating it on
+# real datasets is the only check there is.
+snippet_preview() {
+    local uid="$1" file="${2:-}" limit="${3:-5}" evaluated empty
+
+    jq -n --arg uid "$uid" --arg l "$limit" '{action:"snippet-preview", uid:$uid, limit:$l}' \
+        > "$WORK/request.json"
+    if [ -n "$file" ]; then
+        jq --arg v "$(b64_of "$file")" '.snippet = $v' < "$WORK/request.json" > "$WORK/request.next.json"
+        mv "$WORK/request.next.json" "$WORK/request.json"
+    fi
+    fs_table_call "$WORK/request.json" > "$WORK/preview.json" || return 1
+
+    evaluated="$(jq -r '.evaluated' < "$WORK/preview.json")"
+    empty="$(jq -r '.emptyLabels' < "$WORK/preview.json")"
+    echo "$uid: snippet ($(jq -r 'if .source == "server" then "as saved" else "from file, not saved" end' < "$WORK/preview.json"))" \
+         "on data source(s) $(jq -r '.dataSources | if length == 0 then "none" else join(", ") end' < "$WORK/preview.json")"
+    jq -r '.rows[] | "  #\(.id) \(.language)  \(if .label == "" then "(empty label)" else .label end)"
+                     + (if .extract != "" then "  |  " + .extract else "" end)
+                     + (if .thumbnail then "  [thumbnail]" else "" end)' < "$WORK/preview.json"
+    if [ "$evaluated" -eq 0 ]; then
+        echo "  no datasets yet - nothing to evaluate; run this again once one exists"
+    elif [ "$empty" -eq "$evaluated" ]; then
+        echo "fs-table: every label is empty - a misspelt field or a syntax error evaluates to \"\"" >&2
+        return 1
+    elif [ "$empty" -gt 0 ]; then
+        echo "  $empty of $evaluated labels are empty - fine if those datasets lack the field, else add a fallback"
+    fi
+}
+
+cmd_snippet() {
+    local uid="" limit=5 server=0 dir file=""
+
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --limit) limit="$2"; shift 2 ;;
+            --server) server=1; shift ;;
+            -*) echo "fs-table: unknown option '$1'" >&2; return 1 ;;
+            *) uid="$1"; shift ;;
+        esac
+    done
+    [ -n "$uid" ] || { echo "fs-table: snippet needs a table template uid" >&2; return 1; }
+
+    if [ "$server" -eq 0 ]; then
+        dir="$(find "$REPO_ROOT/$TABLE_ROOT" "$REPO_ROOT" -maxdepth 3 -type d -name "$uid" 2>/dev/null | head -1)"
+        if [ -n "$dir" ] && [ -f "$dir/$uid.snippet.txt" ]; then
+            file="$dir/$uid.snippet.txt"
+            "$FS_BIN_DIR/fs-lint" "$file" > /dev/null || { "$FS_BIN_DIR/fs-lint" "$file"; return 1; }
+        fi
+    fi
+    snippet_preview "$uid" "$file" "$limit"
+}
+
+# --------------------------------------------------------------------------
+
+COMMAND="${1:-}"
+[ $# -gt 0 ] && shift
+
+case "$COMMAND" in
+    list) cmd_list "$@" ;;
+    schemas) cmd_schemas "$@" ;;
+    fields) cmd_fields "$@" ;;
+    pull) cmd_pull "$@" ;;
+    diff) cmd_diff "$@" ;;
+    push) cmd_push "$@" ;;
+    create) cmd_create "$@" ;;
+    extend) cmd_extend "$@" ;;
+    content2) cmd_content2 "$@" ;;
+    snippet) cmd_snippet "$@" ;;
+    *)
+        sed -n '2,70p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
+        exit 1
+        ;;
+esac

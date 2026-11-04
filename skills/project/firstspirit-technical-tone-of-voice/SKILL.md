@@ -13,9 +13,9 @@ description: >-
   templates, the Access API, CaaS, FSM modules) at the reader's depth. Use it even
   when the request does not say "tone of voice". Not for marketing or brand copy.
 metadata:
-  source-commit: "17f78f9"
-  published: "2026-11-02"
-  toolkit-version: "0.8.0"
+  source-commit: "f1ac89f"
+  published: "2026-11-04"
+  toolkit-version: "0.8.1"
 ---
 
 > **Beta.** Early public release. Feedback welcome; behaviour and structure may change.
