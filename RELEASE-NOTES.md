@@ -45,6 +45,11 @@ change. Evidence tags (`[jar]`, `[odfs]`, `[observed]`, `[verify]`) stay in the 
 - **Toolkit** — the CI shellcheck step also covers the extensionless scripts under
   `skills/*/*/scripts/*/`, and `.gitattributes` keeps those scripts and the `.bsh` on LF so a
   Windows checkout does not break the shebang line or the uploaded script.
+- **Review fixes after the first push** — the table-template tools harden on five review
+  findings: `sha256sum` with `shasum` as fallback, `fs-table diff` reports templates that exist
+  only locally, `fs-lint` no longer miscounts a nested inline `$CMS_SET`, `fs-table-install`
+  stops on a non-200 read-back (wrong template set), and the script releases its lock when the
+  rollback of a failed `create` fails.
 
 
 ## 0.8.0 — 2026-11-02
