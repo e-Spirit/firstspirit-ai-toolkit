@@ -13,7 +13,8 @@
     "./skills",
     "./skills/templating",
     "./skills/project",
-    "./skills/deployment"
+    "./skills/deployment",
+    "./skills/diagnostics"
   ],
   "brandColor": "#0066CC",
   "defaultPrompt": "If this project involves FirstSpirit CMS, use the firstspirit-ai-toolkit skills for content management, templating, project setup, deployment, and diagnostics. If it does not, ignore the toolkit entirely and do not mention it.",

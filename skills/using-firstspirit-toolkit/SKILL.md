@@ -79,6 +79,9 @@ If the person wants to report a problem with a toolkit skill, or asks you to han
 
 Issues on the toolkit's GitHub repository are public. Do not raise feedback unprompted.
 
+### Diagnostics (`skills/diagnostics/`)
+- **firstspirit-verify-api-contracts** — Use when you need to know what a FirstSpirit API actually returns before writing a module or script against it — measuring signatures and live behaviour against a running server with `javap`, a compiled probe, the Access API, or a throwaway schedule-task script.
+
 ## Platform Tool Mappings
 
 If you are running on a harness listed below, read the corresponding reference for how abstract operations map to that harness's real tool names:
